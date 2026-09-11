@@ -183,3 +183,25 @@ prospect questions that would elicit a protected attribute. See
 - HUD May 2024 guidance: screening tools should "implement, rather than set" the provider's
   policies and offer customizable criteria — which is a direct description of this build's
   architecture, and the strongest positioning asset in the project.
+
+---
+
+## 2026-09-11 — Build Plan Written
+
+`build-plan.md` added. Six stages, one gate each, roughly five to six working days to a
+recorded demo.
+
+Scope reaffirmed at POC level on explicit instruction: **happy path only.** Two fixture
+outcomes (clean approval, fraud flag) running through an identical pipeline, so the second
+costs almost nothing to add. The build plan carries an explicit "What We Are Not Testing"
+list — do not add checks from it without a plan revision.
+
+Three invariants kept from the `CLAUDE.md` list because they protect a live meeting:
+no duplicate send on a double-tap, no path to a lease without a recorded human tap, and
+visible failure. The rest are deferred as production concerns.
+
+Voucher handling demoted from a demo path to a correctness detail: the schema keeps
+`rental_assistance_amount` and the engine applies the income multiple to tenant-responsible
+rent, but no fixture is built around it. It is a talking point, not a beat.
+
+Next: Stage 1 (environment).

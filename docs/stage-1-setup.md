@@ -6,6 +6,10 @@ without coming back here.
 Already done for you: Docker Compose stack, Postgres, n8n, encryption key, Postgres
 password, and all the setup scripts.
 
+> **Telegram, Plaid, Cal.com and DocuSign have a detailed click-by-click walkthrough in
+> [account-setup-walkthrough.md](account-setup-walkthrough.md).** Use that if anything below
+> is ambiguous — especially DocuSign, where one screen shows a private key exactly once.
+
 ---
 
 ## 0. Create the n8n owner account
@@ -32,6 +36,8 @@ Expect a few dollars total for the whole build.
 
 ## 2. Telegram bot
 
+*Detailed version: [walkthrough §1](account-setup-walkthrough.md#1-telegram-bot)*
+
 1. Message **@BotFather** on Telegram → `/newbot` → pick a name and username
 2. Copy the token into `.env`:
 
@@ -51,6 +57,8 @@ That writes `TELEGRAM_MANAGER_CHAT_ID` into `.env` for you.
 
 ## 3. Plaid — sandbox, free
 
+*Detailed version: [walkthrough §2](account-setup-walkthrough.md#2-plaid-sandbox)*
+
 1. Sign up at https://dashboard.plaid.com/signup
 2. Go to **Developers → Keys**
 3. Copy the **client_id** and the **Sandbox** secret (not Development, not Production):
@@ -66,8 +74,10 @@ No card required. Sandbox is free and unlimited.
 
 ## 4. Cal.com — free plan
 
+*Detailed version: [walkthrough §3](account-setup-walkthrough.md#3-calcom)*
+
 1. Sign up at https://cal.com
-2. **Settings → Developer → API keys** → create one
+2. **Settings → Security → API keys** → create one (not Developer)
 3. Create an event type for tours (e.g. "Unit Tour", 30 min)
 
 ```
@@ -79,6 +89,8 @@ CALCOM_API_KEY=cal_live_...
 ---
 
 ## 5. DocuSign — developer sandbox, free
+
+*Detailed version: [walkthrough §4](account-setup-walkthrough.md#4-docusign-developer-sandbox) — recommended, this one has a one-shot screen*
 
 The fiddliest one. Fifteen minutes.
 

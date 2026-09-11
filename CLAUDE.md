@@ -76,7 +76,8 @@ Do not assume package managers, Docker images, API keys, Gmail OAuth credentials
 - Cal.com cloud webhooks require HTTPS and reject private IPs, so the cloudflared tunnel is required for tour booking as well as for the Telegram Trigger and DocuSign Connect.
 - Use the built-in OpenAI / OpenAI Chat Model nodes with **JSON Schema structured output**. Do not use HTTP Request for normal OpenAI calls unless a required feature is missing or you are debugging raw errors.
 - Test `gpt-5.6-luna` first; fall back to `gpt-5.4-nano`, then `gpt-5.4-mini` if quality requires it.
-- Gmail OAuth2 is the email path. One non-professional Gmail account is acceptable for local testing.
+- Email goes over **SMTP out / IMAP in**, not the Gmail API. A Gmail App Password (2FA required) is used, which means the credential is scriptable and no Google Cloud project, OAuth consent screen, or redirect URI is involved. One personal Gmail account is fine for local testing.
+- The IMAP trigger polls rather than pushing, so inbound mail has a short delay. Match replies on the `[R-xxxx]` reference token in the subject and dedupe on message id; do not rely on unread state alone. Outbound mail lands in `[Gmail]/Sent` rather than `INBOX`, so the single-mailbox read-state problem from build 04 does not apply here.
 - Telegram is the manager action surface: approvals, edits, and resolutions happen through inline buttons or a slash command. Send-message alerts need no tunnel; Telegram Trigger does.
 - DocuSign runs in **sandbox only**, is webhook-driven, and must respond to the callback immediately — a human wait must never hold the HTTP response open. Iterate against fixtures, not live envelopes.
 - The model never decides identity. Match applicants, replies, and documents **deterministically** by reference token first, then sender email. Never let the model emit or choose a record id.
@@ -154,8 +155,10 @@ Known gotchas, carried forward from builds 01–04:
 - cloudflared quick tunnels get a new hostname every run, and n8n reads `WEBHOOK_URL` only at container start. Re-run the tunnel script after any tunnel or Docker restart, then re-import the trigger workflow.
 - Docker Compose `restart` may not apply changed environment variables. Recreate the container when changing webhook/tunnel settings.
 
-**Gmail**
-- This demo sends and receives on one mailbox, so Gmail marks outbound mail read immediately. Never detect replies by unread state; match on a `Re:` subject carrying the reference token and skip message ids already logged.
+**Email (SMTP/IMAP)**
+- Gmail App Passwords require 2-Step Verification on the account. Plain account passwords have not worked for IMAP/SMTP since May 2022.
+- Match replies on a `Re:` subject carrying the reference token and skip message ids already logged. Unread state alone is not a reliable signal.
+- The n8n IMAP trigger has had reported reliability issues across versions. If it misses mail, fall back to a Schedule Trigger polling an IMAP node, or to Gmail OAuth2 as a last resort.
 
 **PowerShell**
 - Piping JSON into native commands can introduce a UTF-8 BOM. If a workflow import fails at the first character, check encoding.

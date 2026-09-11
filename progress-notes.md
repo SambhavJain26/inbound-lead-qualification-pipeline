@@ -266,3 +266,35 @@ Gotcha found: `.gitignore` pattern `*.private.key` does not match `docusign-priv
 Widened to `*.key` / `*.pem` / `*.p12` / `*.pfx` and verified with `git check-ignore`.
 
 Next: the account signups in `docs/stage-1-setup.md`, then `node scripts/setup-credentials.js`.
+
+---
+
+## 2026-09-12 — Revision: Email Moves To SMTP/IMAP
+
+Gmail OAuth2 replaced with **SMTP out / IMAP in**, using a Gmail App Password.
+
+Why: OAuth2 required a Google Cloud project, an enabled Gmail API, an OAuth consent screen,
+a test-user entry, an OAuth client, and a redirect URI — all manual, all browser-bound, and
+the only credential that could not be scripted. SMTP/IMAP credentials are plain
+host/port/user/password, so `scripts/setup-credentials.js` now creates **every** credential
+in the project. Nothing has to be typed into an n8n credential screen.
+
+Verified: Gmail App Passwords still work in 2026 and require 2-Step Verification on the
+account. Plain account passwords have not worked for IMAP/SMTP since May 2022.
+
+Secondary benefit: the build is no longer tied to Google. Any mailbox provider works, which
+is a better story for a real client deployment.
+
+Trade-offs accepted:
+- The IMAP trigger polls rather than pushing, so inbound mail has a short delay. Fine for a
+  demo and it makes timing easier to control on camera.
+- No Gmail labels, threads, or search syntax. Not needed — replies are matched on the
+  `[R-xxxx]` token in the subject and deduped on message id.
+- The n8n IMAP trigger has had reported reliability issues across versions. Fallback if it
+  misses mail: a Schedule Trigger polling an IMAP node, or Gmail OAuth2 as a last resort.
+
+Note: the single-mailbox read-state gotcha carried over from build 04 does not apply here.
+Outbound mail lands in `[Gmail]/Sent`, not `INBOX`, so it never appears to the IMAP trigger.
+
+Credential set is now: postgres, smtp, imap, openai, telegram, airtable, calcom, plaid,
+docusign.

@@ -129,50 +129,55 @@ Remember this is a **mirror**, not the database. If it breaks, the pipeline keep
 
 ---
 
-## 7. Demo email routing
+## 7. Email — SMTP and IMAP
+
+No Google Cloud project, no OAuth consent screen. Just an App Password.
+
+1. Turn on **2-Step Verification** on the Gmail account if it is not already on —
+   https://myaccount.google.com/security (required; App Passwords do not exist without it)
+2. Go to https://myaccount.google.com/apppasswords
+3. Create an app password, name it anything (e.g. "n8n leasing demo")
+4. Copy the 16-character password — spaces don't matter, it works either way
+5. Fill `.env`:
+
+```
+GMAIL_ADDRESS=you@gmail.com
+GMAIL_APP_PASSWORD=abcd efgh ijkl mnop
+```
+
+Host and port defaults are already set (`smtp.gmail.com:465`, `imap.gmail.com:993`).
+
+6. Set where demo mail should land while testing:
 
 ```
 DEMO_RECIPIENT_EMAIL=your-test-inbox@gmail.com
-DEMO_FROM_EMAIL=the-gmail-you-connect@gmail.com
+DEMO_FROM_EMAIL=the-gmail-above@gmail.com
 ```
 
-A normal personal Gmail is fine.
+That's it — `setup-credentials.js` creates both credentials for you. Because it's plain
+SMTP/IMAP, this also works with any other mailbox provider, which matters for a real
+client deployment.
+
+> Note: Gmail stopped accepting plain account passwords for IMAP/SMTP in May 2022. The App
+> Password is the supported path, and it still works in 2026.
 
 ---
 
 ## 8. Import everything into n8n
 
-Once `.env` is filled in:
+Once every value above is in `.env`:
 
 ```bash
 node scripts/setup-credentials.js
 ```
 
-That creates the Postgres, OpenAI, Telegram, Airtable, Cal.com, Plaid, and DocuSign
-credentials in n8n. It reports each one separately, so a single failure does not block
-the rest.
+That creates **every** credential — Postgres, SMTP, IMAP, OpenAI, Telegram, Airtable,
+Cal.com, Plaid and DocuSign. It reports each one separately, so a single failure does not
+block the rest. Nothing has to be typed into the n8n credential screens.
 
 ---
 
-## 9. Gmail — the one credential that must be clicked
-
-Gmail needs a browser consent flow, so it cannot be scripted.
-
-1. https://console.cloud.google.com → create a project
-2. **APIs & Services → Library** → enable **Gmail API**
-3. **OAuth consent screen** → External → fill the required fields → add yourself under
-   **Test users**
-4. **Credentials → Create Credentials → OAuth client ID → Web application**
-5. Authorised redirect URI — copy this exactly from the n8n credential screen in step 6,
-   it is usually:
-   `http://localhost:5678/rest/oauth2-credential/callback`
-6. In n8n: **Credentials → New → Gmail OAuth2 API**, paste the client ID and secret, then
-   click **Sign in with Google** and approve
-7. Name it exactly **`Leasing Gmail`** so the workflows find it
-
----
-
-## 10. Tunnel
+## 9. Tunnel
 
 Needed for Telegram Trigger, Cal.com webhooks, and DocuSign Connect:
 
@@ -187,7 +192,7 @@ and re-import the workflows that own inbound webhooks.
 
 ---
 
-## 11. Verify
+## 10. Verify
 
 ```bash
 node scripts/verify-stage-1.js --telegram

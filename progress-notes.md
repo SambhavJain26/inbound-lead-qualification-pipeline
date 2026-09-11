@@ -205,3 +205,28 @@ Voucher handling demoted from a demo path to a correctness detail: the schema ke
 rent, but no fixture is built around it. It is a talking point, not a beat.
 
 Next: Stage 1 (environment).
+
+---
+
+## 2026-09-12 — Revision: Airtable Returns As A Display Mirror
+
+Postgres alone gives the demo nothing to look at, and the lead pipeline is the part that
+benefits most from a visible board. Airtable comes back, but as a **mirror, not a store**.
+
+- **Postgres remains the system of record for everything.**
+- **Airtable mirrors the lead pipeline** so the demo has a board on screen.
+- Mirror writes at phase boundaries only — lead created, pre-qualified, tour booked, applied,
+  decided. About five calls per lead lifecycle, which keeps the 1,000/month free cap
+  comfortable even with heavy rehearsal.
+- Mirror writes are **fire-and-forget**. Never read state back from Airtable and never block a
+  workflow on an Airtable write. If the mirror is capped or failing, the pipeline runs on and
+  only the board goes stale.
+- `scripts/sync-airtable.js` rebuilds the board from Postgres in one command, so a stale board
+  is recoverable before a take.
+- Application-level detail — extracted values, the three income numbers, criteria evidence —
+  stays on the **Telegram card**, which is already the richest visual in the demo.
+
+Rejected: putting leads in Airtable as their home. That makes a capped free tier a
+single point of failure in the middle of a live meeting.
+
+Demo visual set is now: Airtable lead board → Telegram decision card → DocuSign envelope.

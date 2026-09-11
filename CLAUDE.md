@@ -30,7 +30,7 @@ Current contents are `my_builds/` reference docs only. When implementation begin
 - `scripts/*-lib.js` — shared logic inlined into Code nodes by the `build-wf*.js` scripts. Never duplicate logic between a lib and a workflow JSON by hand.
 - `fixtures/` — synthetic applicants, documents, replies, expected outcomes.
 - `prompts/` — extraction/classification prompts and JSON schemas if kept outside workflow JSON.
-- `db/` — Postgres schema SQL. Postgres is the system of record (Airtable Free's 1,000 API calls/month cap rules it out).
+- `db/` — Postgres schema SQL. Postgres is the system of record; Airtable is a display mirror only.
 - `docs/` — runbooks, demo notes, production caveats, content-strategy drafts.
 - `my_builds/` — finished public write-ups for builds 01–04. Read-only reference for tone, depth, and structure.
 - `tmp/` and `data/` — generated local artifacts only; gitignored.
@@ -65,8 +65,12 @@ Do not assume package managers, Docker images, API keys, Gmail OAuth credentials
 
 ## Architecture Rules
 
-- n8n orchestrates. **Postgres** (local Docker) is the system of record; **Telegram** is the manager's visible surface. Airtable is NOT the state store — its free tier caps API calls at 1,000/month.
-- Approved tool surface, all free or test-mode except OpenAI: **n8n** (self-hosted, incl. Form Trigger and Chat Trigger), **Gmail**, **Telegram**, **Postgres**, **Plaid Sandbox**, **Cal.com**, **DocuSign developer sandbox**, **OpenAI**. Do not introduce Google Sheets, Supabase, SMS/Twilio, real screening-bureau or PMS APIs, or community nodes unless `progress-notes.md` records a plan revision.
+- n8n orchestrates. **Postgres** (local Docker) is the system of record for everything. **Telegram** is the manager's action surface.
+- **Airtable is a display mirror, never the state store.** Lead-pipeline rows are mirrored out to Airtable so the demo has a visible board; Postgres stays the truth. Airtable Free caps API calls at 1,000/month per workspace, so the pipeline must keep running unaffected if the mirror fails or is capped: never read state back from Airtable, and never block a workflow on an Airtable write (fire-and-forget, errors logged not thrown).
+- Mirror writes happen at **phase boundaries only** — lead created, pre-qualified, tour booked, applied, decided. Roughly five calls per lead lifecycle. Do not mirror on every field change, and skip mirroring during development iterations.
+- `scripts/sync-airtable.js` rebuilds the Airtable board from Postgres in one command, so a stale or capped board is recoverable before a take.
+- Application-level detail (extracted values, the three income numbers, criteria evidence) is surfaced on the **Telegram card**, not in Airtable.
+- Approved tool surface, all free or test-mode except OpenAI: **n8n** (self-hosted, incl. Form Trigger and Chat Trigger), **Gmail**, **Telegram**, **Postgres**, **Airtable** (display mirror only), **Plaid Sandbox**, **Cal.com**, **DocuSign developer sandbox**, **OpenAI**. Do not introduce Google Sheets, Supabase, SMS/Twilio, real screening-bureau or PMS APIs, or community nodes unless `progress-notes.md` records a plan revision.
 - **OpenAI is the only paid dependency.** If a design needs a paid API for anything else, stop and propose an alternative rather than spending.
 - Plaid runs in **Sandbox only** (`sandbox.plaid.com`), which is free and unlimited. Use it for income verification only — Sandbox performs no OCR, so its identity-document product returns canned results and is not a meaningful demo.
 - Cal.com cloud webhooks require HTTPS and reject private IPs, so the cloudflared tunnel is required for tour booking as well as for the Telegram Trigger and DocuSign Connect.
@@ -134,7 +138,7 @@ Known gotchas, carried forward from builds 01–04:
 **Postgres**
 - Use the built-in Postgres node with a named credential. The container is reachable from n8n at host `postgres`, not `localhost`.
 - Keep schema changes in versioned files under `db/`; never mutate the schema by hand in a running container.
-- Airtable is deliberately not used: its free tier enforces 1,000 API calls per month per workspace, which a rehearsed demo exhausts in days.
+- Airtable is a **display mirror only**, never the system of record: its free tier enforces 1,000 API calls per month per workspace. Mirror at phase boundaries, fire-and-forget, and rebuild the board from Postgres with `scripts/sync-airtable.js`.
 
 **Code nodes and data shape**
 - When generating Code nodes from a builder script, avoid backticks and escape sequences inside template literals; they are consumed before reaching the node. Parse every generated Code node before importing.

@@ -52,6 +52,7 @@ resolves to it, and a manual test message reaches Telegram.
 Four tables in `db/schema.sql`:
 
 - `units` — property facts; doubles as the FAQ knowledge base
+- (Airtable mirrors `leads` for the on-screen board; Postgres stays the source of truth)
 - `leads` — prospect, conversation state, pre-qual answers, tour booking
 - `applications` — applicant details, extracted values, verification results, criteria
   outcome, decision, lease status

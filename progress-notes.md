@@ -230,3 +230,39 @@ Rejected: putting leads in Airtable as their home. That makes a capped free tier
 single point of failure in the middle of a live meeting.
 
 Demo visual set is now: Airtable lead board → Telegram decision card → DocuSign envelope.
+
+---
+
+## 2026-09-12 — Stage 1: Infrastructure Up
+
+Docker Compose stack running: `leasing-postgres` (Postgres 16.14, host port 5433) and
+`leasing-n8n` (n8n 2.29.10, port 5678). n8n keeps its own state in SQLite inside its volume;
+the Postgres service is the application database, not n8n's internal store.
+
+`node scripts/verify-stage-1.js` passes all required checks. Credentials and tunnel are the
+two optional checks still showing SKIP — both need the account signups in
+`docs/stage-1-setup.md`, which is the remaining human step.
+
+Scripts written:
+- `scripts/lib/env.js` — .env read/write, no npm dependency
+- `scripts/generate-secrets.js` — encryption key + Postgres password, refuses to clobber
+- `scripts/setup-credentials.js` — imports Postgres, OpenAI, Telegram, Airtable, Cal.com,
+  Plaid and DocuSign credentials into n8n from .env, each reported separately
+- `scripts/get-telegram-chat-id.js` — resolves and writes the manager chat id
+- `scripts/start-tunnel.js` — cloudflared, writes the hostname into .env, recreates n8n
+- `scripts/verify-stage-1.js` — the Stage 1 gate
+
+Decisions made during setup:
+- Postgres exposed on host **5433** to avoid clashing with any local 5432 install.
+- Plaid uses an `httpCustomAuth` credential carrying `PLAID-CLIENT-ID` and `PLAID-SECRET`
+  headers, because `httpHeaderAuth` only holds one header pair.
+- DocuSign uses a `jwtAuth` credential holding the RSA key, signed by n8n's built-in JWT node
+  and exchanged for an access token by an HTTP Request node. The DocuSign community node
+  exists but community nodes are out of scope per `CLAUDE.md`.
+- Credential ids are fixed (`leasing-postgres`, `leasing-openai`, ...) so workflow JSON can
+  carry stable placeholders.
+
+Gotcha found: `.gitignore` pattern `*.private.key` does not match `docusign-private.key`.
+Widened to `*.key` / `*.pem` / `*.p12` / `*.pfx` and verified with `git check-ignore`.
+
+Next: the account signups in `docs/stage-1-setup.md`, then `node scripts/setup-credentials.js`.

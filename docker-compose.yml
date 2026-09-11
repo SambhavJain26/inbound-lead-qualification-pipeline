@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:16-alpine}
+    container_name: leasing-postgres
+    restart: unless-stopped
+    ports:
+      # Exposed so local scripts (seed, reset, sync) can reach it directly.
+      - "${POSTGRES_PORT:-5433}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-leasing}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-leasing}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Anything in here runs once, on first init of an empty volume.
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-leasing} -d ${POSTGRES_DB:-leasing}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  n8n:
+    image: ${N8N_IMAGE:-n8nio/n8n:latest}
+    container_name: leasing-n8n
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    environment:
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: ${N8N_PROTOCOL:-http}
+      # n8n reads these only at container start. After changing the tunnel URL,
+      # recreate the container - a restart is not enough.
+      WEBHOOK_URL: ${WEBHOOK_URL:-http://localhost:5678/}
+      N8N_EDITOR_BASE_URL: ${N8N_EDITOR_BASE_URL:-http://localhost:5678/}
+      N8N_SECURE_COOKIE: ${N8N_SECURE_COOKIE:-false}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-America/New_York}
+      TZ: ${GENERIC_TIMEZONE:-America/New_York}
+      N8N_DEFAULT_BINARY_DATA_MODE: ${N8N_DEFAULT_BINARY_DATA_MODE:-filesystem}
+      N8N_RUNNERS_ENABLED: "true"
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?Set N8N_ENCRYPTION_KEY in .env before starting n8n}
+      # n8n keeps its own state in SQLite inside the volume. The Postgres service
+      # above is the application database, not n8n's internal store.
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./fixtures:/fixtures:ro
+
+volumes:
+  postgres_data:
+  n8n_data:

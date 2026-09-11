@@ -8,8 +8,11 @@
 *.credentials.json
 *credentials*.json
 
-# DocuSign / Plaid / Cal.com local secrets
-*.private.key
+# Private keys and local secrets (DocuSign JWT key, anything PEM)
+*.key
+*.pem
+*.p12
+*.pfx
 docusign-*.json
 !docusign-*.example.json
 

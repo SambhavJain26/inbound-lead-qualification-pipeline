@@ -6,7 +6,7 @@ without coming back here.
 Already done for you: Docker Compose stack, Postgres, n8n, encryption key, Postgres
 password, and all the setup scripts.
 
-> **Telegram, Plaid, Cal.com and DocuSign have a detailed click-by-click walkthrough in
+> **Telegram, Plaid, Cal.com, DocuSign and Airtable have a detailed click-by-click walkthrough in
 > [account-setup-walkthrough.md](account-setup-walkthrough.md).** Use that if anything below
 > is ambiguous — especially DocuSign, where one screen shows a private key exactly once.
 
@@ -126,6 +126,8 @@ You will land on a page that fails to load. That is expected — the consent is 
 ---
 
 ## 6. Airtable — display mirror only
+
+*Detailed version: [walkthrough §5](account-setup-walkthrough.md#5-airtable)*
 
 1. https://airtable.com/create/tokens → **Create token**
 2. Scopes: `schema.bases:write`, `data.records:read`, `data.records:write`

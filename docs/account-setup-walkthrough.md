@@ -1,7 +1,7 @@
 # Account Setup — Detailed Walkthrough
 
-Step-by-step for the four accounts that need more than a copy-paste: **Telegram**, **Plaid**,
-**Cal.com**, **DocuSign**.
+Step-by-step for the five accounts that need more than a copy-paste: **Telegram**, **Plaid**,
+**Cal.com**, **DocuSign**, **Airtable**.
 
 `docs/stage-1-setup.md` is the short checklist. This is the long version, with the gotchas.
 
@@ -318,7 +318,91 @@ environment; production uses different hosts.
 
 ---
 
-# When all four are done
+# 5. Airtable
+
+**Time:** 4 minutes · **Cost:** free plan · **What it gives us:** the visible lead board
+
+Remember what this is for: Airtable is a **display mirror**, not the database. Postgres holds
+the truth. If Airtable breaks or hits its limit, the pipeline keeps running and only the
+on-screen board goes stale.
+
+### Step 1 — Sign up
+
+1. Go to **https://airtable.com/signup**
+2. Sign up with email or Google. Free plan, no card
+3. Skip or click through the onboarding questions
+
+### Step 2 — Create an empty base
+
+1. From the home screen, click **Create** → **Start from scratch**
+2. Name it:
+   ```
+   Leasing Demo
+   ```
+3. Airtable creates a default `Table 1` with sample columns. **Leave it alone** — the Stage 2
+   schema script creates the real tables. You can delete `Table 1` afterwards if you want a
+   tidy board on camera.
+
+### Step 3 — Get the base ID
+
+1. With the base open, look at the browser URL:
+   ```
+   https://airtable.com/appK3xR9mQ2wLpZ7t/tblAbC123/viwXyZ789
+                        ^^^^^^^^^^^^^^^^^
+   ```
+2. The part starting with **`app`** is your base ID — copy it
+
+> Three ids appear in that URL. `app...` is the base, `tbl...` is the table, `viw...` is the
+> view. You want the `app` one.
+
+### Step 4 — Create a personal access token
+
+Airtable retired plain API keys; it's personal access tokens now.
+
+1. Go to **https://airtable.com/create/tokens**
+2. Click **Create new token**
+3. **Name:** `Leasing Demo n8n`
+4. **Scopes** — click *Add a scope* and add all four:
+   - `data.records:read`
+   - `data.records:write`
+   - `schema.bases:read`
+   - `schema.bases:write`   ← needed so the schema script can create tables
+5. **Access** — click *Add a base* and pick **Leasing Demo** only.
+   Don't grant workspace-wide or all-future-bases access; there's no reason to widen it.
+6. Click **Create token**
+
+7. The token is shown **once**, in a modal. Copy it now — it starts with `pat`:
+   ```
+   patAbC123XyZ.9f8e7d6c5b4a39281706f5e4d3c2b1a09f8e7d6c5b4a3928
+   ```
+
+### Step 5 — Fill `.env`
+
+```
+AIRTABLE_PAT=patAbC123XyZ.9f8e7d6c5b4a39281706f5e4d3c2b1a09f8e7d6c5b4a3928
+AIRTABLE_BASE_ID=appK3xR9mQ2wLpZ7t
+```
+
+### Gotchas
+
+- **The token is shown once.** Lost it? Delete it and create another — no harm.
+- **`schema.bases:write` also requires that you are a Creator on the base.** You will be, since
+  you made it. It matters if you ever point this at someone else's base.
+- **Free plan limits: 1,000 records per base and 1,000 API calls per month, per workspace** —
+  enforced since January 2025. This is exactly why Airtable is a mirror here and not the
+  database. The mirror writes at phase boundaries only (about five calls per lead), so the
+  budget is comfortable — but don't point other projects at the same workspace and don't
+  mirror during development iterations.
+- **Check your usage** at **Settings → Usage / API** if you're unsure how much you've spent.
+  Free plans get detailed API analytics; paid plans don't, because they don't need them.
+- If the board ever drifts or the cap is hit, rebuild it from Postgres:
+  ```bash
+  node scripts/sync-airtable.js
+  ```
+
+---
+
+# When all five are done
 
 ```bash
 node scripts/setup-credentials.js

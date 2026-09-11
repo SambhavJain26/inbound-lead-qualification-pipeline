@@ -50,7 +50,7 @@ This boundary is the core honesty commitment of the build. Every mock is labelle
 | Rental application form + uploads | n8n Form Trigger | Built in |
 | **Income & employment verification** | **Plaid Sandbox** | Free, unlimited test Items, real API surface |
 | Lease e-signature | **DocuSign developer sandbox** | Free and unlimited; stamps a demo watermark on every page. Chosen over DocuSeal for brand recognition with PM prospects |
-| State + manager surface | Airtable free tier | Postgres is the production swap |
+| State + manager surface | Postgres (local Docker) + Telegram | Free and unlimited; see Revision 1 for why not Airtable |
 | Manager actions | Telegram | Free |
 
 **Mocked, with the reason**
@@ -94,7 +94,7 @@ See `CLAUDE.md` → Domain Rules for the enforceable version.
 
 ### State Model
 
-Four Airtable tables, not nine:
+Four Postgres tables, not nine:
 
 - `units` — property facts, doubles as the FAQ knowledge base
 - `leads` — prospect, conversation state, pre-qual answers, tour booking
@@ -116,3 +116,70 @@ Dropped deliberately; drawn in the diagram instead of built:
 - [ ] Write `build-plan.md` with staged verification gates.
 - [ ] `git init` + `.gitignore` before any commit.
 - [ ] Draft the Excalidraw production-architecture diagram mapping each mock to its real counterpart.
+
+---
+
+## 2026-09-11 — Stage 0 Revision: Research Pass Findings
+
+Full research pass completed. Three documents added:
+`05-automated-leasing-tenant-screening.md` (problem + market, cited),
+`foundation-5-leasing-screening.md` (domain background), and
+`docs/feasibility-spike.md` (tool verification).
+
+### Revision 1 — State store moves from Airtable to Postgres
+
+**Airtable Free is capped at 1,000 API calls per month per workspace, enforced since
+22 Jan 2025.** A full pipeline run costs 30-80 calls; development plus rehearsal would
+exhaust a month in days, and the failure mode is the demo dying mid-pitch on a billing error.
+
+Postgres (local Docker) is now the system of record. Telegram remains the manager surface,
+as in build 04. The four-table model is unchanged in substance; it becomes SQL in `db/`
+rather than Airtable tables. If a paid Airtable workspace exists it may be used as a display
+layer only, never as the system of record.
+
+### Revision 2 — The tunnel is required earlier than planned
+
+Cal.com **cloud** webhooks require HTTPS and block private IPs, so a booking cannot reach
+`localhost:5678`. The cloudflared tunnel is needed for WF1/WF2, not just for the Telegram
+Trigger and DocuSign Connect.
+
+### Revision 3 — The criteria engine must handle rental assistance
+
+19 states, DC, and 100+ localities prohibit source-of-income discrimination, including six of
+the ten largest US cities. Requiring a voucher holder to earn 3x the **full** rent is treated
+as source-of-income discrimination where those laws apply; the multiple must be applied to
+**tenant-responsible rent** only.
+
+Concrete changes:
+- Criteria config gains a `rental_assistance_amount` field.
+- The engine computes the income multiple against tenant-responsible rent, not gross rent.
+- Add a voucher-holder fixture to the demo set. This becomes a fourth demo path and is a
+  strong beat — it shows the system handling something a spreadsheet gets wrong.
+
+### Revision 4 — Fair housing question prohibitions are now explicit
+
+Pre-qualification and FAQ prompts must carry an explicit prohibition list (familial status,
+disability, national origin, religion, arrest records) and the bot must refuse to answer
+prospect questions that would elicit a protected attribute. See
+`foundation-5-leasing-screening.md`.
+
+### Confirmed Unchanged
+
+- Plaid Sandbox free and unlimited; payroll-income test flow verified
+  (`/user/create` → `/sandbox/public_token/create` with `ins_135842` → `/credit/payroll_income/get`).
+  Response shape still to be captured empirically.
+- DocuSign developer sandbox free; 5 signers/envelope (irrelevant, demo has one) plus an
+  undocumented cumulative recipient cap — mitigate with a small recipient pool.
+- n8n Chat Trigger hosted mode confirmed as the website chat surface.
+- Gmail lead intake confirmed realistic: Zillow sends leads by email with an anonymised relay
+  address and no phone number. The demo must match that behaviour.
+- Consumer reports remain blocked by FCRA credentialing, not price. Mock in ShareAble v3 shape.
+
+### Evidence Highlights Now Backing The Pitch
+
+- NMHC: 93% of providers hit by fraud in 12 months; 85% saw falsified income documents;
+  23.8% of evictions traced to fraudulent applications.
+- RealPage/RentCafe: 34-41 days average time-to-lease; ~$55-60 lost per vacant day.
+- HUD May 2024 guidance: screening tools should "implement, rather than set" the provider's
+  policies and offer customizable criteria — which is a direct description of this build's
+  architecture, and the strongest positioning asset in the project.

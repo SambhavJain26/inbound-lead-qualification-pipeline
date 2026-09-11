@@ -2,7 +2,7 @@
 
 This file is the Claude Code counterpart of `AGENTS.md`. Both files carry the same guidance; `AGENTS.md` is the Codex-facing copy. Keep them in sync — any rule added to one must be added to the other.
 
-This repository is the planning and implementation workspace for a local-first n8n **leasing / tenant-screening coordination demo**. Treat it as an automation project, not a SaaS app or compiled software product. Core behavior lives in n8n workflow exports, a state store (Airtable or Postgres, decided at Stage 0), synthetic fixtures, prompts/schemas, and helper scripts.
+This repository is the planning and implementation workspace for a local-first n8n **leasing / tenant-screening coordination demo**. Treat it as an automation project, not a SaaS app or compiled software product. Core behavior lives in n8n workflow exports, a Postgres state store, synthetic fixtures, prompts/schemas, and helper scripts.
 
 This is a **portfolio demo built to prove capability**, not a client deployment. It runs on synthetic data, on localhost, with the operator in the loop at every decision point. It is also the fifth build in a series — `my_builds/` holds the finished write-ups for builds 01–04 and sets the documentation bar this one must meet.
 
@@ -29,7 +29,7 @@ Current contents are `my_builds/` reference docs only. When implementation begin
 - `scripts/*-lib.js` — shared logic inlined into Code nodes by the `build-wf*.js` scripts. Never duplicate logic between a lib and a workflow JSON by hand.
 - `fixtures/` — synthetic applicants, documents, replies, expected outcomes.
 - `prompts/` — extraction/classification prompts and JSON schemas if kept outside workflow JSON.
-- `db/` — schema SQL, if Postgres is chosen as the state store.
+- `db/` — Postgres schema SQL. Postgres is the system of record (Airtable Free's 1,000 API calls/month cap rules it out).
 - `docs/` — runbooks, demo notes, production caveats, content-strategy drafts.
 - `my_builds/` — finished public write-ups for builds 01–04. Read-only reference for tone, depth, and structure.
 - `tmp/` and `data/` — generated local artifacts only; gitignored.
@@ -64,11 +64,11 @@ Do not assume package managers, Docker images, API keys, Gmail OAuth credentials
 
 ## Architecture Rules
 
-- n8n orchestrates. The state store (Airtable or Postgres) holds demo state and is the manager's visible record.
-- Approved tool surface, all free or test-mode except OpenAI: **n8n** (self-hosted, incl. Form Trigger and Chat Trigger), **Gmail**, **Telegram**, **Airtable**, **Plaid Sandbox**, **Cal.com**, **DocuSign developer sandbox**, **OpenAI**. Postgres is available if the state model outgrows Airtable. Do not introduce Google Sheets, Supabase, SMS/Twilio, real screening-bureau or PMS APIs, or community nodes unless `progress-notes.md` records a plan revision.
+- n8n orchestrates. **Postgres** (local Docker) is the system of record; **Telegram** is the manager's visible surface. Airtable is NOT the state store — its free tier caps API calls at 1,000/month.
+- Approved tool surface, all free or test-mode except OpenAI: **n8n** (self-hosted, incl. Form Trigger and Chat Trigger), **Gmail**, **Telegram**, **Postgres**, **Plaid Sandbox**, **Cal.com**, **DocuSign developer sandbox**, **OpenAI**. Do not introduce Google Sheets, Supabase, SMS/Twilio, real screening-bureau or PMS APIs, or community nodes unless `progress-notes.md` records a plan revision.
 - **OpenAI is the only paid dependency.** If a design needs a paid API for anything else, stop and propose an alternative rather than spending.
 - Plaid runs in **Sandbox only** (`sandbox.plaid.com`), which is free and unlimited. Use it for income verification only — Sandbox performs no OCR, so its identity-document product returns canned results and is not a meaningful demo.
-- Airtable access goes through **HTTP Request nodes with the predefined `airtableTokenApi` credential**, so writes batch ten records per request. OpenAI uses the built-in node.
+- Cal.com cloud webhooks require HTTPS and reject private IPs, so the cloudflared tunnel is required for tour booking as well as for the Telegram Trigger and DocuSign Connect.
 - Use the built-in OpenAI / OpenAI Chat Model nodes with **JSON Schema structured output**. Do not use HTTP Request for normal OpenAI calls unless a required feature is missing or you are debugging raw errors.
 - Test `gpt-5.6-luna` first; fall back to `gpt-5.4-nano`, then `gpt-5.4-mini` if quality requires it.
 - Gmail OAuth2 is the email path. One non-professional Gmail account is acceptable for local testing.
@@ -130,9 +130,10 @@ Known gotchas, carried forward from builds 01–04:
 - Running `n8n execute` inside the already-running container can fail because the task broker port is in use. Stop the service container, run `docker compose run --rm --no-deps n8n execute --id=<id> --rawOutput`, then start n8n again.
 - Exported workflow JSON never contains credential secrets, but it does contain credential **names and ids** — strip or placeholder them before sharing an export.
 
-**Airtable**
-- The Meta API cannot create formula, rollup, lookup, or count fields. Derived values are plain fields written by n8n.
-- Airtable allows 5 requests/second per base and 10 records per write. Batch accordingly.
+**Postgres**
+- Use the built-in Postgres node with a named credential. The container is reachable from n8n at host `postgres`, not `localhost`.
+- Keep schema changes in versioned files under `db/`; never mutate the schema by hand in a running container.
+- Airtable is deliberately not used: its free tier enforces 1,000 API calls per month per workspace, which a rehearsed demo exhausts in days.
 
 **Code nodes and data shape**
 - When generating Code nodes from a builder script, avoid backticks and escape sequences inside template literals; they are consumed before reaching the node. Parse every generated Code node before importing.

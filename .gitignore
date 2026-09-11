@@ -1,0 +1,28 @@
+# Local secrets and environment
+.env
+.env.*
+!.env.example
+
+# n8n local state and credential exports
+.n8n/
+*.credentials.json
+*credentials*.json
+
+# DocuSign / Plaid / Cal.com local secrets
+*.private.key
+docusign-*.json
+!docusign-*.example.json
+
+# Generated local artifacts
+tmp/
+data/
+*.log
+
+# Node
+node_modules/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

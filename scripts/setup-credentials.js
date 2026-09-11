@@ -6,8 +6,8 @@
  * failure never blocks the rest. Re-running is safe: an existing credential
  * with the same id is overwritten with the current .env values.
  *
- * Gmail OAuth2 is NOT handled here. It needs an interactive browser consent
- * flow and must be created in the n8n UI once - see docs/stage-1-setup.md.
+ * Email uses SMTP/IMAP with an app password, so every credential in the
+ * project is scriptable. Nothing has to be created in the n8n UI.
  *
  * Usage:
  *   node scripts/setup-credentials.js
@@ -171,19 +171,30 @@ function importCredential(def) {
     },
   ];
 
-  // Written without a BOM: the n8n CLI rejects one at the first character.
-  const tmpPath = path.join(os.tmpdir(), `leasing-cred-${def.name}.json`);
-  fs.writeFileSync(tmpPath, JSON.stringify(payload, null, 2), { encoding: "utf8" });
+  // Piped in over stdin rather than `docker cp`, which writes as root and leaves
+  // a file the in-container `node` user cannot delete. Written without a BOM:
+  // the n8n CLI rejects one at the first character.
+  const json = JSON.stringify(payload, null, 2);
+  const remotePath = `/home/node/.cred-${def.name}.json`;
+
+  docker(["compose", "exec", "-T", "n8n", "sh", "-lc", `cat > ${remotePath}`], {
+    input: json,
+    stdio: ["pipe", "pipe", "pipe"],
+  });
 
   try {
-    docker(["cp", tmpPath, `${CONTAINER}:/tmp/cred.json`]);
     docker(
-      ["compose", "exec", "-T", "n8n", "n8n", "import:credentials", "--input=/tmp/cred.json"],
+      ["compose", "exec", "-T", "n8n", "n8n", "import:credentials", `--input=${remotePath}`],
       { stdio: "pipe" }
     );
-    docker(["compose", "exec", "-T", "n8n", "sh", "-lc", "rm -f /tmp/cred.json"], { stdio: "pipe" });
   } finally {
-    fs.unlinkSync(tmpPath);
+    // Best effort: the credential is already imported, so a cleanup failure is
+    // not an import failure.
+    try {
+      docker(["compose", "exec", "-T", "n8n", "sh", "-lc", `rm -f ${remotePath}`], { stdio: "pipe" });
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -225,7 +236,7 @@ function main() {
   if (skipped.length) console.log(`\nSkipped ${skipped.length}:\n  ${skipped.join("\n  ")}`);
   if (failed.length) console.log(`\nFailed ${failed.length}:\n  ${failed.join("\n  ")}`);
 
-  console.log("\nGmail OAuth2 must be created in the n8n UI - see docs/stage-1-setup.md.");
+  console.log("\nEvery credential is scripted - nothing needs the n8n UI.");
   if (failed.length) process.exit(1);
 }
 

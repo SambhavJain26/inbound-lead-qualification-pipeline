@@ -298,3 +298,44 @@ Outbound mail lands in `[Gmail]/Sent`, not `INBOX`, so it never appears to the I
 
 Credential set is now: postgres, smtp, imap, openai, telegram, airtable, calcom, plaid,
 docusign.
+
+---
+
+## 2026-09-12 — Stage 1 Gate: PASS
+
+All credentials created and verified against live APIs, not just present in `.env`.
+
+`node scripts/verify-credentials.js` — new script, tests each service for real:
+
+| Service | Result |
+|---|---|
+| OpenAI | 132 models reachable |
+| Telegram | `@sambhav_leasing_demo_bot` |
+| Plaid Sandbox | reachable, 10,089 institutions |
+| Cal.com | v2 API ok |
+| DocuSign JWT + consent | access token acquired (proves the RSA key AND the consent grant) |
+| DocuSign account | `n8n-testing`, id matches `.env` |
+| Airtable PAT + base | base reachable |
+| SMTP | authenticated |
+| IMAP | authenticated |
+
+All nine credentials imported into n8n with fixed ids: `leasing-postgres`, `leasing-smtp`,
+`leasing-imap`, `leasing-openai`, `leasing-telegram`, `leasing-airtable`, `leasing-calcom`,
+`leasing-plaid`, `leasing-docusign-jwt`.
+
+Tunnel up, Telegram test message delivered, `verify-stage-1.js` passes every check.
+
+### Fixed during this stage
+
+`setup-credentials.js` used `docker cp`, which writes into the container as root. The n8n
+process runs as the `node` user, so the cleanup `rm` failed and all nine imports were
+reported as failures even though every one had succeeded. Now the payload is piped in over
+stdin so the `node` user owns the file, and cleanup is best-effort — a failed cleanup can no
+longer be mistaken for a failed import.
+
+### Open item for demo polish
+
+The Cal.com event type is still the default **"30 min meeting"**. Rename it to **"Unit Tour"**
+before recording — it appears on the booking page the prospect sees.
+
+Next: Stage 2 — schema, fixtures, seed.

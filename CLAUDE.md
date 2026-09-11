@@ -16,7 +16,8 @@ Before making changes, read in this order (create each file at the stage that pr
 2. `build-plan.md` — staged implementation plan and verification gates.
 3. `<project>-demo-build-plan.md` — detailed demo/workflow spec.
 4. `05-<slug>.md` and `foundation-5-<slug>.md` — problem statement and domain background.
-5. `my_builds/0*/build-technical-notes.md` — how prior builds were actually assembled; reuse those patterns before inventing new ones.
+5. `what-we-are-building.md` — plain-language overview of the whole project. Good starting point.
+6. `my_builds/0*/build-technical-notes.md` — how prior builds were actually assembled; reuse those patterns before inventing new ones.
 
 If documents conflict, prefer the newest decision in `progress-notes.md`, then update the stale doc rather than guessing.
 

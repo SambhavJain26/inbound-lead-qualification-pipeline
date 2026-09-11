@@ -77,7 +77,7 @@ Do not assume package managers, Docker images, API keys, Gmail OAuth credentials
 - Use the built-in OpenAI / OpenAI Chat Model nodes with **JSON Schema structured output**. Do not use HTTP Request for normal OpenAI calls unless a required feature is missing or you are debugging raw errors.
 - Test `gpt-5.6-luna` first; fall back to `gpt-5.4-nano`, then `gpt-5.4-mini` if quality requires it.
 - Email goes over **SMTP out / IMAP in**, not the Gmail API. A Gmail App Password (2FA required) is used, which means the credential is scriptable and no Google Cloud project, OAuth consent screen, or redirect URI is involved. One personal Gmail account is fine for local testing.
-- The IMAP trigger polls rather than pushing, so inbound mail has a short delay. Match replies on the `[R-xxxx]` reference token in the subject and dedupe on message id; do not rely on unread state alone. Outbound mail lands in `[Gmail]/Sent` rather than `INBOX`, so the single-mailbox read-state problem from build 04 does not apply here.
+- The IMAP trigger polls rather than pushing, so inbound mail has a short delay. Match replies on the `[R-xxxx]` reference token in the subject and dedupe on message id; do not rely on unread state alone. Outbound mail lands in `[Gmail]/Sent` rather than `INBOX` **provided the recipient is a different account**, which is why the demo uses a separate prospect address.
 - Telegram is the manager action surface: approvals, edits, and resolutions happen through inline buttons or a slash command. Send-message alerts need no tunnel; Telegram Trigger does.
 - DocuSign runs in **sandbox only**, is webhook-driven, and must respond to the callback immediately — a human wait must never hold the HTTP response open. Iterate against fixtures, not live envelopes.
 - The model never decides identity. Match applicants, replies, and documents **deterministically** by reference token first, then sender email. Never let the model emit or choose a record id.
@@ -158,6 +158,7 @@ Known gotchas, carried forward from builds 01–04:
 **Email (SMTP/IMAP)**
 - Gmail App Passwords require 2-Step Verification on the account. Plain account passwords have not worked for IMAP/SMTP since May 2022.
 - Match replies on a `Re:` subject carrying the reference token and skip message ids already logged. Unread state alone is not a reliable signal.
+- **The system mailbox and the demo prospect address must be different accounts.** Gmail delivers self-addressed mail to `INBOX` as well as `[Gmail]/Sent`, so if they are the same the IMAP trigger sees our own outbound mail and can re-process it as inbound — a send loop. With two addresses, outbound never reaches `INBOX` and no guard is needed. Only the system mailbox needs credentials; the prospect account is human-operated in a browser and n8n never connects to it.
 - The n8n IMAP trigger has had reported reliability issues across versions. If it misses mail, fall back to a Schedule Trigger polling an IMAP node, or to Gmail OAuth2 as a last resort.
 
 **PowerShell**

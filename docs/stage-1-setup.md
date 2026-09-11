@@ -159,12 +159,21 @@ GMAIL_APP_PASSWORD=abcd efgh ijkl mnop
 
 Host and port defaults are already set (`smtp.gmail.com:465`, `imap.gmail.com:993`).
 
-6. Set where demo mail should land while testing:
+6. Create a **second, throwaway Gmail** to play the prospect, and point the demo at it:
 
 ```
-DEMO_RECIPIENT_EMAIL=your-test-inbox@gmail.com
-DEMO_FROM_EMAIL=the-gmail-above@gmail.com
+DEMO_RECIPIENT_EMAIL=maya.prospect.demo@gmail.com
+DEMO_FROM_EMAIL=<same as GMAIL_ADDRESS above>
 ```
+
+This second account needs **no credentials and no setup** — n8n never connects to it, you
+just open it in a browser tab. Two reasons it matters:
+
+- Gmail delivers self-addressed mail to `INBOX` as well as `[Gmail]/Sent`. If the system
+  mailbox and the prospect are the same account, the IMAP trigger picks up our own outbound
+  mail and can re-send on it — a loop.
+- The recording is far clearer with two visibly separate identities: the prospect's inbox on
+  one side, Telegram on the other.
 
 That's it — `setup-credentials.js` creates both credentials for you. Because it's plain
 SMTP/IMAP, this also works with any other mailbox provider, which matters for a real

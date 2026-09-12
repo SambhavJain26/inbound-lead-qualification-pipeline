@@ -924,3 +924,111 @@ during the demo rather than decoration.
 
 One manual step remains: delete Airtable's default `Table 1` by hand. The Meta API can create
 tables but cannot delete them.
+
+---
+
+## 2026-09-12 — HANDOFF: Current State
+
+**Read this entry first. It is the state of the project as of the last session.**
+
+### Status: build complete, demo not yet recorded
+
+All six stages of `build-plan.md` are done and verified. The full pipeline runs end to end on
+real services. What remains is recording the demo and two small pieces of housekeeping, both
+listed under "Open items" below.
+
+### What exists
+
+| Workflow | Nodes | Status |
+|---|---|---|
+| WF1 `leasing-front` | 28 | Working. Lead intake, grounded FAQ, pre-qualification, tour booking, application handoff |
+| WF2 `application-and-verify` | 18 | Working. Form intake, paystub extraction, Plaid income verification, mocked bureau, criteria engine, Telegram card |
+| WF3 `telegram-router` | 10 | Working. The only Telegram Trigger. Decisions with a two-layer double-tap guard |
+| WF4 `lease-and-signature` | 15 | Working. Lease generation, DocuSign envelope, signature return, unit status, welcome packet |
+
+Five Postgres tables (`units`, `leads`, `applications`, `message_log`, `criteria_config`).
+Airtable mirrors the lead pipeline for the demo board. Zero npm dependencies anywhere.
+
+38 unit tests (`test-leasing-lib.js`, `test-screening-lib.js`) plus stage gates
+(`verify-stage-1.js`, `verify-stage-2.js`, `verify-stage-3.js`, `verify-credentials.js`).
+All passing as of this entry.
+
+### Proven end to end, on real services
+
+- Listing-site lead email → grounded AI reply (every figure traced to the unit record)
+- Prospect reply → pre-qualification extracted, evaluated, evidence trail stored
+- Cal.com booking → entry code (MOCK) → confirmation
+- Tour completed → application link
+- Application + pay stub → extraction → **real Plaid Sandbox call** → mocked bureau →
+  deterministic criteria engine → Telegram card
+- Approve tap → decision recorded → DocuSign envelope → signed → unit leased → welcome packet
+  (welcome went out 23 seconds after signature)
+- Devon's fraud path: 56% income mismatch → `does_not_meet` → stopped for human, nothing sent
+
+### Restarting the environment
+
+Nothing is running — Docker and the tunnel were stopped at the end of the last session.
+
+```bash
+docker compose up -d
+node scripts/start-tunnel.js          # NEW hostname every run
+node scripts/import-workflows.js      # must follow the tunnel
+docker compose restart n8n
+node scripts/register-calcom-webhook.js
+node scripts/verify-stage-1.js --telegram
+```
+
+The order matters. The tunnel hostname changes on every run, so the workflow import and the
+Cal.com webhook registration must both come after it. A Cal.com webhook pointing at a dead
+tunnel fails silently.
+
+### Running a demo
+
+```bash
+node scripts/reset-demo.js --with-airtable
+node scripts/send-as-prospect.js lead
+node scripts/send-as-prospect.js reply "Re: 412 Maple Street, Apt 2B, Springfield [R-xxxx]" "..."
+node scripts/submit-application.js maya          # or devon for the fraud path
+node scripts/simulate-telegram-tap.js approve A-xxxx
+```
+
+`docs/recording-checklist.md` has the full sequence with narration.
+
+### Open items
+
+1. **Swap `PROSPECT_GMAIL_ADDRESS` to an empty Gmail.** The current one
+   (`worksambhav26@gmail.com`) holds 10,000+ real messages and will be on camera. One `.env`
+   line, no code change.
+2. **Rename the Cal.com event type** from "30 min meeting" to "Unit Tour" — the renter sees
+   that title on the booking page. If the slug changes, update `CALCOM_BOOKING_URL` in `.env`.
+3. **Delete Airtable's default `Table 1`** by hand. The Meta API creates tables but cannot
+   delete them.
+4. **Record the demo.**
+
+### Deliberately not built
+
+- **Web chat entry point.** Dropped in Stage 3 under the depth-discipline rule; the email
+  path tells the same story and connects to the rest of the funnel.
+- **Stripe application fee and deposit.** Cut at Stage 0 — proves little beyond "a test card
+  charged".
+- Multi-applicant households, co-signers, document chase loops, and everything else in the
+  "What We Are Not Testing" list in `build-plan.md`.
+
+Do not add any of these without recording a plan revision here first.
+
+### Where the documentation lives
+
+| File | For |
+|---|---|
+| `the-full-flow.md` | The end-to-end journey, non-technical, with components named. Hand this to a prospect |
+| `what-we-are-building.md` | Plain-language project overview |
+| `05-automated-leasing-tenant-screening.md` | Problem statement, every claim cited |
+| `foundation-5-leasing-screening.md` | Domain background and the legal constraints that shaped the build |
+| `docs/recording-checklist.md` | How to run the demo on camera |
+| `docs/architecture.excalidraw` | The diagram, with production swaps beneath each stage |
+| `docs/stage-1-setup.md` + `docs/account-setup-walkthrough.md` | Account setup, already done |
+| `docs/feasibility-spike.md` | What is free, what is gated, and why |
+| `my_builds/05-leasing-tenant-screening/` | The two portfolio write-ups |
+
+`CLAUDE.md` carries every n8n gotcha found during this build. Read it before touching a
+workflow — most of them cost an hour each to find and every one fails silently.

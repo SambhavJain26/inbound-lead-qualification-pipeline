@@ -86,6 +86,92 @@ async function sendTelegram(text, messageId) {
   return { status: response.status, messageId: id };
 }
 
+const TZ = env.GENERIC_TIMEZONE || "America/New_York";
+
+/** Real availability, so the gate never fails on a guessed hour being taken. */
+async function calcomSlots() {
+  const day = (offset) =>
+    new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
+  const url =
+    `https://api.cal.com/v2/slots?eventTypeId=${env.CALCOM_EVENT_TYPE_ID}` +
+    `&start=${day(0)}&end=${day(14)}&timeZone=${encodeURIComponent(TZ)}`;
+  const body = await (
+    await fetch(url, {
+      headers: { Authorization: `Bearer ${env.CALCOM_API_KEY}`, "cal-api-version": "2024-09-04" },
+    })
+  ).json();
+  const out = [];
+  for (const entries of Object.values(body.data || {})) {
+    for (const entry of entries || []) out.push(typeof entry === "string" ? entry : entry.start);
+  }
+  return out.sort();
+}
+
+async function tourPolicy() {
+  const row = psql(
+    "SELECT earliest_hour || '|' || latest_hour || '|' || min_notice_hours " +
+      "FROM tour_policy WHERE is_active ORDER BY id DESC LIMIT 1;"
+  ).split("|");
+  return { earliest_hour: +row[0], latest_hour: +row[1], min_notice_hours: +row[2] };
+}
+
+function localParts(iso) {
+  const f = new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ, hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
+  });
+  const p = {};
+  f.formatToParts(new Date(iso)).forEach((x) => { p[x.type] = x.value; });
+  return p;
+}
+
+const hoursAway = (iso) => (new Date(iso).getTime() - Date.now()) / 3600000;
+
+function insidePolicy(iso, policy) {
+  const hour = Number(localParts(iso).hour) % 24;
+  return (
+    hour >= policy.earliest_hour &&
+    hour < policy.latest_hour &&
+    hoursAway(iso) >= policy.min_notice_hours
+  );
+}
+
+/** "2026-09-15 14:00" in property-local time, for comparing against the DB. */
+function localStamp(iso) {
+  const p = localParts(iso);
+  return `${p.year}-${p.month}-${p.day} ${String(Number(p.hour) % 24).padStart(2, "0")}:${p.minute}`;
+}
+
+/** How a person would say it, so the model has something natural to extract. */
+function spoken(iso) {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ, weekday: "long", month: "long", day: "numeric",
+    hour: "numeric", minute: "2-digit",
+  }).format(new Date(iso));
+}
+
+/**
+ * A lead already through pre-qualification, so the tour paths can be exercised
+ * without replaying a three-turn conversation for each one.
+ */
+function seedPrequalifiedLead(token) {
+  psql(
+    "INSERT INTO leads (ref_token, unit_id, source, prospect_name, prospect_email, " +
+      "telegram_chat_id, status, move_in_date, stated_monthly_income, prequal_result) " +
+      `SELECT '${token}', id, 'listing_site', 'Gate Tester', 'gate@example.com', ` +
+      `${CHAT_ID}, 'prequalified', '2026-10-05', 5000, 'clear' FROM units WHERE unit_code='MAPLE-2B' ` +
+      "ON CONFLICT (ref_token) DO NOTHING;"
+  );
+}
+
+function requestTour(token, slotIso) {
+  return fetch(new URL("/webhook/tour-request", env.TUNNEL_URL).href, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ref_token: token, preferred_iso: slotIso }),
+  });
+}
+
 async function main() {
   console.log("Stage 7 gate: listing site + Telegram conversation\n");
 
@@ -299,6 +385,86 @@ async function main() {
 
   const status = psql(`SELECT status FROM leads WHERE ref_token = '${refToken}';`);
   check(status === "prequalified", "Lead status advanced to prequalified", status);
+
+  /* 13. tour booking: inside the policy, booked without a human ---------- */
+  //
+  // Times are chosen from what Cal.com ACTUALLY has free rather than guessed,
+  // so the gate cannot fail because a hard-coded hour happened to be taken.
+  const freeSlots = await calcomSlots();
+  const policy = await tourPolicy();
+  const inside = freeSlots.find((s) => insidePolicy(s, policy));
+  const outside = freeSlots.find((s) => !insidePolicy(s, policy) && hoursAway(s) >= policy.min_notice_hours);
+
+  if (!inside) {
+    check(false, "Cal.com has a bookable slot inside the tour policy", "none free - cannot test booking");
+  } else {
+    await sendTelegram(`Can I come by on ${spoken(inside)}?`);
+    const booked = await waitFor(
+      `SELECT calcom_booking_uid FROM leads WHERE ref_token = '${refToken}' ` +
+        "AND calcom_booking_uid IS NOT NULL;",
+      { timeoutMs: 120000, label: "direct booking" }
+    );
+    check(Boolean(booked), "A time inside the policy books itself, no manager involved", booked);
+
+    const row = psql(
+      `SELECT status || '|' || tour_approval_state || '|' || coalesce(lock_code,'') ` +
+        `FROM leads WHERE ref_token = '${refToken}';`
+    ).split("|");
+    check(row[0] === "tour_booked", "Lead advanced to tour_booked", row[0]);
+    check(row[1] === "none", "No approval was required", `tour_approval_state=${row[1]}`);
+    check(/^\d{6}$/.test(row[2]), "Entry code issued (MOCK)", row[2]);
+
+    const bookedAt = psql(
+      `SELECT to_char(tour_starts_at AT TIME ZONE '${TZ}', 'YYYY-MM-DD HH24:MI') ` +
+        `FROM leads WHERE ref_token = '${refToken}';`
+    );
+    check(
+      bookedAt === localStamp(inside),
+      "Booked the local time that was asked for, not a UTC-shifted one",
+      `${bookedAt} local`
+    );
+  }
+
+  /* 14. outside the policy: held, and NOT booked ------------------------- */
+  if (!outside) {
+    check(false, "Cal.com has a slot outside the tour policy", "none free - cannot test the exception path");
+  } else {
+    for (const [token, decision, shouldBook] of [
+      ["R-8001", "tour-approve", true],
+      ["R-8002", "tour-decline", false],
+    ]) {
+      seedPrequalifiedLead(token);
+      await requestTour(token, outside);
+      await sleep(20000);
+
+      const held = psql(
+        `SELECT tour_approval_state || '|' || coalesce(calcom_booking_uid,'') ` +
+          `FROM leads WHERE ref_token = '${token}';`
+      ).split("|");
+      check(held[0] === "pending", `${token}: an out-of-policy time is held for the manager`, held[0]);
+      check(held[1] === "", `${token}: nothing is booked while it is held`);
+
+      execFileSync("node", ["scripts/simulate-telegram-tap.js", decision, token], {
+        cwd: REPO_ROOT, stdio: "pipe",
+      });
+      await sleep(22000);
+
+      const after = psql(
+        `SELECT tour_approval_state || '|' || coalesce(calcom_booking_uid,'') || '|' || ` +
+          `coalesce(pending_tour_starts_at::text,'') FROM leads WHERE ref_token = '${token}';`
+      ).split("|");
+
+      if (shouldBook) {
+        check(after[0] === "approved", `${token}: approving records the approval`, after[0]);
+        check(Boolean(after[1]), `${token}: approving books the held slot`, after[1]);
+      } else {
+        check(after[0] === "declined", `${token}: declining records the decline`, after[0]);
+        // The safety property: a declined slot must never have occupied the calendar.
+        check(after[1] === "", `${token}: a declined slot is never booked`);
+        check(after[2] === "", `${token}: the held slot is released`);
+      }
+    }
+  }
 
   console.log(`\nStage 7 gate: ${failures ? `${failures} FAILURE(S)` : "PASS"}`);
   process.exit(failures ? 1 : 0);

@@ -24,6 +24,8 @@ start to set the rules, and once per applicant to make the call. That's it.
 
 ## Scene 1 — Thursday, 10:34pm
 
+> **Involved:** the listing site (Zillow) · **Gmail**
+
 A renter is scrolling listings on her phone. She finds the two-bedroom on Maple Street, likes
 it, and taps *Contact*.
 
@@ -38,6 +40,8 @@ messaged four other places.
 ---
 
 ## Scene 2 — 10:35pm, about a minute later
+
+> **Involved:** **Gmail** (receives, then sends) · **OpenAI** (writes the reply) · the property record (holds the facts it is allowed to use) · **Airtable** (the lead appears on the board as *Engaged*)
 
 She gets a reply:
 
@@ -70,6 +74,8 @@ Nobody was awake. Nobody will know this happened until morning.
 
 ## Scene 3 — 10:41pm
 
+> **Involved:** **Gmail** · **OpenAI** (pulls the answers out of her sentence) · the rules engine (checks them) · **Airtable** (*Prequalified*)
+
 She replies in plain English:
 
 > *"October 5th works for me. I make about $5,000 a month gross. One small dog, 18 lbs. One
@@ -96,6 +102,8 @@ rejected either — she'd have been offered other options and passed to a human.
 
 ## Scene 4 — 10:42pm
 
+> **Involved:** **Cal.com** (the booking page and calendar) · smart lock — **simulated** (the entry code) · **Gmail** (confirmation) · **Airtable** (*Tour Booked*)
+
 She gets a booking link, picks Saturday at 11am, and gets a confirmation.
 
 Shortly before her slot, an entry code arrives:
@@ -110,6 +118,8 @@ Self-guided. No agent drives across town.
 ---
 
 ## Scene 5 — Saturday, just after the tour
+
+> **Involved:** **Gmail** (the follow-up and application link) · **Airtable** (*Toured*)
 
 The tour window closes and she gets a follow-up:
 
@@ -127,6 +137,8 @@ manager learns why, which is worth something too.
 
 ## Scene 6 — She applies
 
+> **Involved:** the online application form · the database (stores the file, masks the SSN)
+
 The form asks what a real application asks: who she is, where she's lived, her employer and
 income, who else is moving in, pets, vehicles, the standard disclosures, and the written
 consent that makes background checks legal at all.
@@ -139,6 +151,8 @@ is never stored.
 ---
 
 ## Scene 7 — The next forty seconds
+
+> **Involved:** **OpenAI** (reads the pay stub) · **Plaid** (verifies income against her actual bank deposits) · credit bureau — **simulated** · the rules engine (applies the criteria and records the evidence)
 
 This is where the work happens.
 
@@ -165,6 +179,8 @@ twenty states and a hundred-plus cities treat as illegal discrimination.
 ---
 
 ## Scene 8 — The manager's turn
+
+> **Involved:** **Telegram** (the card and the buttons) · the database (records who decided what, and when)
 
 The property manager's phone buzzes. **This is the first time they've been involved.**
 
@@ -199,6 +215,8 @@ The manager reads it and taps **Approve**. Elapsed: about fifteen seconds.
 
 ## Scene 9 — The lease
 
+> **Involved:** **DocuSign** (the lease and the signature) · **Gmail** (welcome message) · the database (unit marked leased) · **Airtable** (*Leased*)
+
 The lease fills itself in from verified data — her name, the address, the rent, the deposit,
 the term, her move-in date — and goes out for signature.
 
@@ -222,6 +240,8 @@ Nobody touched anything in between.
 ---
 
 ## Now the other one
+
+> **Involved:** exactly the same parts as Maya. Nothing special runs for Devon — the difference is entirely in what **Plaid** reports back.
 
 Same process. Different applicant.
 
@@ -315,6 +335,33 @@ shows its working. A person makes every call.
 That isn't caution getting in the way of the product. It's the whole reason the product is
 safe to use — and it happens to be exactly what the housing regulator asked for when it wrote
 its guidance on AI in tenant screening in 2024.
+
+---
+
+## Every part, and what it does
+
+| Part | Where it shows up | What it does |
+|---|---|---|
+| **Gmail** | Scenes 1, 2, 3, 4, 5, 9 | Carries every message to and from the renter. The listing-site lead arrives here, and every reply, confirmation, application link and welcome message goes out from here |
+| **OpenAI** | Scenes 2, 3, 7 | Writes the reply from the property's own facts, pulls the answers out of a plain-English email, and reads figures off the uploaded pay stub |
+| **Cal.com** | Scene 4 | The booking page the renter picks a tour slot on, and the calendar behind it |
+| **The application form** | Scene 6 | The online form the renter fills in, including the document upload |
+| **Plaid** | Scene 7 | Verifies income against the renter's actual bank deposits. The single most important check in the system |
+| **Telegram** | Scene 8 | Where the property manager sees the complete file and taps a decision. The only place a human is involved |
+| **DocuSign** | Scene 9 | Sends the lease, collects the signature, and tells the system when it is done |
+| **Airtable** | Scenes 2, 3, 4, 5, 9 | The board. Shows every lead and where it has got to, so anyone can see the pipeline at a glance |
+| **The database** | Throughout | The actual record of everything. Airtable is a display of it, not the thing itself |
+
+Two of these are worth separating out, because they do different jobs that people often lump
+together.
+
+**Airtable is a window, not the engine.** It shows the pipeline so a person can glance at it.
+If it broke tomorrow, nothing would stop — the system would carry on and the board would just
+be out of date until it caught up.
+
+**Telegram is where a person actually does something.** Everything else runs on its own. That
+one card is the entire human interface, which is the point: there is no new software for the
+team to learn, no dashboard to log into, and no training. They already have Telegram open.
 
 ---
 

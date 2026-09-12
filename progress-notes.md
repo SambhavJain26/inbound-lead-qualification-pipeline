@@ -735,3 +735,73 @@ lookup so a missing unit fails loudly.
 - Confirm the Telegram decision card renders with its three buttons, and the stop card with
   the adverse-action requirements
 - Verify the double-tap guard once WF3 exists to receive the callbacks
+
+---
+
+## 2026-09-12 — Stage 5: Router And Lease Working
+
+WF3 and WF4 built and verified. The pipeline now runs from a listing-site lead all the way
+to a lease sitting in the applicant's inbox awaiting signature.
+
+### Verified end to end
+
+```
+ref_token    | A-9135
+full_name    | Maya Restrepo
+credit_score | 712                                    <- name-keyed mock
+decision     | approved
+status       | lease_sent
+lease_status | sent
+envelope_id  | b4112766-bdfb-8e30-81d3-26adfe9d0cb7
+```
+
+Confirmed against the DocuSign API directly:
+
+```
+status:  sent | subject: Your lease for 412 Maple Street, Apt 2B, Springfield
+signer:  Maya Restrepo <worksambhav26@gmail.com> | sent
+```
+
+### Double-tap guard proven
+
+Two identical taps were sent four seconds apart. The first recorded the decision and created
+the envelope; the second took the already-decided branch and did nothing. The guard is in two
+places, deliberately:
+
+- `Record Decision` has `WHERE ref_token = $1 AND decision IS NULL`
+- `Load Application For Lease` has `WHERE ref_token = $1 AND envelope_id IS NULL`
+
+Either alone would be enough in the happy case; both together mean a race between two taps
+still cannot produce two envelopes.
+
+### Design notes
+
+- **Connect is configured per envelope** through `eventNotification` in the create body, so
+  no setup is needed in the DocuSign admin UI and the callback follows the tunnel
+  automatically on every rebuild.
+- **The lease is sent as HTML** and DocuSign converts it to PDF. Signature placement uses
+  `anchorString` markers (`/sig1/`, `/date1/`) in the template.
+- **There is no denial button.** The card offers Approve, Conditional, and Send to review.
+  `does_not_meet` never reaches this workflow at all.
+- The signer address is overridden to `PROSPECT_GMAIL_ADDRESS` at submission time so the
+  lease lands somewhere signable, while the committed fixture keeps a generic address.
+- The mock bureau is keyed on applicant **name**, not email, because every demo applicant
+  now shares one real mailbox.
+
+### Three more n8n / DocuSign findings, in CLAUDE.md
+
+1. **`eventNotification.events` requires `deliveryMode: "SIM"` and `eventData` together.**
+   Omit either and DocuSign rejects the whole envelope with `INVALID_REQUEST_PARAMETER`.
+2. **The Telegram Trigger validates a secret header**, derived as `${workflowId}_${nodeId}`
+   with anything outside `[A-Za-z0-9_-]` stripped, sent as `X-Telegram-Bot-Api-Secret-Token`.
+   A posted update without it gets a 403. `scripts/simulate-telegram-tap.js` derives it from
+   the workflow JSON.
+3. **Activating the Telegram Trigger registers a webhook on the bot**, which disables
+   `getUpdates` — so `get-telegram-chat-id.js` stops working until WF3 is deactivated.
+
+### Open
+
+- The signature half of WF4 (`docusign-status` webhook → mark signed → unit leased → welcome
+  packet) is built and registered but unverified: it needs the lease actually signed, which
+  is a human action in DocuSign. Sign the envelope sitting in the prospect mailbox to close
+  the loop.

@@ -1,0 +1,358 @@
+{
+  "id": "wf3-telegram-router",
+  "name": "WF3 Telegram Router",
+  "active": true,
+  "nodes": [
+    {
+      "id": "telegram-trigger",
+      "name": "Manager Actions (Telegram)",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -620,
+        0
+      ],
+      "parameters": {
+        "updates": [
+          "callback_query",
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram"
+        }
+      },
+      "webhookId": "leasing-telegram-router"
+    },
+    {
+      "id": "parse-manager-action",
+      "name": "Parse Manager Action",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// callback_data is capped at 64 bytes, so it carries a three-letter action\n// and the application reference only - never a decision payload.\nconst ACTIONS = {\n  apr: { decision: 'approved', label: 'Approved', triggers_lease: true },\n  con: { decision: 'conditional', label: 'Approved with conditions', triggers_lease: true },\n  rev: { decision: 'sent_to_review', label: 'Sent for closer review', triggers_lease: false },\n};\n\nconst out = [];\nfor (const item of $input.all()) {\n  const update = item.json;\n  const callback = update.callback_query;\n\n  if (!callback) {\n    // Not a button tap. Nothing else enters this workflow yet.\n    continue;\n  }\n\n  const raw = String(callback.data || '');\n  const separator = raw.indexOf(':');\n  const prefix = separator === -1 ? '' : raw.slice(0, separator);\n  const refToken = separator === -1 ? '' : raw.slice(separator + 1);\n  const action = ACTIONS[prefix];\n\n  if (!action || !refToken) {\n    throw new Error('Unrecognised callback_data: ' + raw);\n  }\n\n  const from = callback.from || {};\n  const actor = from.username ? '@' + from.username\n    : [from.first_name, from.last_name].filter(Boolean).join(' ') || String(from.id || 'unknown');\n\n  out.push({ json: {\n    ref_token: refToken,\n    decision: action.decision,\n    decision_label: action.label,\n    triggers_lease: action.triggers_lease,\n    actor: actor,\n    callback_query_id: callback.id,\n    chat_id: (callback.message && callback.message.chat && callback.message.chat.id) || null,\n  } });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "acknowledge-tap",
+      "name": "Acknowledge Tap",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -180,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot__TELEGRAM_BOT_TOKEN__/answerCallbackQuery",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ callback_query_id: $json.callback_query_id }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "load-application-for-decision",
+      "name": "Load Application For Decision",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        40,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT a.*, u.unit_code, u.address, u.rent_amount, u.deposit_amount, u.lease_term_months,\n       (a.decision IS NOT NULL) AS already_decided\nFROM applications a JOIN units u ON u.id = a.unit_id\nWHERE a.ref_token = $1 LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [$('Parse Manager Action').first().json.ref_token] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      }
+    },
+    {
+      "id": "already-decided",
+      "name": "Already Decided?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "json-already-decided",
+              "leftValue": "={{ $json.already_decided }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "notify-already-actioned",
+      "name": "Notify: Already Actioned",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        -160
+      ],
+      "parameters": {
+        "chatId": "=__TELEGRAM_CHAT_ID__",
+        "text": "={{ $json.ref_token }} was already {{ $json.decision }} by {{ $json.decided_by }} on {{ $json.decided_at }}.\n\nNo second action was taken.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "record-decision",
+      "name": "Record Decision",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        480,
+        120
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE applications SET\n  decision = $2,\n  decided_by = $3,\n  decided_at = now(),\n  status = 'decided'\nWHERE ref_token = $1 AND decision IS NULL\nRETURNING *, (SELECT unit_code FROM units WHERE id = applications.unit_id) AS unit_code;",
+        "options": {
+          "queryReplacement": "={{ [$('Parse Manager Action').first().json.ref_token,$('Parse Manager Action').first().json.decision,$('Parse Manager Action').first().json.actor] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      }
+    },
+    {
+      "id": "send-lease-now",
+      "name": "Send Lease Now?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        700,
+        120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "parse-manager-action-first-jso",
+              "leftValue": "={{ $('Parse Manager Action').first().json.triggers_lease }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "start-lease-workflow",
+      "name": "Start Lease Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        920,
+        40
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=__TUNNEL_URL__webhook/lease-create",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ref_token: $('Parse Manager Action').first().json.ref_token }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      }
+    },
+    {
+      "id": "confirm-decision-recorded",
+      "name": "Confirm Decision Recorded",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        920,
+        220
+      ],
+      "parameters": {
+        "chatId": "=__TELEGRAM_CHAT_ID__",
+        "text": "={{ $('Parse Manager Action').first().json.decision_label }} - {{ $('Parse Manager Action').first().json.ref_token }} by {{ $('Parse Manager Action').first().json.actor }}.\n\n{{ $('Parse Manager Action').first().json.triggers_lease ? 'Preparing the lease for signature now.' : 'No lease prepared. Nothing has been sent to the applicant.' }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Manager Actions (Telegram)": {
+      "main": [
+        [
+          {
+            "node": "Parse Manager Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Manager Action": {
+      "main": [
+        [
+          {
+            "node": "Acknowledge Tap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Acknowledge Tap": {
+      "main": [
+        [
+          {
+            "node": "Load Application For Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Application For Decision": {
+      "main": [
+        [
+          {
+            "node": "Already Decided?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already Decided?": {
+      "main": [
+        [
+          {
+            "node": "Notify: Already Actioned",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Decision": {
+      "main": [
+        [
+          {
+            "node": "Send Lease Now?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Lease Now?": {
+      "main": [
+        [
+          {
+            "node": "Start Lease Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Confirm Decision Recorded",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Lease Workflow": {
+      "main": [
+        [
+          {
+            "node": "Confirm Decision Recorded",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

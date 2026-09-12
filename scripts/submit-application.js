@@ -63,7 +63,9 @@ async function main() {
   set("ref_token", refIndex === -1 ? "" : args[refIndex + 1]);
 
   set("full_name", applicant.full_name);
-  set("email", applicant.email);
+  // The committed fixture carries a generic address. The demo needs the lease
+  // to actually arrive somewhere signable, so route it to the prospect mailbox.
+  set("email", env.PROSPECT_GMAIL_ADDRESS || applicant.email);
   set("phone", applicant.phone);
   // Fabricated. A real form would collect a real SSN; this one masks it to
   // last-4 on arrival and never stores the rest.

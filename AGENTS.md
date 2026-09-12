@@ -80,6 +80,10 @@ Do not assume package managers, Docker images, API keys, Gmail OAuth credentials
 - The IMAP trigger polls rather than pushing, so inbound mail has a short delay. Match replies on the `[R-xxxx]` reference token in the subject and dedupe on message id; do not rely on unread state alone. Outbound mail lands in `[Gmail]/Sent` rather than `INBOX` **provided the recipient is a different account**, which is why the demo uses a separate prospect address.
 - Telegram is the manager action surface: approvals, edits, and resolutions happen through inline buttons or a slash command. Send-message alerts need no tunnel; Telegram Trigger does.
 - DocuSign runs in **sandbox only**, is webhook-driven, and must respond to the callback immediately — a human wait must never hold the HTTP response open. Iterate against fixtures, not live envelopes.
+- Configure Connect **per envelope** via `eventNotification` in the create-envelope body, so nothing has to be set up in the DocuSign admin UI. The `events` array requires **`deliveryMode: "SIM"` and `eventData: { version: "restv2.1" }` together** — omit either and DocuSign rejects the entire envelope with `INVALID_REQUEST_PARAMETER`.
+- Send the lease as `fileExtension: "html"` and let DocuSign convert it to PDF; generating a PDF inside a Code node is unnecessary work. Place tabs with `anchorString` markers in the HTML.
+- The **Telegram Trigger validates a secret header**. n8n derives it as `${workflowId}_${nodeId}` with anything outside `[A-Za-z0-9_-]` stripped, and sends it as `X-Telegram-Bot-Api-Secret-Token`. Without it a posted update is rejected with 403, which matters when driving the router from a script rather than a phone.
+- Activating a Telegram Trigger **registers a webhook on the bot**, which disables `getUpdates`. `scripts/get-telegram-chat-id.js` will stop working until that workflow is deactivated.
 - The model never decides identity. Match applicants, replies, and documents **deterministically** by reference token first, then sender email. Never let the model emit or choose a record id.
 
 ## Domain Rules (Leasing And Tenant Screening)

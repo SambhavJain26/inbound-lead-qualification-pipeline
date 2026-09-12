@@ -64,6 +64,15 @@ function buildReplacements(credentialIds) {
     __TELEGRAM_CHAT_ID__: env.TELEGRAM_MANAGER_CHAT_ID,
     __AIRTABLE_BASE_ID__: env.AIRTABLE_BASE_ID,
 
+    __TELEGRAM_BOT_TOKEN__: env.TELEGRAM_BOT_TOKEN,
+    __TUNNEL_URL__: tunnel,
+
+    __DOCUSIGN_INTEGRATION_KEY__: env.DOCUSIGN_INTEGRATION_KEY,
+    __DOCUSIGN_USER_ID__: env.DOCUSIGN_USER_ID,
+    __DOCUSIGN_ACCOUNT_ID__: env.DOCUSIGN_ACCOUNT_ID,
+    __DOCUSIGN_AUTH_BASE__: env.DOCUSIGN_AUTH_BASE,
+    __DOCUSIGN_BASE_PATH__: env.DOCUSIGN_BASE_PATH,
+
     __CALCOM_BOOKING_URL__: env.CALCOM_BOOKING_URL,
     // The application form lives in WF2. Until that exists, the tunnel-relative
     // path is still correct - n8n serves Form Triggers under /form/<path>.

@@ -119,6 +119,17 @@ class ImapClient {
     return messages;
   }
 
+  /** Fetches the plain-text body of one message by sequence number. */
+  async fetchBody(seq) {
+    const response = await this.command(`FETCH ${seq} (BODY.PEEK[TEXT])`);
+    // The literal payload starts after the "{<length>}" marker and its CRLF.
+    const marker = response.match(/\{\d+\}\r?\n/);
+    if (!marker) return "";
+    const body = response.slice(marker.index + marker[0].length);
+    // Trim the IMAP framing that follows the literal.
+    return body.replace(/\r?\n\)\r?\n[\s\S]*$/, "").trim();
+  }
+
   async logout() {
     try {
       await this.command("LOGOUT");

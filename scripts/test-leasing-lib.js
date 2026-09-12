@@ -1,0 +1,221 @@
+/**
+ * Tests for the front-of-funnel logic, run outside n8n.
+ *
+ * These matter more than they look: this library is inlined into Code nodes, so
+ * a bug here surfaces as a confusing workflow failure with no stack trace.
+ * Catching it at the command line is far cheaper.
+ *
+ * Usage:
+ *   node scripts/test-leasing-lib.js
+ */
+
+const lib = require("./lib/leasing-lib");
+const { units, leadEmail, criteriaConfig } = require("../fixtures/demo-data");
+
+let passed = 0;
+const failures = [];
+
+function check(name, fn) {
+  try {
+    fn();
+    passed += 1;
+  } catch (error) {
+    failures.push(`${name}: ${error.message}`);
+  }
+}
+
+function assert(condition, message) {
+  if (!condition) throw new Error(message);
+}
+
+function equal(actual, expected, label) {
+  if (actual !== expected) {
+    throw new Error(`${label || "value"} was ${JSON.stringify(actual)}, expected ${JSON.stringify(expected)}`);
+  }
+}
+
+const unit2b = units[0];
+const knowledge = lib.buildUnitKnowledge(unit2b);
+
+/* ------------------------------------------------------------------ tokens */
+
+check("extractRefToken finds a token in a subject", () => {
+  equal(lib.extractRefToken("Re: 412 Maple [R-4417]"), "R-4417");
+  equal(lib.extractRefToken("no token here"), null);
+  equal(lib.extractRefToken("application [A-1234]"), "A-1234");
+});
+
+check("subjectWithToken does not double-append", () => {
+  const once = lib.subjectWithToken("412 Maple", "R-4417");
+  equal(once, "412 Maple [R-4417]");
+  equal(lib.subjectWithToken(once, "R-4417"), once);
+});
+
+/* ------------------------------------------------------------ lead parsing */
+
+check("parseLeadEmail reads the real fixture", () => {
+  const parsed = lib.parseLeadEmail({
+    subject: leadEmail.subject,
+    body: leadEmail.body,
+    replyTo: leadEmail.reply_to,
+  });
+
+  equal(parsed.prospect_name, "Maya Restrepo", "prospect_name");
+  equal(parsed.prospect_email, leadEmail.reply_to, "prospect_email");
+  assert(parsed.unit_hint.includes("Apt 2B"), "unit_hint should name the unit");
+  assert(parsed.inquiry_text.includes("small dog"), "inquiry_text should carry the question");
+  equal(parsed.parse_warnings.length, 0, "warnings");
+});
+
+check("parseLeadEmail tolerates a missing phone without failing", () => {
+  const parsed = lib.parseLeadEmail({
+    subject: leadEmail.subject,
+    body: leadEmail.body,
+    replyTo: leadEmail.reply_to,
+  });
+  // Zillow never includes one. Absent must not be treated as a parse failure.
+  equal(parsed.prospect_phone, null, "prospect_phone");
+  assert(!parsed.parse_warnings.some((w) => w.includes("phone")), "phone must not warn");
+});
+
+check("parseLeadEmail flags a malformed email instead of guessing", () => {
+  const parsed = lib.parseLeadEmail({ subject: "", body: "garbage", replyTo: "" });
+  assert(parsed.parse_warnings.length >= 3, "should collect warnings");
+  equal(parsed.prospect_name, null);
+  equal(parsed.inquiry_text, null);
+});
+
+/* -------------------------------------------------------------- guardrails */
+
+check("guardrail passes a normal grounded answer", () => {
+  const result = lib.guardrailCheck(
+    "Yes, one assigned parking space is included, and we do allow dogs under 50 lbs. " +
+      "The pet fee is $35 per month.",
+    knowledge
+  );
+  assert(result.passed, `should pass, got ${JSON.stringify(result.findings)}`);
+});
+
+check("guardrail blocks protected-class content", () => {
+  const result = lib.guardrailCheck(
+    "This is a great building for families with children.",
+    knowledge
+  );
+  assert(!result.passed, "should block");
+  assert(
+    result.findings.some((f) => f.category === "protected_class"),
+    "should flag protected class"
+  );
+});
+
+check("guardrail blocks steering language", () => {
+  const result = lib.guardrailCheck("It is a good neighborhood for you.", knowledge);
+  assert(!result.passed, "should block steering");
+});
+
+check("guardrail blocks approval and availability commitments", () => {
+  assert(!lib.guardrailCheck("You will be approved, guaranteed.", knowledge).passed);
+  assert(!lib.guardrailCheck("We can hold it for you until Friday.", knowledge).passed);
+  assert(!lib.guardrailCheck("We can lower the rent if you sign today.", knowledge).passed);
+});
+
+check("guardrail blocks adverse-decision language", () => {
+  const result = lib.guardrailCheck("Unfortunately you do not qualify for this unit.", knowledge);
+  assert(!result.passed, "should block");
+  assert(result.findings.some((f) => f.detail === "adverse decision language"));
+});
+
+check("guardrail blocks an invented dollar figure", () => {
+  const result = lib.guardrailCheck("Rent is $1,400 per month.", knowledge);
+  assert(!result.passed, "should block a rent that is not the real rent");
+  assert(result.findings.some((f) => f.category === "unsupported_figure"));
+});
+
+check("guardrail allows figures that are in the unit facts", () => {
+  const result = lib.guardrailCheck(
+    "Rent is $1,650 per month and the deposit is $1,650.",
+    knowledge
+  );
+  assert(result.passed, `should pass, got ${JSON.stringify(result.findings)}`);
+});
+
+/* -------------------------------------------------------- pre-qualification */
+
+check("prequal clears a well-matched prospect", () => {
+  const outcome = lib.prequalGate(
+    { move_in_date: "2026-10-05", stated_monthly_income: 5000, pets: "one small dog" },
+    unit2b,
+    criteriaConfig
+  );
+  equal(outcome.result, "clear");
+  assert(outcome.reasons.every((r) => r.met), "all criteria should be met");
+});
+
+check("prequal reports incomplete rather than failing on missing answers", () => {
+  const outcome = lib.prequalGate({ pets: "none" }, unit2b, criteriaConfig);
+  equal(outcome.result, "incomplete");
+  assert(outcome.missing.includes("move_in_date"));
+  assert(outcome.missing.includes("stated_monthly_income"));
+});
+
+check("prequal flags a move-in far beyond availability", () => {
+  const outcome = lib.prequalGate(
+    { move_in_date: "2027-03-01", stated_monthly_income: 6000, pets: "none" },
+    unit2b,
+    criteriaConfig
+  );
+  equal(outcome.result, "not_clear");
+  assert(outcome.reasons.some((r) => r.criterion === "move_in_timing" && !r.met));
+});
+
+check("prequal flags low stated income but keeps it labelled unverified", () => {
+  const outcome = lib.prequalGate(
+    { move_in_date: "2026-10-05", stated_monthly_income: 3000, pets: "none" },
+    unit2b,
+    criteriaConfig
+  );
+  equal(outcome.result, "not_clear");
+  const income = outcome.reasons.find((r) => r.criterion === "stated_income");
+  assert(income && !income.met, "income criterion should not be met");
+  assert(income.detail.includes("unverified"), "must be labelled unverified");
+});
+
+check("prequal flags an over-limit pet", () => {
+  const outcome = lib.prequalGate(
+    { move_in_date: "2026-10-05", stated_monthly_income: 6000, pets: "a 70 lb labrador" },
+    unit2b,
+    criteriaConfig
+  );
+  equal(outcome.result, "not_clear");
+  assert(outcome.reasons.some((r) => r.criterion === "pets" && !r.met));
+});
+
+check("prequal output carries no decision or score field", () => {
+  const outcome = lib.prequalGate(
+    { move_in_date: "2026-10-05", stated_monthly_income: 5000, pets: "none" },
+    unit2b,
+    criteriaConfig
+  );
+  const serialised = JSON.stringify(outcome).toLowerCase();
+  ["approve", "deny", "denied", "reject", "score", "risk", "rank"].forEach((word) => {
+    assert(!serialised.includes(word), `output must not contain "${word}"`);
+  });
+});
+
+/* ------------------------------------------------------------- lock code */
+
+check("lock code is six digits and labelled as a mock", () => {
+  const lock = lib.generateLockCode();
+  assert(/^\d{6}$/.test(lock.code), "six digits");
+  equal(lock.source, "mock");
+});
+
+/* ---------------------------------------------------------------- report */
+
+console.log("");
+if (failures.length) {
+  failures.forEach((f) => console.log(`  FAIL  ${f}`));
+  console.log(`\n${passed} passed, ${failures.length} failed.`);
+  process.exit(1);
+}
+console.log(`  ${passed} checks passed.`);

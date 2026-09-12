@@ -1,0 +1,979 @@
+{
+  "id": "wf1-leasing-front",
+  "name": "WF1 Leasing Front",
+  "active": true,
+  "nodes": [
+    {
+      "id": "receive-prospect-mail-imap",
+      "name": "Receive Prospect Mail (IMAP)",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        0
+      ],
+      "parameters": {
+        "format": "simple",
+        "options": {
+          "customEmailConfig": "[\"UNSEEN\", [\"FROM\", \"__PROSPECT_EMAIL__\"]]",
+          "forceReconnect": 60
+        }
+      },
+      "credentials": {
+        "imap": {
+          "id": "__IMAP_CREDENTIAL_ID__",
+          "name": "Leasing IMAP (inbound mail)"
+        }
+      }
+    },
+    {
+      "id": "classify-inbound-mail",
+      "name": "Classify Inbound Mail",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -340,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "/**\n * Shared front-of-funnel logic.\n *\n * This file is the single source of truth for lead parsing, reference tokens,\n * Tier A guardrails, and the pre-qualification gate. The build scripts inline it\n * into n8n Code nodes, so it must stay dependency-free and must not use\n * backticks or template literals - those are consumed before reaching the node.\n *\n * Nothing here calls a model. Everything here is deterministic.\n */\n\n/* ------------------------------------------------------------------ tokens */\n\n/**\n * Reference token carried in every subject line. Replies are matched on this\n * first and on sender address only as a fallback - the model never decides\n * which lead a message belongs to.\n */\nfunction makeRefToken(prefix, seed) {\n  var n = seed === undefined ? Math.floor(Math.random() * 9000) + 1000 : seed;\n  return prefix + \"-\" + String(n).slice(0, 4);\n}\n\nfunction extractRefToken(text) {\n  if (!text) return null;\n  var match = String(text).match(/\\[([RA]-\\d{4})\\]/);\n  return match ? match[1] : null;\n}\n\nfunction subjectWithToken(subject, token) {\n  if (extractRefToken(subject)) return subject;\n  return subject + \" [\" + token + \"]\";\n}\n\n/* ------------------------------------------------------- lead email parsing */\n\n/**\n * Parses a listing-site lead notification.\n *\n * Zillow delivers these as email with an anonymised relay reply-to and no phone\n * number, so the parser must tolerate a missing phone rather than treat it as a\n * failure. Anything it cannot determine is left null and flagged, never guessed.\n */\nfunction parseLeadEmail(input) {\n  var subject = input.subject || \"\";\n  var body = input.body || \"\";\n  var replyTo = input.replyTo || input.from || \"\";\n\n  var result = {\n    prospect_name: null,\n    prospect_email: null,\n    prospect_phone: null,\n    unit_hint: null,\n    inquiry_text: null,\n    source: \"zillow_email\",\n    parse_warnings: [],\n  };\n\n  var nameMatch = body.match(/^\\s*Renter:\\s*(.+)$/m);\n  if (nameMatch) result.prospect_name = nameMatch[1].trim();\n  else result.parse_warnings.push(\"no renter name found\");\n\n  var propertyMatch = body.match(/^\\s*Property:\\s*(.+)$/m);\n  if (propertyMatch) result.unit_hint = propertyMatch[1].trim();\n  else {\n    var subjectUnit = subject.match(/:\\s*(.+)$/);\n    if (subjectUnit) result.unit_hint = subjectUnit[1].trim();\n    else result.parse_warnings.push(\"no property reference found\");\n  }\n\n  // The renter's own words, between the quotes after \"Message:\".\n  var messageMatch = body.match(/Message:\\s*\"([\\s\\S]*?)\"/);\n  if (messageMatch) result.inquiry_text = messageMatch[1].replace(/\\s+/g, \" \").trim();\n  else result.parse_warnings.push(\"no inquiry text found\");\n\n  var emailMatch = String(replyTo).match(/[\\w.+-]+@[\\w.-]+\\.\\w+/);\n  if (emailMatch) result.prospect_email = emailMatch[0];\n  else result.parse_warnings.push(\"no reply address found\");\n\n  var phoneMatch = body.match(/(\\+?1[\\s.-]?)?\\(?\\d{3}\\)?[\\s.-]\\d{3}[\\s.-]\\d{4}/);\n  if (phoneMatch) result.prospect_phone = phoneMatch[0].trim();\n\n  return result;\n}\n\n/* ------------------------------------------------- unit knowledge for the AI */\n\n/**\n * Flattens a unit row into the only facts the FAQ model is allowed to use.\n * If a fact is not in here, the correct answer is \"I don't have that\".\n */\nfunction buildUnitKnowledge(unit) {\n  if (!unit) return null;\n  var facts = unit.faq_facts || {};\n  var knowledge = {\n    unit_code: unit.unit_code,\n    address: unit.address,\n    bedrooms: unit.beds,\n    bathrooms: Number(unit.baths),\n    square_feet: unit.sqft,\n    monthly_rent: Number(unit.rent_amount),\n    security_deposit: Number(unit.deposit_amount),\n    available_from: unit.available_from,\n    lease_term_months: unit.lease_term_months,\n    pet_policy: unit.pet_policy,\n    pet_fee_monthly: unit.pet_fee_monthly === null ? null : Number(unit.pet_fee_monthly),\n    parking: unit.parking,\n    utilities: unit.utilities_included,\n    laundry: unit.laundry,\n  };\n  Object.keys(facts).forEach(function (key) {\n    knowledge[key] = facts[key];\n  });\n  return knowledge;\n}\n\n/* -------------------------------------------------------------- guardrails */\n\n/**\n * Tier A guardrail. Runs on every message before it leaves, and again at send\n * time, because a manager may have edited the wording after it was drafted.\n *\n * Blocks: protected-class content, legal or lease commitments, rent negotiation,\n * availability promises, and invented numbers that are not in the unit facts.\n */\nvar PROTECTED_CLASS_PATTERNS = [\n  { pattern: /\\b(kids?|children|child|family friendly|families|school district)\\b/i, label: \"familial status\" },\n  { pattern: /\\b(disab|wheelchair|handicap|mental health|service animal policy)\\b/i, label: \"disability\" },\n  { pattern: /\\b(race|ethnic|nationality|immigration|citizen|visa status)\\b/i, label: \"national origin / race\" },\n  { pattern: /\\b(church|mosque|temple|synagogue|religio)\\b/i, label: \"religion\" },\n  { pattern: /\\b(marital status|married|single people|couples only)\\b/i, label: \"marital status\" },\n  { pattern: /\\b(section 8|voucher|housing assistance|welfare)\\b/i, label: \"source of income\" },\n  { pattern: /\\b(good neighborhood for|safe area for|type of people)\\b/i, label: \"steering\" },\n];\n\nvar COMMITMENT_PATTERNS = [\n  { pattern: /\\b(guarantee|guaranteed|we promise|you will be approved|pre-?approved)\\b/i, label: \"approval commitment\" },\n  { pattern: /\\b(hold (it|the unit) for you|reserved for you|it'?s yours)\\b/i, label: \"availability commitment\" },\n  { pattern: /\\b(we can lower|discount the rent|negotiate the rent|reduce the rent)\\b/i, label: \"rent negotiation\" },\n  { pattern: /\\b(legally|by law|you are entitled|your rights under)\\b/i, label: \"legal statement\" },\n  { pattern: /\\b(denied|rejected|you do not qualify|we cannot rent to you)\\b/i, label: \"adverse decision language\" },\n];\n\nfunction guardrailCheck(text, knowledge) {\n  var findings = [];\n  var body = String(text || \"\");\n\n  PROTECTED_CLASS_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"protected_class\", detail: rule.label });\n    }\n  });\n\n  COMMITMENT_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"commitment\", detail: rule.label });\n    }\n  });\n\n  // Any dollar figure in the message must appear in the unit facts. Catches the\n  // model inventing a rent, fee, or deposit.\n  if (knowledge) {\n    var allowed = [];\n    Object.keys(knowledge).forEach(function (key) {\n      var value = knowledge[key];\n      if (typeof value === \"number\") allowed.push(Math.round(value));\n      if (typeof value === \"string\") {\n        var found = value.match(/\\d[\\d,]*(\\.\\d+)?/g) || [];\n        found.forEach(function (n) { allowed.push(Math.round(Number(n.replace(/,/g, \"\")))); });\n      }\n    });\n\n    var quoted = body.match(/\\$\\s?\\d[\\d,]*(\\.\\d+)?/g) || [];\n    quoted.forEach(function (raw) {\n      var amount = Math.round(Number(raw.replace(/[$,\\s]/g, \"\")));\n      if (allowed.indexOf(amount) === -1) {\n        findings.push({\n          severity: \"block\",\n          category: \"unsupported_figure\",\n          detail: raw.trim() + \" is not in the unit facts\",\n        });\n      }\n    });\n  }\n\n  var blocking = findings.filter(function (f) { return f.severity === \"block\"; });\n  return {\n    passed: blocking.length === 0,\n    findings: findings,\n    checked_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- pre-qualification */\n\n/**\n * Scheduling triage only. This is NOT a rental decision and its output must\n * never be phrased to a prospect as a denial.\n *\n * Deliberately narrow: move-in timing, self-reported income against the\n * published multiple, pet policy, and occupancy. Nothing else is considered and\n * nothing here is verified.\n */\nfunction prequalGate(answers, unit, config) {\n  var reasons = [];\n  var missing = [];\n  var incomeMultiple = config && config.income_multiple ? Number(config.income_multiple) : 3;\n\n  if (!answers || answers.move_in_date === null || answers.move_in_date === undefined) {\n    missing.push(\"move_in_date\");\n  } else {\n    var availableFrom = new Date(unit.available_from);\n    var wanted = new Date(answers.move_in_date);\n    var daysAfter = (wanted - availableFrom) / 86400000;\n\n    if (daysAfter < -14) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"wants \" + answers.move_in_date + \", unit is available from \" + unit.available_from,\n      });\n    } else if (daysAfter > 60) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"move-in is more than 60 days after the unit is available\",\n      });\n    } else {\n      reasons.push({ criterion: \"move_in_timing\", met: true, detail: answers.move_in_date });\n    }\n  }\n\n  if (answers && (answers.stated_monthly_income === null || answers.stated_monthly_income === undefined)) {\n    missing.push(\"stated_monthly_income\");\n  } else if (answers) {\n    // Self-reported and unverified. Verification happens after an application.\n    var rent = Number(unit.rent_amount);\n    var stated = Number(answers.stated_monthly_income);\n    var ratio = stated / rent;\n    reasons.push({\n      criterion: \"stated_income\",\n      met: ratio >= incomeMultiple,\n      detail: \"$\" + stated + \"/mo stated against $\" + rent + \" rent = \" + ratio.toFixed(2) + \"x (unverified)\",\n    });\n  }\n\n  if (answers && answers.pets && String(answers.pets).toLowerCase() !== \"none\") {\n    var weightMatch = String(answers.pets).match(/(\\d+)\\s?(lb|pound)/i);\n    var overLimit = weightMatch && Number(weightMatch[1]) > 50;\n    reasons.push({\n      criterion: \"pets\",\n      met: !overLimit,\n      detail: overLimit ? \"stated pet is over the 50 lb limit\" : String(answers.pets),\n    });\n  }\n\n  var failed = reasons.filter(function (r) { return r.met === false; });\n  var result = missing.length ? \"incomplete\" : failed.length ? \"not_clear\" : \"clear\";\n\n  return {\n    result: result,\n    reasons: reasons,\n    missing: missing,\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- AI output shape */\n\n/**\n * Unwraps structured output from the OpenAI node.\n *\n * The payload arrives wrapped differently depending on node version, whether\n * simplify is on, and whether a JSON schema was applied - sometimes a parsed\n * object, sometimes a JSON string under `output`, sometimes nested one level\n * deeper. Probing for a known key is more robust than assuming a shape.\n *\n * @param {*} data       the item's json\n * @param {string} anchor a key that must exist on the real payload\n */\nfunction unwrapAiPayload(data, anchor) {\n  var value = data;\n\n  for (var depth = 0; depth < 6; depth++) {\n    if (value === null || value === undefined) break;\n\n    if (typeof value === \"string\") {\n      var trimmed = value.trim();\n      if (trimmed.charAt(0) !== \"{\" && trimmed.charAt(0) !== \"[\") break;\n      try {\n        value = JSON.parse(trimmed);\n      } catch (error) {\n        break;\n      }\n      continue;\n    }\n\n    if (Array.isArray(value)) {\n      value = value[0];\n      continue;\n    }\n\n    if (typeof value === \"object\") {\n      if (Object.prototype.hasOwnProperty.call(value, anchor)) return value;\n\n      var next =\n        value.output !== undefined ? value.output :\n        value.message !== undefined ? value.message :\n        value.content !== undefined ? value.content :\n        value.text !== undefined ? value.text :\n        value.json !== undefined ? value.json : undefined;\n\n      if (next === undefined) break;\n      value = next;\n      continue;\n    }\n\n    break;\n  }\n\n  return value;\n}\n\n/* ------------------------------------------------------------- lock code */\n\n/**\n * Self-guided tour entry code.\n *\n * MOCK. A real deployment issues this through a smart-lock platform\n * (Rently, Tour24, ButterflyMX) bound to the booking window. Here it is\n * generated locally and logged, and every record it touches is marked\n * source: \"mock\".\n */\nfunction generateLockCode() {\n  var code = String(Math.floor(Math.random() * 900000) + 100000);\n  return { code: code, source: \"mock\", issued_at: new Date().toISOString() };\n}\n\n// Splits inbound mail into new leads and replies to an existing lead.\n// Matching is deterministic: reference token first, sender address never guessed.\nconst out = [];\nfor (const item of $input.all()) {\n  const mail = item.json;\n  const subject = mail.subject || '';\n  const body = mail.textPlain || mail.text || mail.textHtml || '';\n  const from = mail.from || '';\n  const replyTo = mail.replyTo || mail['reply-to'] || from;\n  const messageId = mail.messageId || mail['message-id'] || null;\n\n  const token = extractRefToken(subject);\n  const base = {\n    is_reply: Boolean(token),\n    ref_token: token,\n    message_id: messageId,\n    subject: subject,\n    body_text: body,\n    from_addr: from,\n    reply_to: replyTo,\n    received_at: new Date().toISOString(),\n  };\n\n  if (token) {\n    out.push({ json: base });\n  } else {\n    const parsed = parseLeadEmail({ subject: subject, body: body, replyTo: replyTo });\n    out.push({ json: Object.assign({}, base, parsed, { new_ref_token: makeRefToken('R') }) });\n  }\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "is-reply-to-existing-lead",
+      "name": "Is Reply To Existing Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -120,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "json-is-reply",
+              "leftValue": "={{ $json.is_reply }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "find-unit-for-inquiry",
+      "name": "Find Unit For Inquiry",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        120,
+        160
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM units\nWHERE status = 'available'\n  AND (position(unit_code in $1) > 0 OR position(split_part(address, ',', 2) in $1) > 0)\nORDER BY id LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [$json.unit_hint || ''] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "create-lead-record",
+      "name": "Create Lead Record",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        340,
+        160
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO leads (ref_token, unit_id, source, prospect_name, prospect_email, prospect_phone, status)\nVALUES ($1, (SELECT id FROM units WHERE unit_code = $2), 'zillow_email', $3, $4, NULLIF($5,''), 'engaged')\nON CONFLICT (ref_token) DO UPDATE SET status = leads.status\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [$('Classify Inbound Mail').item.json.new_ref_token,$json.unit_code,$('Classify Inbound Mail').item.json.prospect_name,$('Classify Inbound Mail').item.json.prospect_email,($('Classify Inbound Mail').item.json.prospect_phone ?? '')] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      }
+    },
+    {
+      "id": "draft-grounded-reply",
+      "name": "Draft Grounded Reply",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        160
+      ],
+      "parameters": {
+        "resource": "text",
+        "operation": "response",
+        "modelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gpt-5.6-luna"
+        },
+        "responses": {
+          "values": [
+            {
+              "type": "text",
+              "role": "user",
+              "content": "=Prospect name: {{ $('Classify Inbound Mail').item.json.prospect_name }}\nTheir message: {{ JSON.stringify($('Classify Inbound Mail').item.json.inquiry_text) }}\n\nUNIT FACTS (the only facts you may use):\n{{ JSON.stringify($('Find Unit For Inquiry').item.json) }}"
+            }
+          ]
+        },
+        "simplify": true,
+        "options": {
+          "instructions": "You are a leasing assistant for a property management company, replying to a rental inquiry.\n\nANSWER ONLY FROM THE SUPPLIED UNIT FACTS. If a fact is not in the JSON you are given, say you\nwill check with the team and have someone follow up. Never estimate, never infer, never invent\na number, and never state a figure that is not in the facts.\n\nFAIR HOUSING - THIS IS NOT OPTIONAL:\nNever mention or ask about race, colour, national origin, religion, sex, familial status,\nchildren, disability, age, marital status, or source of income. If the prospect asks anything\nthat would require you to characterise the neighbourhood's people, schools, or suitability for\nfamilies, do not answer it. Give the factual property details instead and list the question in\nrefused_questions.\n\nNEVER: promise approval, hold or reserve a unit, negotiate rent, state anything about legal\nrights, or tell anyone they do not qualify.\n\nAfter answering, ask these pre-qualification questions in one short natural paragraph:\nintended move-in date, approximate gross monthly income, pets, number of vehicles, and how many\nadults will be living there. Explain that it is to check which units fit, not a decision.\n\nTone: warm, brief, professional. Sign off as the leasing team. Do not include a subject line.",
+          "maxTokens": 900,
+          "textFormat": {
+            "textOptions": {
+              "type": "json_schema",
+              "name": "leasing_reply",
+              "schema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"reply_text\": {\n      \"type\": \"string\",\n      \"description\": \"The full email body to send to the prospect. Plain text, no subject line.\"\n    },\n    \"questions_answered\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      },\n      \"description\": \"Each prospect question that was answered from the supplied facts.\"\n    },\n    \"questions_unanswered\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      },\n      \"description\": \"Questions that could not be answered because the fact was not supplied.\"\n    },\n    \"refused_questions\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      },\n      \"description\": \"Questions refused because answering would touch a protected class.\"\n    }\n  },\n  \"additionalProperties\": false,\n  \"required\": [\n    \"reply_text\",\n    \"questions_answered\",\n    \"questions_unanswered\",\n    \"refused_questions\"\n  ]\n}"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "__OPENAI_CREDENTIAL_ID__",
+          "name": "Leasing OpenAI"
+        }
+      }
+    },
+    {
+      "id": "check-tier-a-guardrails",
+      "name": "Check Tier A Guardrails",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        160
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "/**\n * Shared front-of-funnel logic.\n *\n * This file is the single source of truth for lead parsing, reference tokens,\n * Tier A guardrails, and the pre-qualification gate. The build scripts inline it\n * into n8n Code nodes, so it must stay dependency-free and must not use\n * backticks or template literals - those are consumed before reaching the node.\n *\n * Nothing here calls a model. Everything here is deterministic.\n */\n\n/* ------------------------------------------------------------------ tokens */\n\n/**\n * Reference token carried in every subject line. Replies are matched on this\n * first and on sender address only as a fallback - the model never decides\n * which lead a message belongs to.\n */\nfunction makeRefToken(prefix, seed) {\n  var n = seed === undefined ? Math.floor(Math.random() * 9000) + 1000 : seed;\n  return prefix + \"-\" + String(n).slice(0, 4);\n}\n\nfunction extractRefToken(text) {\n  if (!text) return null;\n  var match = String(text).match(/\\[([RA]-\\d{4})\\]/);\n  return match ? match[1] : null;\n}\n\nfunction subjectWithToken(subject, token) {\n  if (extractRefToken(subject)) return subject;\n  return subject + \" [\" + token + \"]\";\n}\n\n/* ------------------------------------------------------- lead email parsing */\n\n/**\n * Parses a listing-site lead notification.\n *\n * Zillow delivers these as email with an anonymised relay reply-to and no phone\n * number, so the parser must tolerate a missing phone rather than treat it as a\n * failure. Anything it cannot determine is left null and flagged, never guessed.\n */\nfunction parseLeadEmail(input) {\n  var subject = input.subject || \"\";\n  var body = input.body || \"\";\n  var replyTo = input.replyTo || input.from || \"\";\n\n  var result = {\n    prospect_name: null,\n    prospect_email: null,\n    prospect_phone: null,\n    unit_hint: null,\n    inquiry_text: null,\n    source: \"zillow_email\",\n    parse_warnings: [],\n  };\n\n  var nameMatch = body.match(/^\\s*Renter:\\s*(.+)$/m);\n  if (nameMatch) result.prospect_name = nameMatch[1].trim();\n  else result.parse_warnings.push(\"no renter name found\");\n\n  var propertyMatch = body.match(/^\\s*Property:\\s*(.+)$/m);\n  if (propertyMatch) result.unit_hint = propertyMatch[1].trim();\n  else {\n    var subjectUnit = subject.match(/:\\s*(.+)$/);\n    if (subjectUnit) result.unit_hint = subjectUnit[1].trim();\n    else result.parse_warnings.push(\"no property reference found\");\n  }\n\n  // The renter's own words, between the quotes after \"Message:\".\n  var messageMatch = body.match(/Message:\\s*\"([\\s\\S]*?)\"/);\n  if (messageMatch) result.inquiry_text = messageMatch[1].replace(/\\s+/g, \" \").trim();\n  else result.parse_warnings.push(\"no inquiry text found\");\n\n  var emailMatch = String(replyTo).match(/[\\w.+-]+@[\\w.-]+\\.\\w+/);\n  if (emailMatch) result.prospect_email = emailMatch[0];\n  else result.parse_warnings.push(\"no reply address found\");\n\n  var phoneMatch = body.match(/(\\+?1[\\s.-]?)?\\(?\\d{3}\\)?[\\s.-]\\d{3}[\\s.-]\\d{4}/);\n  if (phoneMatch) result.prospect_phone = phoneMatch[0].trim();\n\n  return result;\n}\n\n/* ------------------------------------------------- unit knowledge for the AI */\n\n/**\n * Flattens a unit row into the only facts the FAQ model is allowed to use.\n * If a fact is not in here, the correct answer is \"I don't have that\".\n */\nfunction buildUnitKnowledge(unit) {\n  if (!unit) return null;\n  var facts = unit.faq_facts || {};\n  var knowledge = {\n    unit_code: unit.unit_code,\n    address: unit.address,\n    bedrooms: unit.beds,\n    bathrooms: Number(unit.baths),\n    square_feet: unit.sqft,\n    monthly_rent: Number(unit.rent_amount),\n    security_deposit: Number(unit.deposit_amount),\n    available_from: unit.available_from,\n    lease_term_months: unit.lease_term_months,\n    pet_policy: unit.pet_policy,\n    pet_fee_monthly: unit.pet_fee_monthly === null ? null : Number(unit.pet_fee_monthly),\n    parking: unit.parking,\n    utilities: unit.utilities_included,\n    laundry: unit.laundry,\n  };\n  Object.keys(facts).forEach(function (key) {\n    knowledge[key] = facts[key];\n  });\n  return knowledge;\n}\n\n/* -------------------------------------------------------------- guardrails */\n\n/**\n * Tier A guardrail. Runs on every message before it leaves, and again at send\n * time, because a manager may have edited the wording after it was drafted.\n *\n * Blocks: protected-class content, legal or lease commitments, rent negotiation,\n * availability promises, and invented numbers that are not in the unit facts.\n */\nvar PROTECTED_CLASS_PATTERNS = [\n  { pattern: /\\b(kids?|children|child|family friendly|families|school district)\\b/i, label: \"familial status\" },\n  { pattern: /\\b(disab|wheelchair|handicap|mental health|service animal policy)\\b/i, label: \"disability\" },\n  { pattern: /\\b(race|ethnic|nationality|immigration|citizen|visa status)\\b/i, label: \"national origin / race\" },\n  { pattern: /\\b(church|mosque|temple|synagogue|religio)\\b/i, label: \"religion\" },\n  { pattern: /\\b(marital status|married|single people|couples only)\\b/i, label: \"marital status\" },\n  { pattern: /\\b(section 8|voucher|housing assistance|welfare)\\b/i, label: \"source of income\" },\n  { pattern: /\\b(good neighborhood for|safe area for|type of people)\\b/i, label: \"steering\" },\n];\n\nvar COMMITMENT_PATTERNS = [\n  { pattern: /\\b(guarantee|guaranteed|we promise|you will be approved|pre-?approved)\\b/i, label: \"approval commitment\" },\n  { pattern: /\\b(hold (it|the unit) for you|reserved for you|it'?s yours)\\b/i, label: \"availability commitment\" },\n  { pattern: /\\b(we can lower|discount the rent|negotiate the rent|reduce the rent)\\b/i, label: \"rent negotiation\" },\n  { pattern: /\\b(legally|by law|you are entitled|your rights under)\\b/i, label: \"legal statement\" },\n  { pattern: /\\b(denied|rejected|you do not qualify|we cannot rent to you)\\b/i, label: \"adverse decision language\" },\n];\n\nfunction guardrailCheck(text, knowledge) {\n  var findings = [];\n  var body = String(text || \"\");\n\n  PROTECTED_CLASS_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"protected_class\", detail: rule.label });\n    }\n  });\n\n  COMMITMENT_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"commitment\", detail: rule.label });\n    }\n  });\n\n  // Any dollar figure in the message must appear in the unit facts. Catches the\n  // model inventing a rent, fee, or deposit.\n  if (knowledge) {\n    var allowed = [];\n    Object.keys(knowledge).forEach(function (key) {\n      var value = knowledge[key];\n      if (typeof value === \"number\") allowed.push(Math.round(value));\n      if (typeof value === \"string\") {\n        var found = value.match(/\\d[\\d,]*(\\.\\d+)?/g) || [];\n        found.forEach(function (n) { allowed.push(Math.round(Number(n.replace(/,/g, \"\")))); });\n      }\n    });\n\n    var quoted = body.match(/\\$\\s?\\d[\\d,]*(\\.\\d+)?/g) || [];\n    quoted.forEach(function (raw) {\n      var amount = Math.round(Number(raw.replace(/[$,\\s]/g, \"\")));\n      if (allowed.indexOf(amount) === -1) {\n        findings.push({\n          severity: \"block\",\n          category: \"unsupported_figure\",\n          detail: raw.trim() + \" is not in the unit facts\",\n        });\n      }\n    });\n  }\n\n  var blocking = findings.filter(function (f) { return f.severity === \"block\"; });\n  return {\n    passed: blocking.length === 0,\n    findings: findings,\n    checked_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- pre-qualification */\n\n/**\n * Scheduling triage only. This is NOT a rental decision and its output must\n * never be phrased to a prospect as a denial.\n *\n * Deliberately narrow: move-in timing, self-reported income against the\n * published multiple, pet policy, and occupancy. Nothing else is considered and\n * nothing here is verified.\n */\nfunction prequalGate(answers, unit, config) {\n  var reasons = [];\n  var missing = [];\n  var incomeMultiple = config && config.income_multiple ? Number(config.income_multiple) : 3;\n\n  if (!answers || answers.move_in_date === null || answers.move_in_date === undefined) {\n    missing.push(\"move_in_date\");\n  } else {\n    var availableFrom = new Date(unit.available_from);\n    var wanted = new Date(answers.move_in_date);\n    var daysAfter = (wanted - availableFrom) / 86400000;\n\n    if (daysAfter < -14) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"wants \" + answers.move_in_date + \", unit is available from \" + unit.available_from,\n      });\n    } else if (daysAfter > 60) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"move-in is more than 60 days after the unit is available\",\n      });\n    } else {\n      reasons.push({ criterion: \"move_in_timing\", met: true, detail: answers.move_in_date });\n    }\n  }\n\n  if (answers && (answers.stated_monthly_income === null || answers.stated_monthly_income === undefined)) {\n    missing.push(\"stated_monthly_income\");\n  } else if (answers) {\n    // Self-reported and unverified. Verification happens after an application.\n    var rent = Number(unit.rent_amount);\n    var stated = Number(answers.stated_monthly_income);\n    var ratio = stated / rent;\n    reasons.push({\n      criterion: \"stated_income\",\n      met: ratio >= incomeMultiple,\n      detail: \"$\" + stated + \"/mo stated against $\" + rent + \" rent = \" + ratio.toFixed(2) + \"x (unverified)\",\n    });\n  }\n\n  if (answers && answers.pets && String(answers.pets).toLowerCase() !== \"none\") {\n    var weightMatch = String(answers.pets).match(/(\\d+)\\s?(lb|pound)/i);\n    var overLimit = weightMatch && Number(weightMatch[1]) > 50;\n    reasons.push({\n      criterion: \"pets\",\n      met: !overLimit,\n      detail: overLimit ? \"stated pet is over the 50 lb limit\" : String(answers.pets),\n    });\n  }\n\n  var failed = reasons.filter(function (r) { return r.met === false; });\n  var result = missing.length ? \"incomplete\" : failed.length ? \"not_clear\" : \"clear\";\n\n  return {\n    result: result,\n    reasons: reasons,\n    missing: missing,\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- AI output shape */\n\n/**\n * Unwraps structured output from the OpenAI node.\n *\n * The payload arrives wrapped differently depending on node version, whether\n * simplify is on, and whether a JSON schema was applied - sometimes a parsed\n * object, sometimes a JSON string under `output`, sometimes nested one level\n * deeper. Probing for a known key is more robust than assuming a shape.\n *\n * @param {*} data       the item's json\n * @param {string} anchor a key that must exist on the real payload\n */\nfunction unwrapAiPayload(data, anchor) {\n  var value = data;\n\n  for (var depth = 0; depth < 6; depth++) {\n    if (value === null || value === undefined) break;\n\n    if (typeof value === \"string\") {\n      var trimmed = value.trim();\n      if (trimmed.charAt(0) !== \"{\" && trimmed.charAt(0) !== \"[\") break;\n      try {\n        value = JSON.parse(trimmed);\n      } catch (error) {\n        break;\n      }\n      continue;\n    }\n\n    if (Array.isArray(value)) {\n      value = value[0];\n      continue;\n    }\n\n    if (typeof value === \"object\") {\n      if (Object.prototype.hasOwnProperty.call(value, anchor)) return value;\n\n      var next =\n        value.output !== undefined ? value.output :\n        value.message !== undefined ? value.message :\n        value.content !== undefined ? value.content :\n        value.text !== undefined ? value.text :\n        value.json !== undefined ? value.json : undefined;\n\n      if (next === undefined) break;\n      value = next;\n      continue;\n    }\n\n    break;\n  }\n\n  return value;\n}\n\n/* ------------------------------------------------------------- lock code */\n\n/**\n * Self-guided tour entry code.\n *\n * MOCK. A real deployment issues this through a smart-lock platform\n * (Rently, Tour24, ButterflyMX) bound to the booking window. Here it is\n * generated locally and logged, and every record it touches is marked\n * source: \"mock\".\n */\nfunction generateLockCode() {\n  var code = String(Math.floor(Math.random() * 900000) + 100000);\n  return { code: code, source: \"mock\", issued_at: new Date().toISOString() };\n}\n\n// Tier A guardrail. Runs before the reply leaves, and again at send time in\n// later stages, because wording can be edited after it is drafted.\nconst out = [];\nfor (const item of $input.all()) {\n  const payload = unwrapAiPayload(item.json, 'reply_text');\n  const draft = payload && typeof payload === 'object' ? (payload.reply_text || '') : '';\n\n  // An empty draft means the model call did not produce what the schema\n  // promised. Sending a blank email instead would be a silent failure.\n  if (!draft.trim()) {\n    throw new Error(\n      'Draft reply was empty. Raw keys: ' +\n      JSON.stringify(Object.keys(item.json || {})) +\n      ' unwrapped: ' + JSON.stringify(payload).slice(0, 400)\n    );\n  }\n\n  const lead = $('Create Lead Record').first().json;\n  const unit = $('Find Unit For Inquiry').first().json;\n  const knowledge = buildUnitKnowledge(unit);\n  const verdict = guardrailCheck(draft, knowledge);\n\n  out.push({\n    json: {\n      ref_token: lead.ref_token,\n      lead_id: lead.id,\n      prospect_email: lead.prospect_email,\n      prospect_name: lead.prospect_name,\n      unit_code: unit.unit_code,\n      reply_text: draft,\n      questions_answered: payload.questions_answered || [],\n      questions_unanswered: payload.questions_unanswered || [],\n      refused_questions: payload.refused_questions || [],\n      guardrail_passed: verdict.passed,\n      guardrail_result: verdict,\n      subject_line: subjectWithToken('Re: ' + unit.address, lead.ref_token),\n    },\n  });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "reply-passed-guardrails",
+      "name": "Reply Passed Guardrails?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1000,
+        160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "json-guardrail-passed",
+              "leftValue": "={{ $json.guardrail_passed }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "send-grounded-reply",
+      "name": "Send Grounded Reply",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1240,
+        60
+      ],
+      "parameters": {
+        "fromEmail": "=__SYSTEM_EMAIL__",
+        "toEmail": "={{ $json.prospect_email }}",
+        "subject": "={{ $json.subject_line }}",
+        "emailFormat": "text",
+        "text": "={{ $json.reply_text }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "smtp": {
+          "id": "__SMTP_CREDENTIAL_ID__",
+          "name": "Leasing SMTP (outbound mail)"
+        }
+      }
+    },
+    {
+      "id": "log-outbound-reply",
+      "name": "Log Outbound Reply",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1460,
+        60
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO message_log\n  (ref_token, direction, channel, tier, from_addr, to_addr, subject, body,\n   message_id, guardrail_passed, guardrail_result)\nVALUES ($1, 'outbound', 'email', 'A', $2, $3, $4, $5, $6, TRUE, $7::jsonb);",
+        "options": {
+          "queryReplacement": "={{ [$('Check Tier A Guardrails').item.json.ref_token,'__SYSTEM_EMAIL__',$('Check Tier A Guardrails').item.json.prospect_email,$('Check Tier A Guardrails').item.json.subject_line,$('Check Tier A Guardrails').item.json.reply_text,'out-' + $('Check Tier A Guardrails').item.json.ref_token + '-' + Date.now(),JSON.stringify($('Check Tier A Guardrails').item.json.guardrail_result)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      }
+    },
+    {
+      "id": "mirror-lead-to-airtable",
+      "name": "Mirror Lead To Airtable",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1680,
+        60
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/__AIRTABLE_BASE_ID__/Leads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: {\n  'Ref Token': $('Check Tier A Guardrails').item.json.ref_token,\n  'Prospect': $('Check Tier A Guardrails').item.json.prospect_name,\n  'Email': $('Check Tier A Guardrails').item.json.prospect_email,\n  'Unit': $('Check Tier A Guardrails').item.json.unit_code,\n  'Status': 'Engaged'\n} }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "__AIRTABLE_CREDENTIAL_ID__",
+          "name": "Leasing Airtable (display mirror)"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
+    },
+    {
+      "id": "alert-manager-reply-blocked",
+      "name": "Alert Manager: Reply Blocked",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1240,
+        280
+      ],
+      "parameters": {
+        "chatId": "=__TELEGRAM_CHAT_ID__",
+        "text": "=Guardrail blocked an automated reply.\n\nLead: {{ $json.ref_token }} ({{ $json.prospect_name }})\nUnit: {{ $json.unit_code }}\n\nFindings: {{ JSON.stringify($json.guardrail_result.findings) }}\n\nNothing was sent. This one needs a human.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "load-lead-by-token",
+      "name": "Load Lead By Token",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        120,
+        -200
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT l.*, u.unit_code, u.address, u.rent_amount, u.available_from, u.pet_policy\nFROM leads l JOIN units u ON u.id = l.unit_id\nWHERE l.ref_token = $1 LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [$json.ref_token] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "load-active-criteria",
+      "name": "Load Active Criteria",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        340,
+        -200
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM criteria_config WHERE is_active ORDER BY id DESC LIMIT 1;",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      }
+    },
+    {
+      "id": "extract-prequal-answers",
+      "name": "Extract Prequal Answers",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        -200
+      ],
+      "parameters": {
+        "resource": "text",
+        "operation": "response",
+        "modelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gpt-5.6-luna"
+        },
+        "responses": {
+          "values": [
+            {
+              "type": "text",
+              "role": "user",
+              "content": "=Current date: {{ $now.format('yyyy-MM-dd') }}\n\nProspect reply:\n{{ JSON.stringify($('Classify Inbound Mail').item.json.body_text) }}"
+            }
+          ]
+        },
+        "simplify": true,
+        "options": {
+          "instructions": "Extract pre-qualification answers from a prospect's email reply.\n\nReport ONLY what the prospect actually stated. If something was not stated, return null for it.\nNever infer, estimate, or fill in a plausible value.\n\nConvert income to a gross MONTHLY number. If an annual figure is given, divide by 12. If a range\nis given, take the lower bound.\nConvert relative dates ('early October', 'next month') to an ISO date using the supplied\ncurrent date.\n\nDo not record anything about children, family composition, disability, religion, national origin,\nmarital status, or source of income, even if the prospect volunteers it.\nDo not output any judgement, score, or recommendation.",
+          "maxTokens": 500,
+          "textFormat": {
+            "textOptions": {
+              "type": "json_schema",
+              "name": "prequal_answers",
+              "schema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"move_in_date\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"ISO date YYYY-MM-DD, or null if not stated.\"\n    },\n    \"stated_monthly_income\": {\n      \"type\": [\n        \"number\",\n        \"null\"\n      ],\n      \"description\": \"Gross monthly income as stated, or null.\"\n    },\n    \"pets\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Verbatim description of pets, or 'none', or null.\"\n    },\n    \"vehicles\": {\n      \"type\": [\n        \"integer\",\n        \"null\"\n      ],\n      \"description\": \"Number of vehicles, or null.\"\n    },\n    \"occupants\": {\n      \"type\": [\n        \"integer\",\n        \"null\"\n      ],\n      \"description\": \"Number of adults who will live there, or null.\"\n    },\n    \"other_questions\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      },\n      \"description\": \"Any new questions the prospect asked in this reply.\"\n    }\n  },\n  \"additionalProperties\": false,\n  \"required\": [\n    \"move_in_date\",\n    \"stated_monthly_income\",\n    \"pets\",\n    \"vehicles\",\n    \"occupants\",\n    \"other_questions\"\n  ]\n}"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "__OPENAI_CREDENTIAL_ID__",
+          "name": "Leasing OpenAI"
+        }
+      }
+    },
+    {
+      "id": "run-prequal-gate",
+      "name": "Run Prequal Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        -200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "/**\n * Shared front-of-funnel logic.\n *\n * This file is the single source of truth for lead parsing, reference tokens,\n * Tier A guardrails, and the pre-qualification gate. The build scripts inline it\n * into n8n Code nodes, so it must stay dependency-free and must not use\n * backticks or template literals - those are consumed before reaching the node.\n *\n * Nothing here calls a model. Everything here is deterministic.\n */\n\n/* ------------------------------------------------------------------ tokens */\n\n/**\n * Reference token carried in every subject line. Replies are matched on this\n * first and on sender address only as a fallback - the model never decides\n * which lead a message belongs to.\n */\nfunction makeRefToken(prefix, seed) {\n  var n = seed === undefined ? Math.floor(Math.random() * 9000) + 1000 : seed;\n  return prefix + \"-\" + String(n).slice(0, 4);\n}\n\nfunction extractRefToken(text) {\n  if (!text) return null;\n  var match = String(text).match(/\\[([RA]-\\d{4})\\]/);\n  return match ? match[1] : null;\n}\n\nfunction subjectWithToken(subject, token) {\n  if (extractRefToken(subject)) return subject;\n  return subject + \" [\" + token + \"]\";\n}\n\n/* ------------------------------------------------------- lead email parsing */\n\n/**\n * Parses a listing-site lead notification.\n *\n * Zillow delivers these as email with an anonymised relay reply-to and no phone\n * number, so the parser must tolerate a missing phone rather than treat it as a\n * failure. Anything it cannot determine is left null and flagged, never guessed.\n */\nfunction parseLeadEmail(input) {\n  var subject = input.subject || \"\";\n  var body = input.body || \"\";\n  var replyTo = input.replyTo || input.from || \"\";\n\n  var result = {\n    prospect_name: null,\n    prospect_email: null,\n    prospect_phone: null,\n    unit_hint: null,\n    inquiry_text: null,\n    source: \"zillow_email\",\n    parse_warnings: [],\n  };\n\n  var nameMatch = body.match(/^\\s*Renter:\\s*(.+)$/m);\n  if (nameMatch) result.prospect_name = nameMatch[1].trim();\n  else result.parse_warnings.push(\"no renter name found\");\n\n  var propertyMatch = body.match(/^\\s*Property:\\s*(.+)$/m);\n  if (propertyMatch) result.unit_hint = propertyMatch[1].trim();\n  else {\n    var subjectUnit = subject.match(/:\\s*(.+)$/);\n    if (subjectUnit) result.unit_hint = subjectUnit[1].trim();\n    else result.parse_warnings.push(\"no property reference found\");\n  }\n\n  // The renter's own words, between the quotes after \"Message:\".\n  var messageMatch = body.match(/Message:\\s*\"([\\s\\S]*?)\"/);\n  if (messageMatch) result.inquiry_text = messageMatch[1].replace(/\\s+/g, \" \").trim();\n  else result.parse_warnings.push(\"no inquiry text found\");\n\n  var emailMatch = String(replyTo).match(/[\\w.+-]+@[\\w.-]+\\.\\w+/);\n  if (emailMatch) result.prospect_email = emailMatch[0];\n  else result.parse_warnings.push(\"no reply address found\");\n\n  var phoneMatch = body.match(/(\\+?1[\\s.-]?)?\\(?\\d{3}\\)?[\\s.-]\\d{3}[\\s.-]\\d{4}/);\n  if (phoneMatch) result.prospect_phone = phoneMatch[0].trim();\n\n  return result;\n}\n\n/* ------------------------------------------------- unit knowledge for the AI */\n\n/**\n * Flattens a unit row into the only facts the FAQ model is allowed to use.\n * If a fact is not in here, the correct answer is \"I don't have that\".\n */\nfunction buildUnitKnowledge(unit) {\n  if (!unit) return null;\n  var facts = unit.faq_facts || {};\n  var knowledge = {\n    unit_code: unit.unit_code,\n    address: unit.address,\n    bedrooms: unit.beds,\n    bathrooms: Number(unit.baths),\n    square_feet: unit.sqft,\n    monthly_rent: Number(unit.rent_amount),\n    security_deposit: Number(unit.deposit_amount),\n    available_from: unit.available_from,\n    lease_term_months: unit.lease_term_months,\n    pet_policy: unit.pet_policy,\n    pet_fee_monthly: unit.pet_fee_monthly === null ? null : Number(unit.pet_fee_monthly),\n    parking: unit.parking,\n    utilities: unit.utilities_included,\n    laundry: unit.laundry,\n  };\n  Object.keys(facts).forEach(function (key) {\n    knowledge[key] = facts[key];\n  });\n  return knowledge;\n}\n\n/* -------------------------------------------------------------- guardrails */\n\n/**\n * Tier A guardrail. Runs on every message before it leaves, and again at send\n * time, because a manager may have edited the wording after it was drafted.\n *\n * Blocks: protected-class content, legal or lease commitments, rent negotiation,\n * availability promises, and invented numbers that are not in the unit facts.\n */\nvar PROTECTED_CLASS_PATTERNS = [\n  { pattern: /\\b(kids?|children|child|family friendly|families|school district)\\b/i, label: \"familial status\" },\n  { pattern: /\\b(disab|wheelchair|handicap|mental health|service animal policy)\\b/i, label: \"disability\" },\n  { pattern: /\\b(race|ethnic|nationality|immigration|citizen|visa status)\\b/i, label: \"national origin / race\" },\n  { pattern: /\\b(church|mosque|temple|synagogue|religio)\\b/i, label: \"religion\" },\n  { pattern: /\\b(marital status|married|single people|couples only)\\b/i, label: \"marital status\" },\n  { pattern: /\\b(section 8|voucher|housing assistance|welfare)\\b/i, label: \"source of income\" },\n  { pattern: /\\b(good neighborhood for|safe area for|type of people)\\b/i, label: \"steering\" },\n];\n\nvar COMMITMENT_PATTERNS = [\n  { pattern: /\\b(guarantee|guaranteed|we promise|you will be approved|pre-?approved)\\b/i, label: \"approval commitment\" },\n  { pattern: /\\b(hold (it|the unit) for you|reserved for you|it'?s yours)\\b/i, label: \"availability commitment\" },\n  { pattern: /\\b(we can lower|discount the rent|negotiate the rent|reduce the rent)\\b/i, label: \"rent negotiation\" },\n  { pattern: /\\b(legally|by law|you are entitled|your rights under)\\b/i, label: \"legal statement\" },\n  { pattern: /\\b(denied|rejected|you do not qualify|we cannot rent to you)\\b/i, label: \"adverse decision language\" },\n];\n\nfunction guardrailCheck(text, knowledge) {\n  var findings = [];\n  var body = String(text || \"\");\n\n  PROTECTED_CLASS_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"protected_class\", detail: rule.label });\n    }\n  });\n\n  COMMITMENT_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"commitment\", detail: rule.label });\n    }\n  });\n\n  // Any dollar figure in the message must appear in the unit facts. Catches the\n  // model inventing a rent, fee, or deposit.\n  if (knowledge) {\n    var allowed = [];\n    Object.keys(knowledge).forEach(function (key) {\n      var value = knowledge[key];\n      if (typeof value === \"number\") allowed.push(Math.round(value));\n      if (typeof value === \"string\") {\n        var found = value.match(/\\d[\\d,]*(\\.\\d+)?/g) || [];\n        found.forEach(function (n) { allowed.push(Math.round(Number(n.replace(/,/g, \"\")))); });\n      }\n    });\n\n    var quoted = body.match(/\\$\\s?\\d[\\d,]*(\\.\\d+)?/g) || [];\n    quoted.forEach(function (raw) {\n      var amount = Math.round(Number(raw.replace(/[$,\\s]/g, \"\")));\n      if (allowed.indexOf(amount) === -1) {\n        findings.push({\n          severity: \"block\",\n          category: \"unsupported_figure\",\n          detail: raw.trim() + \" is not in the unit facts\",\n        });\n      }\n    });\n  }\n\n  var blocking = findings.filter(function (f) { return f.severity === \"block\"; });\n  return {\n    passed: blocking.length === 0,\n    findings: findings,\n    checked_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- pre-qualification */\n\n/**\n * Scheduling triage only. This is NOT a rental decision and its output must\n * never be phrased to a prospect as a denial.\n *\n * Deliberately narrow: move-in timing, self-reported income against the\n * published multiple, pet policy, and occupancy. Nothing else is considered and\n * nothing here is verified.\n */\nfunction prequalGate(answers, unit, config) {\n  var reasons = [];\n  var missing = [];\n  var incomeMultiple = config && config.income_multiple ? Number(config.income_multiple) : 3;\n\n  if (!answers || answers.move_in_date === null || answers.move_in_date === undefined) {\n    missing.push(\"move_in_date\");\n  } else {\n    var availableFrom = new Date(unit.available_from);\n    var wanted = new Date(answers.move_in_date);\n    var daysAfter = (wanted - availableFrom) / 86400000;\n\n    if (daysAfter < -14) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"wants \" + answers.move_in_date + \", unit is available from \" + unit.available_from,\n      });\n    } else if (daysAfter > 60) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"move-in is more than 60 days after the unit is available\",\n      });\n    } else {\n      reasons.push({ criterion: \"move_in_timing\", met: true, detail: answers.move_in_date });\n    }\n  }\n\n  if (answers && (answers.stated_monthly_income === null || answers.stated_monthly_income === undefined)) {\n    missing.push(\"stated_monthly_income\");\n  } else if (answers) {\n    // Self-reported and unverified. Verification happens after an application.\n    var rent = Number(unit.rent_amount);\n    var stated = Number(answers.stated_monthly_income);\n    var ratio = stated / rent;\n    reasons.push({\n      criterion: \"stated_income\",\n      met: ratio >= incomeMultiple,\n      detail: \"$\" + stated + \"/mo stated against $\" + rent + \" rent = \" + ratio.toFixed(2) + \"x (unverified)\",\n    });\n  }\n\n  if (answers && answers.pets && String(answers.pets).toLowerCase() !== \"none\") {\n    var weightMatch = String(answers.pets).match(/(\\d+)\\s?(lb|pound)/i);\n    var overLimit = weightMatch && Number(weightMatch[1]) > 50;\n    reasons.push({\n      criterion: \"pets\",\n      met: !overLimit,\n      detail: overLimit ? \"stated pet is over the 50 lb limit\" : String(answers.pets),\n    });\n  }\n\n  var failed = reasons.filter(function (r) { return r.met === false; });\n  var result = missing.length ? \"incomplete\" : failed.length ? \"not_clear\" : \"clear\";\n\n  return {\n    result: result,\n    reasons: reasons,\n    missing: missing,\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- AI output shape */\n\n/**\n * Unwraps structured output from the OpenAI node.\n *\n * The payload arrives wrapped differently depending on node version, whether\n * simplify is on, and whether a JSON schema was applied - sometimes a parsed\n * object, sometimes a JSON string under `output`, sometimes nested one level\n * deeper. Probing for a known key is more robust than assuming a shape.\n *\n * @param {*} data       the item's json\n * @param {string} anchor a key that must exist on the real payload\n */\nfunction unwrapAiPayload(data, anchor) {\n  var value = data;\n\n  for (var depth = 0; depth < 6; depth++) {\n    if (value === null || value === undefined) break;\n\n    if (typeof value === \"string\") {\n      var trimmed = value.trim();\n      if (trimmed.charAt(0) !== \"{\" && trimmed.charAt(0) !== \"[\") break;\n      try {\n        value = JSON.parse(trimmed);\n      } catch (error) {\n        break;\n      }\n      continue;\n    }\n\n    if (Array.isArray(value)) {\n      value = value[0];\n      continue;\n    }\n\n    if (typeof value === \"object\") {\n      if (Object.prototype.hasOwnProperty.call(value, anchor)) return value;\n\n      var next =\n        value.output !== undefined ? value.output :\n        value.message !== undefined ? value.message :\n        value.content !== undefined ? value.content :\n        value.text !== undefined ? value.text :\n        value.json !== undefined ? value.json : undefined;\n\n      if (next === undefined) break;\n      value = next;\n      continue;\n    }\n\n    break;\n  }\n\n  return value;\n}\n\n/* ------------------------------------------------------------- lock code */\n\n/**\n * Self-guided tour entry code.\n *\n * MOCK. A real deployment issues this through a smart-lock platform\n * (Rently, Tour24, ButterflyMX) bound to the booking window. Here it is\n * generated locally and logged, and every record it touches is marked\n * source: \"mock\".\n */\nfunction generateLockCode() {\n  var code = String(Math.floor(Math.random() * 900000) + 100000);\n  return { code: code, source: \"mock\", issued_at: new Date().toISOString() };\n}\n\n// Deterministic scheduling triage. NOT a rental decision and never phrased to\n// the prospect as one.\nconst out = [];\nfor (const item of $input.all()) {\n  const answers = unwrapAiPayload(item.json, 'move_in_date');\n\n  // A payload with none of the expected keys means the model call did not\n  // return what the schema promised. Recording that as 'incomplete' would\n  // hide a real failure behind a legitimate-looking outcome.\n  if (!answers || typeof answers !== 'object' || !('move_in_date' in answers)) {\n    throw new Error(\n      'Prequal extraction returned an unexpected shape. Raw keys: ' +\n      JSON.stringify(Object.keys(item.json || {})) +\n      ' unwrapped: ' + JSON.stringify(answers).slice(0, 300)\n    );\n  }\n\n  const lead = $('Load Lead By Token').first().json;\n  const config = $('Load Active Criteria').first().json;\n  const unit = {\n    unit_code: lead.unit_code,\n    address: lead.address,\n    rent_amount: lead.rent_amount,\n    available_from: lead.available_from,\n  };\n\n  const outcome = prequalGate(answers, unit, config);\n\n  out.push({\n    json: {\n      lead_id: lead.id,\n      ref_token: lead.ref_token,\n      prospect_email: lead.prospect_email,\n      prospect_name: lead.prospect_name,\n      unit_code: unit.unit_code,\n      address: unit.address,\n      answers: answers,\n      prequal_result: outcome.result,\n      prequal_reasons: outcome.reasons,\n      prequal_missing: outcome.missing,\n      is_clear: outcome.result === 'clear',\n      subject_line: subjectWithToken('Re: ' + unit.address, lead.ref_token),\n    },\n  });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "update-lead-after-prequal",
+      "name": "Update Lead After Prequal",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1000,
+        -200
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE leads SET\n  move_in_date = COALESCE(NULLIF($2,'')::date, move_in_date),\n  stated_monthly_income = COALESCE(NULLIF($3,'')::numeric, stated_monthly_income),\n  pets = COALESCE(NULLIF($4,''), pets),\n  vehicles = COALESCE(NULLIF($5,'')::int, vehicles),\n  occupants = COALESCE(NULLIF($6,'')::int, occupants),\n  prequal_result = $7,\n  prequal_reasons = $8::jsonb,\n  status = CASE WHEN $7 = 'clear' THEN 'prequalified' ELSE 'engaged' END\nWHERE ref_token = $1 RETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [$json.ref_token,($json.answers.move_in_date ?? ''),($json.answers.stated_monthly_income ?? ''),($json.answers.pets ?? ''),($json.answers.vehicles ?? ''),($json.answers.occupants ?? ''),$json.prequal_result,JSON.stringify($json.prequal_reasons)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      }
+    },
+    {
+      "id": "prequal-clear-for-tour",
+      "name": "Prequal Clear For Tour?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1220,
+        -200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "run-prequal-gate-item-json-is-",
+              "leftValue": "={{ $('Run Prequal Gate').item.json.is_clear }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "send-tour-booking-link",
+      "name": "Send Tour Booking Link",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1460,
+        -300
+      ],
+      "parameters": {
+        "fromEmail": "=__SYSTEM_EMAIL__",
+        "toEmail": "={{ $('Run Prequal Gate').item.json.prospect_email }}",
+        "subject": "={{ $('Run Prequal Gate').item.json.subject_line }}",
+        "emailFormat": "text",
+        "text": "=Hi {{ $('Run Prequal Gate').item.json.prospect_name }},\n\nThanks for those details. {{ $('Run Prequal Gate').item.json.address }} looks like a fit, so here is the link to pick a tour time that suits you:\n\n__CALCOM_BOOKING_URL__?metadata[ref_token]={{ $('Run Prequal Gate').item.json.ref_token }}\n\nTours are self-guided. You will get a one-time door code shortly before your slot.\n\nThe leasing team",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "smtp": {
+          "id": "__SMTP_CREDENTIAL_ID__",
+          "name": "Leasing SMTP (outbound mail)"
+        }
+      }
+    },
+    {
+      "id": "send-alternatives-offer",
+      "name": "Send Alternatives Offer",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1460,
+        -100
+      ],
+      "parameters": {
+        "fromEmail": "=__SYSTEM_EMAIL__",
+        "toEmail": "={{ $('Run Prequal Gate').item.json.prospect_email }}",
+        "subject": "={{ $('Run Prequal Gate').item.json.subject_line }}",
+        "emailFormat": "text",
+        "text": "=Hi {{ $('Run Prequal Gate').item.json.prospect_name }},\n\nThanks for those details. Based on what you have told us, {{ $('Run Prequal Gate').item.json.address }} may not be the closest match on timing or size, but we would still like to help.\n\nA member of the team will follow up with other options that may suit you better. If you would like to go ahead and tour this unit anyway, just reply and we will set it up.\n\nThe leasing team",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "smtp": {
+          "id": "__SMTP_CREDENTIAL_ID__",
+          "name": "Leasing SMTP (outbound mail)"
+        }
+      }
+    },
+    {
+      "id": "notify-manager-prequal-needs-review",
+      "name": "Notify Manager: Prequal Needs Review",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1680,
+        -100
+      ],
+      "parameters": {
+        "chatId": "=__TELEGRAM_CHAT_ID__",
+        "text": "=Pre-qualification did not clear for {{ $('Run Prequal Gate').item.json.ref_token }} ({{ $('Run Prequal Gate').item.json.prospect_name }}).\n\nUnit: {{ $('Run Prequal Gate').item.json.unit_code }}\nResult: {{ $('Run Prequal Gate').item.json.prequal_result }}\nReasons: {{ JSON.stringify($('Run Prequal Gate').item.json.prequal_reasons) }}\n\nThis is scheduling triage on unverified answers, not a rental decision. They were offered alternatives, not a refusal.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "receive-tour-booking-cal-com",
+      "name": "Receive Tour Booking (Cal.com)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -560,
+        420
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "calcom-booking",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "webhookId": "calcom-booking"
+    },
+    {
+      "id": "issue-lock-code-mock",
+      "name": "Issue Lock Code (MOCK)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -340,
+        420
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "/**\n * Shared front-of-funnel logic.\n *\n * This file is the single source of truth for lead parsing, reference tokens,\n * Tier A guardrails, and the pre-qualification gate. The build scripts inline it\n * into n8n Code nodes, so it must stay dependency-free and must not use\n * backticks or template literals - those are consumed before reaching the node.\n *\n * Nothing here calls a model. Everything here is deterministic.\n */\n\n/* ------------------------------------------------------------------ tokens */\n\n/**\n * Reference token carried in every subject line. Replies are matched on this\n * first and on sender address only as a fallback - the model never decides\n * which lead a message belongs to.\n */\nfunction makeRefToken(prefix, seed) {\n  var n = seed === undefined ? Math.floor(Math.random() * 9000) + 1000 : seed;\n  return prefix + \"-\" + String(n).slice(0, 4);\n}\n\nfunction extractRefToken(text) {\n  if (!text) return null;\n  var match = String(text).match(/\\[([RA]-\\d{4})\\]/);\n  return match ? match[1] : null;\n}\n\nfunction subjectWithToken(subject, token) {\n  if (extractRefToken(subject)) return subject;\n  return subject + \" [\" + token + \"]\";\n}\n\n/* ------------------------------------------------------- lead email parsing */\n\n/**\n * Parses a listing-site lead notification.\n *\n * Zillow delivers these as email with an anonymised relay reply-to and no phone\n * number, so the parser must tolerate a missing phone rather than treat it as a\n * failure. Anything it cannot determine is left null and flagged, never guessed.\n */\nfunction parseLeadEmail(input) {\n  var subject = input.subject || \"\";\n  var body = input.body || \"\";\n  var replyTo = input.replyTo || input.from || \"\";\n\n  var result = {\n    prospect_name: null,\n    prospect_email: null,\n    prospect_phone: null,\n    unit_hint: null,\n    inquiry_text: null,\n    source: \"zillow_email\",\n    parse_warnings: [],\n  };\n\n  var nameMatch = body.match(/^\\s*Renter:\\s*(.+)$/m);\n  if (nameMatch) result.prospect_name = nameMatch[1].trim();\n  else result.parse_warnings.push(\"no renter name found\");\n\n  var propertyMatch = body.match(/^\\s*Property:\\s*(.+)$/m);\n  if (propertyMatch) result.unit_hint = propertyMatch[1].trim();\n  else {\n    var subjectUnit = subject.match(/:\\s*(.+)$/);\n    if (subjectUnit) result.unit_hint = subjectUnit[1].trim();\n    else result.parse_warnings.push(\"no property reference found\");\n  }\n\n  // The renter's own words, between the quotes after \"Message:\".\n  var messageMatch = body.match(/Message:\\s*\"([\\s\\S]*?)\"/);\n  if (messageMatch) result.inquiry_text = messageMatch[1].replace(/\\s+/g, \" \").trim();\n  else result.parse_warnings.push(\"no inquiry text found\");\n\n  var emailMatch = String(replyTo).match(/[\\w.+-]+@[\\w.-]+\\.\\w+/);\n  if (emailMatch) result.prospect_email = emailMatch[0];\n  else result.parse_warnings.push(\"no reply address found\");\n\n  var phoneMatch = body.match(/(\\+?1[\\s.-]?)?\\(?\\d{3}\\)?[\\s.-]\\d{3}[\\s.-]\\d{4}/);\n  if (phoneMatch) result.prospect_phone = phoneMatch[0].trim();\n\n  return result;\n}\n\n/* ------------------------------------------------- unit knowledge for the AI */\n\n/**\n * Flattens a unit row into the only facts the FAQ model is allowed to use.\n * If a fact is not in here, the correct answer is \"I don't have that\".\n */\nfunction buildUnitKnowledge(unit) {\n  if (!unit) return null;\n  var facts = unit.faq_facts || {};\n  var knowledge = {\n    unit_code: unit.unit_code,\n    address: unit.address,\n    bedrooms: unit.beds,\n    bathrooms: Number(unit.baths),\n    square_feet: unit.sqft,\n    monthly_rent: Number(unit.rent_amount),\n    security_deposit: Number(unit.deposit_amount),\n    available_from: unit.available_from,\n    lease_term_months: unit.lease_term_months,\n    pet_policy: unit.pet_policy,\n    pet_fee_monthly: unit.pet_fee_monthly === null ? null : Number(unit.pet_fee_monthly),\n    parking: unit.parking,\n    utilities: unit.utilities_included,\n    laundry: unit.laundry,\n  };\n  Object.keys(facts).forEach(function (key) {\n    knowledge[key] = facts[key];\n  });\n  return knowledge;\n}\n\n/* -------------------------------------------------------------- guardrails */\n\n/**\n * Tier A guardrail. Runs on every message before it leaves, and again at send\n * time, because a manager may have edited the wording after it was drafted.\n *\n * Blocks: protected-class content, legal or lease commitments, rent negotiation,\n * availability promises, and invented numbers that are not in the unit facts.\n */\nvar PROTECTED_CLASS_PATTERNS = [\n  { pattern: /\\b(kids?|children|child|family friendly|families|school district)\\b/i, label: \"familial status\" },\n  { pattern: /\\b(disab|wheelchair|handicap|mental health|service animal policy)\\b/i, label: \"disability\" },\n  { pattern: /\\b(race|ethnic|nationality|immigration|citizen|visa status)\\b/i, label: \"national origin / race\" },\n  { pattern: /\\b(church|mosque|temple|synagogue|religio)\\b/i, label: \"religion\" },\n  { pattern: /\\b(marital status|married|single people|couples only)\\b/i, label: \"marital status\" },\n  { pattern: /\\b(section 8|voucher|housing assistance|welfare)\\b/i, label: \"source of income\" },\n  { pattern: /\\b(good neighborhood for|safe area for|type of people)\\b/i, label: \"steering\" },\n];\n\nvar COMMITMENT_PATTERNS = [\n  { pattern: /\\b(guarantee|guaranteed|we promise|you will be approved|pre-?approved)\\b/i, label: \"approval commitment\" },\n  { pattern: /\\b(hold (it|the unit) for you|reserved for you|it'?s yours)\\b/i, label: \"availability commitment\" },\n  { pattern: /\\b(we can lower|discount the rent|negotiate the rent|reduce the rent)\\b/i, label: \"rent negotiation\" },\n  { pattern: /\\b(legally|by law|you are entitled|your rights under)\\b/i, label: \"legal statement\" },\n  { pattern: /\\b(denied|rejected|you do not qualify|we cannot rent to you)\\b/i, label: \"adverse decision language\" },\n];\n\nfunction guardrailCheck(text, knowledge) {\n  var findings = [];\n  var body = String(text || \"\");\n\n  PROTECTED_CLASS_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"protected_class\", detail: rule.label });\n    }\n  });\n\n  COMMITMENT_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"commitment\", detail: rule.label });\n    }\n  });\n\n  // Any dollar figure in the message must appear in the unit facts. Catches the\n  // model inventing a rent, fee, or deposit.\n  if (knowledge) {\n    var allowed = [];\n    Object.keys(knowledge).forEach(function (key) {\n      var value = knowledge[key];\n      if (typeof value === \"number\") allowed.push(Math.round(value));\n      if (typeof value === \"string\") {\n        var found = value.match(/\\d[\\d,]*(\\.\\d+)?/g) || [];\n        found.forEach(function (n) { allowed.push(Math.round(Number(n.replace(/,/g, \"\")))); });\n      }\n    });\n\n    var quoted = body.match(/\\$\\s?\\d[\\d,]*(\\.\\d+)?/g) || [];\n    quoted.forEach(function (raw) {\n      var amount = Math.round(Number(raw.replace(/[$,\\s]/g, \"\")));\n      if (allowed.indexOf(amount) === -1) {\n        findings.push({\n          severity: \"block\",\n          category: \"unsupported_figure\",\n          detail: raw.trim() + \" is not in the unit facts\",\n        });\n      }\n    });\n  }\n\n  var blocking = findings.filter(function (f) { return f.severity === \"block\"; });\n  return {\n    passed: blocking.length === 0,\n    findings: findings,\n    checked_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- pre-qualification */\n\n/**\n * Scheduling triage only. This is NOT a rental decision and its output must\n * never be phrased to a prospect as a denial.\n *\n * Deliberately narrow: move-in timing, self-reported income against the\n * published multiple, pet policy, and occupancy. Nothing else is considered and\n * nothing here is verified.\n */\nfunction prequalGate(answers, unit, config) {\n  var reasons = [];\n  var missing = [];\n  var incomeMultiple = config && config.income_multiple ? Number(config.income_multiple) : 3;\n\n  if (!answers || answers.move_in_date === null || answers.move_in_date === undefined) {\n    missing.push(\"move_in_date\");\n  } else {\n    var availableFrom = new Date(unit.available_from);\n    var wanted = new Date(answers.move_in_date);\n    var daysAfter = (wanted - availableFrom) / 86400000;\n\n    if (daysAfter < -14) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"wants \" + answers.move_in_date + \", unit is available from \" + unit.available_from,\n      });\n    } else if (daysAfter > 60) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"move-in is more than 60 days after the unit is available\",\n      });\n    } else {\n      reasons.push({ criterion: \"move_in_timing\", met: true, detail: answers.move_in_date });\n    }\n  }\n\n  if (answers && (answers.stated_monthly_income === null || answers.stated_monthly_income === undefined)) {\n    missing.push(\"stated_monthly_income\");\n  } else if (answers) {\n    // Self-reported and unverified. Verification happens after an application.\n    var rent = Number(unit.rent_amount);\n    var stated = Number(answers.stated_monthly_income);\n    var ratio = stated / rent;\n    reasons.push({\n      criterion: \"stated_income\",\n      met: ratio >= incomeMultiple,\n      detail: \"$\" + stated + \"/mo stated against $\" + rent + \" rent = \" + ratio.toFixed(2) + \"x (unverified)\",\n    });\n  }\n\n  if (answers && answers.pets && String(answers.pets).toLowerCase() !== \"none\") {\n    var weightMatch = String(answers.pets).match(/(\\d+)\\s?(lb|pound)/i);\n    var overLimit = weightMatch && Number(weightMatch[1]) > 50;\n    reasons.push({\n      criterion: \"pets\",\n      met: !overLimit,\n      detail: overLimit ? \"stated pet is over the 50 lb limit\" : String(answers.pets),\n    });\n  }\n\n  var failed = reasons.filter(function (r) { return r.met === false; });\n  var result = missing.length ? \"incomplete\" : failed.length ? \"not_clear\" : \"clear\";\n\n  return {\n    result: result,\n    reasons: reasons,\n    missing: missing,\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- AI output shape */\n\n/**\n * Unwraps structured output from the OpenAI node.\n *\n * The payload arrives wrapped differently depending on node version, whether\n * simplify is on, and whether a JSON schema was applied - sometimes a parsed\n * object, sometimes a JSON string under `output`, sometimes nested one level\n * deeper. Probing for a known key is more robust than assuming a shape.\n *\n * @param {*} data       the item's json\n * @param {string} anchor a key that must exist on the real payload\n */\nfunction unwrapAiPayload(data, anchor) {\n  var value = data;\n\n  for (var depth = 0; depth < 6; depth++) {\n    if (value === null || value === undefined) break;\n\n    if (typeof value === \"string\") {\n      var trimmed = value.trim();\n      if (trimmed.charAt(0) !== \"{\" && trimmed.charAt(0) !== \"[\") break;\n      try {\n        value = JSON.parse(trimmed);\n      } catch (error) {\n        break;\n      }\n      continue;\n    }\n\n    if (Array.isArray(value)) {\n      value = value[0];\n      continue;\n    }\n\n    if (typeof value === \"object\") {\n      if (Object.prototype.hasOwnProperty.call(value, anchor)) return value;\n\n      var next =\n        value.output !== undefined ? value.output :\n        value.message !== undefined ? value.message :\n        value.content !== undefined ? value.content :\n        value.text !== undefined ? value.text :\n        value.json !== undefined ? value.json : undefined;\n\n      if (next === undefined) break;\n      value = next;\n      continue;\n    }\n\n    break;\n  }\n\n  return value;\n}\n\n/* ------------------------------------------------------------- lock code */\n\n/**\n * Self-guided tour entry code.\n *\n * MOCK. A real deployment issues this through a smart-lock platform\n * (Rently, Tour24, ButterflyMX) bound to the booking window. Here it is\n * generated locally and logged, and every record it touches is marked\n * source: \"mock\".\n */\nfunction generateLockCode() {\n  var code = String(Math.floor(Math.random() * 900000) + 100000);\n  return { code: code, source: \"mock\", issued_at: new Date().toISOString() };\n}\n\n// Self-guided tour entry code. MOCK - a real deployment issues this through a\n// smart-lock platform bound to the booking window.\nconst out = [];\nfor (const item of $input.all()) {\n  const payload = item.json.body || item.json;\n  const booking = payload.payload || payload;\n  const attendee = (booking.attendees && booking.attendees[0]) || {};\n  const lock = generateLockCode();\n\n  out.push({\n    json: {\n      booking_uid: booking.uid || booking.bookingId || null,\n      starts_at: booking.startTime || booking.start_time || null,\n      attendee_email: attendee.email || null,\n      attendee_name: attendee.name || null,\n      ref_token: extractRefToken(booking.title || '') ||\n                 extractRefToken((booking.description || '')) ||\n                 (booking.metadata && booking.metadata.ref_token) || null,\n      lock_code: lock.code,\n      lock_code_source: lock.source,\n    },\n  });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "record-tour-booking",
+      "name": "Record Tour Booking",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -120,
+        420
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE leads SET\n  calcom_booking_uid = NULLIF($2,''),\n  tour_starts_at = NULLIF($3,'')::timestamptz,\n  lock_code = $4,\n  lock_code_source = 'mock',\n  status = 'tour_booked'\nWHERE ref_token = $1\nRETURNING *, (SELECT address FROM units WHERE id = leads.unit_id) AS address;",
+        "options": {
+          "queryReplacement": "={{ [($json.ref_token ?? ''), ($json.booking_uid ?? ''), ($json.starts_at ?? ''), ($json.lock_code ?? '')] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "send-tour-confirmation",
+      "name": "Send Tour Confirmation",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        100,
+        420
+      ],
+      "parameters": {
+        "fromEmail": "=__SYSTEM_EMAIL__",
+        "toEmail": "={{ $json.prospect_email }}",
+        "subject": "=Your tour is booked [{{ $json.ref_token }}]",
+        "emailFormat": "text",
+        "text": "=Hi {{ $json.prospect_name }},\n\nYour self-guided tour of {{ $json.address }} is confirmed.\n\nEntry code: {{ $json.lock_code }}\n\nThe code works during your booked slot only. Let yourself in, take your time, and pull the door closed when you leave.\n\nThe leasing team",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "smtp": {
+          "id": "__SMTP_CREDENTIAL_ID__",
+          "name": "Leasing SMTP (outbound mail)"
+        }
+      }
+    },
+    {
+      "id": "receive-tour-completed-demo",
+      "name": "Receive Tour Completed (Demo)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -560,
+        640
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tour-completed",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "webhookId": "tour-completed"
+    },
+    {
+      "id": "mark-lead-toured",
+      "name": "Mark Lead Toured",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -340,
+        640
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE leads SET status = 'toured'\nWHERE ref_token = $1\nRETURNING *, (SELECT address FROM units WHERE id = leads.unit_id) AS address;",
+        "options": {
+          "queryReplacement": "={{ [($json.body?.ref_token || $json.query?.ref_token || '')] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "send-application-link",
+      "name": "Send Application Link",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -120,
+        640
+      ],
+      "parameters": {
+        "fromEmail": "=__SYSTEM_EMAIL__",
+        "toEmail": "={{ $json.prospect_email }}",
+        "subject": "=How was {{ $json.address }}? [{{ $json.ref_token }}]",
+        "emailFormat": "text",
+        "text": "=Hi {{ $json.prospect_name }},\n\nHope the tour went well. If you would like to apply, here is the application:\n\n__APPLICATION_FORM_URL__?ref_token={{ $json.ref_token }}\n\nThere is no obligation - applying just puts you forward for consideration. If it was not the right fit, reply and tell us what did not work and we will look for something closer.\n\nThe leasing team",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "smtp": {
+          "id": "__SMTP_CREDENTIAL_ID__",
+          "name": "Leasing SMTP (outbound mail)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Receive Prospect Mail (IMAP)": {
+      "main": [
+        [
+          {
+            "node": "Classify Inbound Mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Inbound Mail": {
+      "main": [
+        [
+          {
+            "node": "Is Reply To Existing Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Reply To Existing Lead?": {
+      "main": [
+        [
+          {
+            "node": "Load Lead By Token",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Unit For Inquiry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Unit For Inquiry": {
+      "main": [
+        [
+          {
+            "node": "Create Lead Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Lead Record": {
+      "main": [
+        [
+          {
+            "node": "Draft Grounded Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft Grounded Reply": {
+      "main": [
+        [
+          {
+            "node": "Check Tier A Guardrails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Tier A Guardrails": {
+      "main": [
+        [
+          {
+            "node": "Reply Passed Guardrails?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply Passed Guardrails?": {
+      "main": [
+        [
+          {
+            "node": "Send Grounded Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Manager: Reply Blocked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Grounded Reply": {
+      "main": [
+        [
+          {
+            "node": "Log Outbound Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Outbound Reply": {
+      "main": [
+        [
+          {
+            "node": "Mirror Lead To Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Lead By Token": {
+      "main": [
+        [
+          {
+            "node": "Load Active Criteria",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Active Criteria": {
+      "main": [
+        [
+          {
+            "node": "Extract Prequal Answers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Prequal Answers": {
+      "main": [
+        [
+          {
+            "node": "Run Prequal Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Prequal Gate": {
+      "main": [
+        [
+          {
+            "node": "Update Lead After Prequal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Lead After Prequal": {
+      "main": [
+        [
+          {
+            "node": "Prequal Clear For Tour?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prequal Clear For Tour?": {
+      "main": [
+        [
+          {
+            "node": "Send Tour Booking Link",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Alternatives Offer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Alternatives Offer": {
+      "main": [
+        [
+          {
+            "node": "Notify Manager: Prequal Needs Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Tour Booking (Cal.com)": {
+      "main": [
+        [
+          {
+            "node": "Issue Lock Code (MOCK)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Issue Lock Code (MOCK)": {
+      "main": [
+        [
+          {
+            "node": "Record Tour Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Tour Booking": {
+      "main": [
+        [
+          {
+            "node": "Send Tour Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Tour Completed (Demo)": {
+      "main": [
+        [
+          {
+            "node": "Mark Lead Toured",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Lead Toured": {
+      "main": [
+        [
+          {
+            "node": "Send Application Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

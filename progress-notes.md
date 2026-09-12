@@ -468,3 +468,74 @@ would have leads arriving to a dedicated address or label, not a human's general
 Recommendation: create a genuinely empty Gmail for the prospect before recording. If that is
 not wanted, at minimum set up a label + filter so a clean filtered view can be shown instead
 of the raw inbox.
+
+---
+
+## 2026-09-12 — Stage 3 Partial: Email Lead Path Working
+
+### Working end to end, verified with real mail
+
+`send-as-prospect.js lead` → IMAP trigger → parse → unit lookup → lead row → OpenAI draft →
+guardrail → SMTP → message log. Confirmed by database rows and by the mail landing in the
+prospect inbox.
+
+The reply the model produced, unedited:
+
+> Hi Maya,
+>
+> Thanks for your interest in the two-bedroom at 412 Maple Street, Apt 2B. One assigned
+> surface parking space is included, and a second space may be available for $50/month. Small
+> dogs are welcome if they are under 50 lbs; breed restrictions apply. The monthly pet fee is
+> $35, with a maximum of two pets. The unit is available starting October 1, 2026, which may
+> fit an early-October move-in.
+>
+> To check which units fit, rather than make a decision, could you share your intended move-in
+> date, approximate gross monthly income, pets, number of vehicles, and how many adults will
+> be living there?
+
+Every figure traces to the `units` row. Guardrail passed. It even reproduced the "to check
+which units fit, rather than make a decision" framing the instructions require.
+
+### Open item: the prequal reply branch
+
+The reply path triggers and reaches the database, but extracted answers come back empty and
+the run ends in a `NodeOperationError` that the reference-encoded execution blob has not yet
+given up. Next session: reproduce with the workflow opened in the n8n UI, where the failing
+node and its input are visible directly, rather than decoding `execution_data` by hand.
+
+The new-lead path is unaffected.
+
+### Four n8n gotchas found, all now in CLAUDE.md
+
+1. **`queryReplacement` drops `undefined` entries.** The Postgres node flattens an array
+   expression with `if (item === undefined) continue`, so a single absent value silently
+   shortens the parameter list and Postgres reports `there is no parameter $5`. Pass `?? ''`
+   for anything nullable and unwrap with `NULLIF($n,'')` in SQL.
+2. **`queryReplacement` as a comma-separated string is unsafe here anyway** — addresses
+   contain commas. The array-expression form is correct.
+3. **OpenAI `textFormat.textOptions` must be an object, not an array.** The field's own
+   default shows an array, but the node reads `textFormat.textOptions.type` directly. Passing
+   an array means no format is ever sent and the model returns prose instead of JSON, with no
+   error anywhere.
+4. **`emailSend` appends an n8n attribution footer** unless `options.appendAttribution` is
+   false. Harmless on internal alerts, wrong on prospect-facing mail.
+
+### Invariant added
+
+An empty draft now throws instead of sending. The first version of the guardrail happily
+passed an empty string (no findings = no problem) and sent a blank email — precisely the
+quiet failure `CLAUDE.md` forbids. Both AI-consuming Code nodes now share `unwrapAiPayload`
+from `leasing-lib.js` and fail loudly with the raw shape when the payload is not what the
+schema promised.
+
+### Built
+
+- `scripts/lib/leasing-lib.js` — tokens, lead parsing, unit knowledge, Tier A guardrails,
+  prequal gate, lock code, AI unwrap. 19 unit tests in `scripts/test-leasing-lib.js`, all
+  passing, run outside n8n.
+- `scripts/lib/wf-common.js` — node factories; parses every generated Code node before
+  writing, wrapped in an async function so top-level `return` validates correctly.
+- `scripts/build-wf1-leasing-front.js` — 28 nodes, three entry points.
+- `scripts/import-workflows.js` — placeholder substitution and CLI import.
+- `scripts/lib/smtp.js`, `scripts/lib/imap.js`, `scripts/check-inbox.js` — dependency-free
+  mail tooling; `check-inbox.js --body` proved the empty-email bug faster than n8n's own logs.

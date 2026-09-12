@@ -1,20 +1,28 @@
 /**
- * Finds the manager's Telegram chat id and writes it into .env.
+ * Finds a Telegram chat id and writes it into .env.
  *
- * Send any message to your bot first, then run this.
+ * Send any message to the bot first, then run this.
  *
- * Note: getUpdates only works while no webhook is registered on the bot. If a
- * Telegram Trigger is already active, this will say so - deactivate it, run
- * this, then reactivate.
+ * There are two bots: the manager bot (WF3's router) and the prospect bot
+ * (WF1's leasing assistant). Pass --prospect for the second one.
+ *
+ * Note: getUpdates only works while no webhook is registered on that bot. Once
+ * the matching Telegram Trigger is active, this stops working for it - so run
+ * this BEFORE the first import, or deactivate that workflow first.
  *
  * Usage:
- *   node scripts/get-telegram-chat-id.js
+ *   node scripts/get-telegram-chat-id.js              manager bot
+ *   node scripts/get-telegram-chat-id.js --prospect   prospect bot
  */
 
 const { loadEnv, setEnvValue } = require("./lib/env");
 
-const env = loadEnv(["TELEGRAM_BOT_TOKEN"]);
-const API = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}`;
+const prospect = process.argv.includes("--prospect");
+const TOKEN_VAR = prospect ? "TELEGRAM_PROSPECT_BOT_TOKEN" : "TELEGRAM_BOT_TOKEN";
+const CHAT_VAR = prospect ? "TELEGRAM_PROSPECT_CHAT_ID" : "TELEGRAM_MANAGER_CHAT_ID";
+
+const env = loadEnv([TOKEN_VAR]);
+const API = `https://api.telegram.org/bot${env[TOKEN_VAR]}`;
 
 async function call(method) {
   const response = await fetch(`${API}/${method}`);
@@ -25,13 +33,13 @@ async function call(method) {
 
 async function main() {
   const me = await call("getMe");
-  console.log(`Bot: @${me.username} (${me.first_name})`);
+  console.log(`Bot: @${me.username} (${me.first_name})  [${prospect ? "prospect" : "manager"}]`);
 
   const hook = await call("getWebhookInfo");
   if (hook.url) {
     console.log(`\nA webhook is registered at ${hook.url}`);
     console.log("getUpdates returns nothing while a webhook is active.");
-    console.log("Deactivate the Telegram Trigger workflow, then re-run this.");
+    console.log(`Deactivate ${prospect ? "WF1" : "WF3"}, then re-run this.`);
     process.exit(1);
   }
 

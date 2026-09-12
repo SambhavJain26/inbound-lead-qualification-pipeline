@@ -842,7 +842,7 @@ const prequalCode = [
   "  }",
   "",
   "  const lead = $('Load Lead By Token').first().json;",
-  "  const config = $('Load Active Criteria').first().json;",
+  "  const config = $('Load Criteria For Email Prequal').first().json;",
   "  const unit = {",
   "    unit_code: lead.unit_code,",
   "    address: lead.address,",

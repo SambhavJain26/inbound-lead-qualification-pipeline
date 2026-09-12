@@ -442,8 +442,36 @@ function validateCodeNodes(nodes) {
   }
 }
 
+/**
+ * Every `$('Node Name')` reference must name a node that exists.
+ *
+ * Renaming a node and missing one reference is invisible until that branch
+ * actually runs, and then it fails with "Node 'X' hasn't been executed" - which
+ * reads like a wiring problem rather than a typo. Worse, a reference can point
+ * at a REAL node on a different branch, which only fails on the runs where that
+ * branch did not execute. Catching it at build time costs nothing.
+ */
+function validateNodeReferences(nodes) {
+  const known = new Set(nodes.map((n) => n.name));
+  const problems = [];
+
+  for (const n of nodes) {
+    const haystack = JSON.stringify(n.parameters || {});
+    const matches = haystack.match(/\$\(\\?['"]([^'"\\]+)\\?['"]\)/g) || [];
+    for (const raw of matches) {
+      const name = raw.replace(/^\$\(\\?['"]/, "").replace(/\\?['"]\)$/, "");
+      if (!known.has(name)) problems.push(`"${n.name}" references unknown node "${name}"`);
+    }
+  }
+
+  if (problems.length) {
+    throw new Error("Unresolvable node references:\n  " + [...new Set(problems)].join("\n  "));
+  }
+}
+
 function writeWorkflow(workflow, outPath) {
   validateCodeNodes(workflow.nodes);
+  validateNodeReferences(workflow.nodes);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   // No BOM: the n8n CLI rejects one at the first character.
   fs.writeFileSync(outPath, JSON.stringify(workflow, null, 2), { encoding: "utf8" });

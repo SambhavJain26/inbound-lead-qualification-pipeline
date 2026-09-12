@@ -168,8 +168,19 @@ DEMO_RECIPIENT_EMAIL=maya.prospect.demo@gmail.com
 DEMO_FROM_EMAIL=<same as GMAIL_ADDRESS above>
 ```
 
-This second account needs **no credentials and no setup** — n8n never connects to it, you
-just open it in a browser tab. Two reasons it matters:
+This second account **also needs its own App Password**, so the fixture lead email and the
+prospect's replies can be sent by script instead of typed by hand each run:
+
+```
+PROSPECT_GMAIL_ADDRESS=maya.prospect.demo@gmail.com
+PROSPECT_GMAIL_APP_PASSWORD=abcd efgh ijkl mnop
+```
+
+Same procedure as above — turn on 2-Step Verification on that account, then
+https://myaccount.google.com/apppasswords. n8n never uses this credential; only
+`scripts/send-as-prospect.js` does.
+
+Why the prospect must be a separate account:
 
 - Gmail delivers self-addressed mail to `INBOX` as well as `[Gmail]/Sent`. If the system
   mailbox and the prospect are the same account, the IMAP trigger picks up our own outbound

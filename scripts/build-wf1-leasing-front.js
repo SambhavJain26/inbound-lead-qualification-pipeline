@@ -105,6 +105,15 @@ const TURN_SCHEMA = {
       enum: ["question", "prequal_answer", "book_tour", "apply", "handoff_request", "smalltalk", "other"],
       description: "What this MESSAGE is doing. Never a label about the person.",
     },
+    tour_preference: {
+      type: ["string", "null"],
+      description:
+        "If the prospect named a day or time they want to tour, the ISO datetime " +
+        "(YYYY-MM-DDTHH:MM) it refers to, using the supplied current date. Vague " +
+        "times take the obvious hour: morning 10:00, afternoon 14:00, evening 18:00. " +
+        "Null if they did not name a time. You are NOT booking anything - the " +
+        "system checks real availability and decides.",
+    },
     wants_human: {
       type: "boolean",
       description: "True only if the prospect explicitly asked to speak to a person.",
@@ -112,8 +121,11 @@ const TURN_SCHEMA = {
   },
   additionalProperties: false,
   required: [
+    // OpenAI strict mode requires EVERY key in properties to appear here, or
+    // the call is rejected with "Invalid schema for response_format". Adding a
+    // property without adding it here breaks every conversation turn.
     "reply_text", "questions_answered", "questions_unanswered", "refused_questions",
-    "prequal", "intent", "wants_human",
+    "prequal", "intent", "tour_preference", "wants_human",
   ],
 };
 
@@ -219,6 +231,11 @@ const TURN_INSTRUCTIONS = [
   "  - Never say you are an AI, a bot, or a language model. You are the leasing assistant.",
   "REPLY_TEXT MUST NEVER BE EMPTY. There is always something to say, even if it is only that",
   "you did not follow and would like them to try again.",
+  "",
+  "TOURS: if they name a day or time they would like to visit, put it in tour_preference as an",
+  "ISO datetime and say you are checking it - do NOT confirm it, do NOT say it is booked, and",
+  "do NOT offer times of your own. The system checks real availability and the manager's policy",
+  "and comes back to them itself, in a separate message.",
   "",
   "Tone: warm, brief, human. This is a chat, not an email - keep reply_text under about 500",
   "characters, no greeting block, no sign-off, no subject line. Answer what they asked and stop.",
@@ -677,6 +694,10 @@ const turnGateCode = [
   "    stage: stage,",
   "    next_ask: nextAsk,",
   "    intent: payload.intent || null,",
+  "    tour_preference: payload.tour_preference || null,",
+  "    // Only chase a booking once the gate is happy and nothing is outstanding.",
+  "    wants_tour_slot: Boolean(payload.tour_preference) && outcome.result === 'clear' &&",
+  "      !unasked.length && lead.status !== 'tour_booked' && lead.tour_approval_state !== 'pending',",
   "    wants_human: wantsHuman,",
   "    questions_answered: payload.questions_answered || [],",
   "    questions_unanswered: payload.questions_unanswered || [],",
@@ -879,6 +900,29 @@ const lockCodeCode = [
   "  });",
   "}",
   "return out;",
+].join("\n");
+
+/**
+ * A Cal.com booking that matches no lead.
+ *
+ * Cal.com's webhook does NOT carry the metadata set when a booking is created
+ * through the API, so only bookings made on the public booking page arrive with
+ * a recoverable token - and WF5 records its own bookings for exactly that
+ * reason. Without this guard every API booking still produced a failed
+ * execution here, dying at the mail node with "No recipients defined", which
+ * says nothing at all about the real problem.
+ */
+const bookingGuardCode = [
+  "const rows = $input.all().filter((item) => item.json && item.json.ref_token);",
+  "if (!rows.length) {",
+  "  const booking = $('Issue Lock Code (MOCK)').first().json || {};",
+  "  return [{ json: {",
+  "    lead_found: false,",
+  "    booking_uid: booking.booking_uid || null,",
+  "    attendee_email: booking.attendee_email || null,",
+  "  } }];",
+  "}",
+  "return [{ json: Object.assign({}, rows[0].json, { lead_found: true }) }];",
 ].join("\n");
 
 /**
@@ -1329,6 +1373,36 @@ const nodes = [
   ),
 
   wf.ifNode(
+    "Wants A Tour Slot?",
+    [wf.booleanCondition("={{ $('Check Guardrails (Telegram)').item.json.wants_tour_slot }}", true)],
+    [3400, -1120]
+  ),
+
+  // Hands off to WF5, the same internal-webhook pattern WF3 uses to start WF4.
+  // Fire-and-forget: the booking conversation continues on its own, and a
+  // scheduling hiccup must not break the chat turn that is already sent.
+  {
+    ...wf.plaidNode("Start Tour Booking", "/noop", "={{ '{}' }}", [3620, -1120]),
+    name: "Start Tour Booking",
+    id: "start-tour-booking",
+    parameters: {
+      method: "POST",
+      url: "=__TUNNEL_URL__webhook/tour-request",
+      sendBody: true,
+      contentType: "json",
+      specifyBody: "json",
+      jsonBody:
+        "={{ JSON.stringify({\n" +
+        "  ref_token: $('Check Guardrails (Telegram)').item.json.ref_token,\n" +
+        "  preferred_iso: $('Check Guardrails (Telegram)').item.json.tour_preference\n" +
+        "}) }}",
+      options: { timeout: 30000 },
+    },
+    credentials: undefined,
+    onError: "continueRegularOutput",
+  },
+
+  wf.ifNode(
     "Needs Manager Notice?",
     [wf.booleanCondition("={{ $('Check Guardrails (Telegram)').item.json.needs_manager }}", true)],
     [3400, -920]
@@ -1452,6 +1526,28 @@ const nodes = [
       },
       alwaysOutputData: true,
     }
+  ),
+
+  wf.codeNode("Booking Matches A Lead?", bookingGuardCode, [-230, 120]),
+
+  wf.ifNode(
+    "Tour Lead Found?",
+    [wf.booleanCondition("={{ $json.lead_found }}", true)],
+    [-175, 120]
+  ),
+
+  wf.telegramNode(
+    "Alert Manager: Unmatched Booking",
+    {
+      chatId: "=__TELEGRAM_CHAT_ID__",
+      text:
+        "=A tour was booked that does not match any lead.\n\n" +
+        "Booking: {{ $json.booking_uid }}\n" +
+        "Attendee: {{ $json.attendee_email }}\n\n" +
+        "No entry code was issued and nothing was sent. The booking link was " +
+        "probably used without a reference token.",
+    },
+    [-175, 300]
   ),
 
   wf.codeNode("Tour: Pick Delivery Channel", deliveryChannelCode("tour"), [-120, 120]),
@@ -1858,7 +1954,8 @@ const connections = wf.connect({
     ["Reply: Handing To A Colleague", "Alert Manager: Reply Blocked"],
   ],
   "Send Prospect Reply (Telegram)": [["Log Outbound Telegram Reply"]],
-  "Log Outbound Telegram Reply": [["Needs Manager Notice?"]],
+  "Log Outbound Telegram Reply": [["Wants A Tour Slot?", "Needs Manager Notice?"]],
+  "Wants A Tour Slot?": [["Start Tour Booking"], []],
   "Needs Manager Notice?": [
     ["Notify Manager: Prequal Needs Review", "Phase Changed?"],
     ["Phase Changed?"],
@@ -1870,7 +1967,9 @@ const connections = wf.connect({
   /* Cal.com booking */
   "Receive Tour Booking (Cal.com)": [["Issue Lock Code (MOCK)"]],
   "Issue Lock Code (MOCK)": [["Record Tour Booking"]],
-  "Record Tour Booking": [["Tour: Pick Delivery Channel"]],
+  "Record Tour Booking": [["Booking Matches A Lead?"]],
+  "Booking Matches A Lead?": [["Tour Lead Found?"]],
+  "Tour Lead Found?": [["Tour: Pick Delivery Channel"], ["Alert Manager: Unmatched Booking"]],
   "Tour: Pick Delivery Channel": [["Tour: On Telegram?"]],
   "Tour: On Telegram?": [["Send Tour Confirmation (Telegram)"], ["Send Tour Confirmation (Email)"]],
 

@@ -35,6 +35,16 @@ const criteriaConfig = {
   income_mismatch_tolerance_pct: 10.0,
 };
 
+// Tours run inside the published self-guided hours. Outside them - or with less
+// than half a day's notice - the assistant holds the slot and asks the manager.
+const tourPolicy = {
+  name: "Self-guided tour policy",
+  earliest_hour: 9,
+  latest_hour: 18,
+  allow_weekends: true,
+  min_notice_hours: 12,
+};
+
 const units = [
   {
     unit_code: "MAPLE-2B",
@@ -238,6 +248,7 @@ const applicants = [
 ];
 
 module.exports = {
+  tourPolicy,
   PLAID_BIWEEKLY_GROSS,
   VERIFIED_MONTHLY,
   criteriaConfig,

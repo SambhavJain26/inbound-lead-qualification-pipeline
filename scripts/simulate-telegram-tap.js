@@ -25,12 +25,21 @@ const TRIGGER = telegramTrigger("wf3-telegram-router", "Manager Actions (Telegra
 const args = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 const twice = process.argv.includes("--twice");
 
-const PREFIX = { approve: "apr", conditional: "con", review: "rev" };
+// Application decisions, then tour-slot decisions. Tour taps route to WF5 and
+// never touch the applications table - approving a viewing time is not a
+// rental decision.
+const PREFIX = {
+  approve: "apr", conditional: "con", review: "rev",
+  "tour-approve": "tba", "tour-decline": "tbd",
+};
 const action = args[0] || "approve";
 const refToken = args[1];
 
 if (!PREFIX[action] || !refToken) {
-  console.error("Usage: node scripts/simulate-telegram-tap.js <approve|conditional|review> <A-1234> [--twice]");
+  console.error(
+    "Usage: node scripts/simulate-telegram-tap.js <approve|conditional|review> <A-1234> [--twice]\n" +
+    "       node scripts/simulate-telegram-tap.js <tour-approve|tour-decline> <R-1234>"
+  );
   process.exit(1);
 }
 

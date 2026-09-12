@@ -103,6 +103,9 @@ function buildReplacements({ byType, byName }) {
     __DOCUSIGN_BASE_PATH__: env.DOCUSIGN_BASE_PATH,
 
     __CALCOM_BOOKING_URL__: env.CALCOM_BOOKING_URL,
+    __CALCOM_API_KEY__: env.CALCOM_API_KEY,
+    __CALCOM_EVENT_TYPE_ID__: env.CALCOM_EVENT_TYPE_ID,
+    __TOUR_TIMEZONE__: env.GENERIC_TIMEZONE || "America/New_York",
     // The application form lives in WF2. Until that exists, the tunnel-relative
     // path is still correct - n8n serves Form Triggers under /form/<path>.
     __APPLICATION_FORM_URL__:

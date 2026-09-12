@@ -173,6 +173,129 @@ function escapeTelegramHtml(text) {
     .split(">").join("&gt;");
 }
 
+/* ------------------------------------------------------------------- tours */
+
+/**
+ * Turns a naive datetime into a real instant, read as PROPERTY-LOCAL time.
+ *
+ * The model returns "2026-09-15T14:00" when someone says "Tuesday at 2pm", and
+ * they mean 2pm at the property. `new Date()` on a bare string with no zone
+ * reads it in the runtime's zone - UTC in a container - so a request for 2pm
+ * silently became 9:30am and the renter was booked five hours out. Nothing
+ * errors; you only notice by reading the booked time.
+ *
+ * Anything already carrying a Z or a +/-HH:MM offset is left exactly alone.
+ */
+function naiveLocalToUtcIso(naive, timeZone) {
+  if (!naive) return null;
+  var text = String(naive).trim();
+  if (/(Z|[+-]\d{2}:?\d{2})$/.test(text)) return new Date(text).toISOString();
+
+  var guess = new Date(text + "Z");
+  if (isNaN(guess.getTime())) return null;
+
+  // How far ahead of UTC that zone is at that instant, DST included.
+  var dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: timeZone || "UTC", hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+  var parts = {};
+  dtf.formatToParts(guess).forEach(function (p) { parts[p.type] = p.value; });
+  var asUtc = Date.UTC(
+    Number(parts.year), Number(parts.month) - 1, Number(parts.day),
+    Number(parts.hour) % 24, Number(parts.minute), Number(parts.second)
+  );
+  var offset = asUtc - guess.getTime();
+  return new Date(guess.getTime() - offset).toISOString();
+}
+
+/**
+ * Picks the real Cal.com slot closest to what the prospect asked for.
+ *
+ * The model turns "Saturday morning" into an ISO datetime; it never chooses the
+ * booking. This does, deterministically, against the slots Cal.com actually
+ * returned - so the assistant can only ever book a time that genuinely exists.
+ *
+ * `slots` is a flat array of ISO strings. Returns the nearest slot within
+ * `toleranceHours`, plus the next few alternatives to offer if nothing is close.
+ */
+function matchTourSlot(wantedIso, slots, toleranceHours) {
+  var tolerance = (toleranceHours === undefined ? 4 : toleranceHours) * 3600000;
+  var available = (slots || []).slice().sort();
+  var result = { matched: null, delta_minutes: null, alternatives: available.slice(0, 3) };
+  if (!wantedIso || !available.length) return result;
+
+  var wanted = new Date(wantedIso).getTime();
+  if (isNaN(wanted)) return result;
+
+  var best = null;
+  var bestDelta = Infinity;
+  for (var i = 0; i < available.length; i++) {
+    var delta = Math.abs(new Date(available[i]).getTime() - wanted);
+    if (delta < bestDelta) { bestDelta = delta; best = available[i]; }
+  }
+
+  // Alternatives are the slots nearest what they asked for, not simply the
+  // earliest ones - "how about Tuesday?" should not be answered with Monday 9am.
+  result.alternatives = available
+    .slice()
+    .sort(function (a, b) {
+      return Math.abs(new Date(a).getTime() - wanted) - Math.abs(new Date(b).getTime() - wanted);
+    })
+    .slice(0, 3)
+    .sort();
+
+  if (best !== null && bestDelta <= tolerance) {
+    result.matched = best;
+    result.delta_minutes = Math.round(bestDelta / 60000);
+  }
+  return result;
+}
+
+/**
+ * Is this slot inside the manager's published tour policy, or an exception?
+ *
+ * Exceptions are held for a tap rather than refused. Returning reasons rather
+ * than a bare boolean means the manager's card can say WHY it was held, which
+ * is the difference between a useful notification and an interruption.
+ *
+ * `hourOverride` exists because a Code node cannot rely on the container's
+ * timezone; the caller passes the local hour and weekday it computed.
+ */
+function classifyTourRequest(slotIso, policy, nowIso, hourOverride, weekdayOverride) {
+  var reasons = [];
+  var config = policy || {};
+  var earliest = Number(config.earliest_hour === undefined ? 9 : config.earliest_hour);
+  var latest = Number(config.latest_hour === undefined ? 18 : config.latest_hour);
+  var minNotice = Number(config.min_notice_hours === undefined ? 12 : config.min_notice_hours);
+  var allowWeekends = config.allow_weekends === undefined ? true : Boolean(config.allow_weekends);
+
+  var slot = new Date(slotIso);
+  var now = new Date(nowIso || new Date().toISOString());
+  var hour = hourOverride === undefined || hourOverride === null ? slot.getUTCHours() : Number(hourOverride);
+  var weekday = weekdayOverride === undefined || weekdayOverride === null
+    ? slot.getUTCDay()
+    : Number(weekdayOverride);
+
+  if (hour < earliest || hour >= latest) {
+    reasons.push("outside self-guided hours (" + earliest + ":00-" + latest + ":00)");
+  }
+  if (!allowWeekends && (weekday === 0 || weekday === 6)) {
+    reasons.push("weekend");
+  }
+  var noticeHours = (slot.getTime() - now.getTime()) / 3600000;
+  if (noticeHours < minNotice) {
+    reasons.push("less than " + minNotice + "h notice (" + Math.max(0, Math.round(noticeHours)) + "h)");
+  }
+
+  return {
+    is_exception: reasons.length > 0,
+    reasons: reasons,
+    notice_hours: Math.round(noticeHours),
+  };
+}
+
 /* -------------------------------------------------------------- guardrails */
 
 /**
@@ -404,6 +527,9 @@ if (typeof module !== "undefined") {
     buildUnitKnowledge,
     buildConversationKnowledge,
     escapeTelegramHtml,
+    naiveLocalToUtcIso,
+    matchTourSlot,
+    classifyTourRequest,
     guardrailCheck,
     prequalGate,
     generateLockCode,

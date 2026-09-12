@@ -43,7 +43,12 @@ const parseCallbackCode = [
   "  const refToken = separator === -1 ? '' : raw.slice(separator + 1);",
   "  const action = ACTIONS[prefix];",
   "",
-  "  if (!action || !refToken) {",
+  "  // Tour approvals are a different kind of tap: they decide a viewing time,",
+  "  // not an application, and they must never touch the applications table.",
+  "  const TOUR = { tba: true, tbd: false };",
+  "  const isTour = Object.prototype.hasOwnProperty.call(TOUR, prefix);",
+  "",
+  "  if ((!action && !isTour) || !refToken) {",
   "    throw new Error('Unrecognised callback_data: ' + raw);",
   "  }",
   "",
@@ -53,9 +58,11 @@ const parseCallbackCode = [
   "",
   "  out.push({ json: {",
   "    ref_token: refToken,",
-  "    decision: action.decision,",
-  "    decision_label: action.label,",
-  "    triggers_lease: action.triggers_lease,",
+  "    is_tour_decision: isTour,",
+  "    tour_approved: isTour ? TOUR[prefix] : null,",
+  "    decision: isTour ? null : action.decision,",
+  "    decision_label: isTour ? (TOUR[prefix] ? 'Tour approved' : 'Tour time declined') : action.label,",
+  "    triggers_lease: isTour ? false : action.triggers_lease,",
   "    actor: actor,",
   "    callback_query_id: callback.id,",
   "    chat_id: (callback.message && callback.message.chat && callback.message.chat.id) || null,",
@@ -98,6 +105,50 @@ const nodes = [
     credentials: undefined,
     onError: "continueRegularOutput",
   },
+
+  // Reads the PARSE node explicitly, not $json. Acknowledge Tap is an HTTP node,
+  // so by this point $json is the Telegram API's answerCallbackQuery response
+  // and every parsed field is gone - the condition silently reads undefined and
+  // every tour tap falls through to the application path.
+  wf.ifNode(
+    "Is A Tour Decision?",
+    [wf.booleanCondition("={{ $('Parse Manager Action').first().json.is_tour_decision }}", true)],
+    [-100, 0]
+  ),
+
+  // Tour decisions go to WF5, which owns scheduling. They must never reach the
+  // application path - approving a viewing time is not a rental decision.
+  {
+    ...wf.plaidNode("Send Tour Decision To WF5", "/noop", "={{ '{}' }}", [40, -200]),
+    name: "Send Tour Decision To WF5",
+    id: "send-tour-decision-to-wf5",
+    parameters: {
+      method: "POST",
+      url: "=__TUNNEL_URL__webhook/tour-decision",
+      sendBody: true,
+      contentType: "json",
+      specifyBody: "json",
+      jsonBody:
+        "={{ JSON.stringify({\n" +
+        "  ref_token: $('Parse Manager Action').first().json.ref_token,\n" +
+        "  approved: $('Parse Manager Action').first().json.tour_approved\n" +
+        "}) }}",
+      options: { timeout: 30000 },
+    },
+    credentials: undefined,
+  },
+
+  wf.telegramNode(
+    "Confirm Tour Decision",
+    {
+      chatId: "={{ $('Parse Manager Action').item.json.chat_id }}",
+      text:
+        "={{ $('Parse Manager Action').item.json.decision_label }} for " +
+        "{{ $('Parse Manager Action').item.json.ref_token }}, recorded against " +
+        "{{ $('Parse Manager Action').item.json.actor }}.",
+    },
+    [260, -200]
+  ),
 
   wf.postgresNode(
     "Load Application For Decision",
@@ -196,7 +247,9 @@ const nodes = [
 const connections = wf.connect({
   "Manager Actions (Telegram)": [["Parse Manager Action"]],
   "Parse Manager Action": [["Acknowledge Tap"]],
-  "Acknowledge Tap": [["Load Application For Decision"]],
+  "Acknowledge Tap": [["Is A Tour Decision?"]],
+  "Is A Tour Decision?": [["Send Tour Decision To WF5"], ["Load Application For Decision"]],
+  "Send Tour Decision To WF5": [["Confirm Tour Decision"]],
   "Load Application For Decision": [["Already Decided?"]],
   "Already Decided?": [["Notify: Already Actioned"], ["Record Decision"]],
   "Record Decision": [["Send Lease Now?"]],

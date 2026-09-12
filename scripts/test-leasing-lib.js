@@ -241,6 +241,70 @@ check("conversation knowledge with no answers equals unit knowledge", () => {
   assert(!verdict.passed, "without a stated income that figure is still ungrounded");
 });
 
+check("a naive datetime is read as property-local, not UTC", () => {
+  // "Tuesday at 2pm" means 2pm at the property. Read as UTC it books hours out
+  // and nothing errors - you only notice by reading the time that was booked.
+  equal(lib.naiveLocalToUtcIso("2026-09-15T14:00", "America/New_York"), "2026-09-15T18:00:00.000Z");
+});
+
+check("naive conversion respects daylight saving", () => {
+  equal(lib.naiveLocalToUtcIso("2026-01-15T14:00", "America/New_York"), "2026-01-15T19:00:00.000Z");
+});
+
+check("an explicit offset is left alone", () => {
+  equal(lib.naiveLocalToUtcIso("2026-09-15T18:00:00Z", "America/New_York"), "2026-09-15T18:00:00.000Z");
+});
+
+/* ------------------------------------------------------- tour slot matching */
+
+const SLOTS = [
+  "2026-09-19T13:00:00Z", "2026-09-19T15:00:00Z",
+  "2026-09-19T22:00:00Z", "2026-09-20T14:00:00Z",
+];
+const POLICY = { earliest_hour: 9, latest_hour: 18, allow_weekends: true, min_notice_hours: 12 };
+
+check("tour slot matches the nearest real availability", () => {
+  const m = lib.matchTourSlot("2026-09-19T14:30:00Z", SLOTS);
+  equal(m.matched, "2026-09-19T15:00:00Z");
+  equal(m.delta_minutes, 30);
+});
+
+check("tour slot refuses to invent availability", () => {
+  // Nothing within tolerance. The assistant must offer alternatives rather than
+  // book something days away from what was asked for.
+  const m = lib.matchTourSlot("2026-09-25T14:00:00Z", SLOTS);
+  equal(m.matched, null);
+  assert(m.alternatives.length === 3, "should still offer alternatives");
+});
+
+check("tour alternatives are nearest to the request, not merely earliest", () => {
+  const m = lib.matchTourSlot("2026-09-20T13:30:00Z", SLOTS);
+  assert(m.alternatives.indexOf("2026-09-20T14:00:00Z") > -1,
+    "the closest slot must be offered: " + JSON.stringify(m.alternatives));
+});
+
+check("tour inside policy is not an exception", () => {
+  const c = lib.classifyTourRequest("2026-09-19T15:00:00Z", POLICY, "2026-09-13T10:00:00Z", 11, 6);
+  assert(!c.is_exception, "should book without asking: " + JSON.stringify(c.reasons));
+});
+
+check("tour outside published hours is held for the manager", () => {
+  const c = lib.classifyTourRequest("2026-09-19T23:00:00Z", POLICY, "2026-09-13T10:00:00Z", 19, 6);
+  assert(c.is_exception, "after-hours must be an exception");
+  assert(/outside self-guided hours/.test(c.reasons.join(" ")), JSON.stringify(c.reasons));
+});
+
+check("tour with too little notice is held for the manager", () => {
+  const c = lib.classifyTourRequest("2026-09-13T14:00:00Z", POLICY, "2026-09-13T10:00:00Z", 10, 0);
+  assert(c.is_exception, "same-day must be an exception");
+  assert(/notice/.test(c.reasons.join(" ")), JSON.stringify(c.reasons));
+});
+
+check("weekend is allowed when the policy says tours run daily", () => {
+  const c = lib.classifyTourRequest("2026-09-19T15:00:00Z", POLICY, "2026-09-13T10:00:00Z", 11, 0);
+  assert(!c.is_exception, "published hours say daily, so Sunday is ordinary");
+});
+
 /* ---------------------------------------------------------------- report */
 
 console.log("");

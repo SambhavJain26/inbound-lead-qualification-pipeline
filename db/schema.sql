@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS applications CASCADE;
 DROP TABLE IF EXISTS leads CASCADE;
 DROP TABLE IF EXISTS units CASCADE;
 DROP TABLE IF EXISTS criteria_config CASCADE;
+DROP TABLE IF EXISTS tour_policy CASCADE;
 
 -- ---------------------------------------------------------------------------
 -- criteria_config
@@ -38,6 +39,33 @@ CREATE TABLE criteria_config (
     income_mismatch_tolerance_pct NUMERIC(5,2) NOT NULL DEFAULT 10.00,
     is_active               BOOLEAN     NOT NULL DEFAULT TRUE,
     created_at              TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ---------------------------------------------------------------------------
+-- tour_policy
+--
+-- When the assistant may book a self-guided tour on its own, and when it has to
+-- ask. Same principle as criteria_config: the rules are the manager's, they are
+-- data rather than code, and they are applied identically to everybody.
+--
+-- Anything inside the policy is booked immediately. Anything outside it is an
+-- EXCEPTION: the tour is held, the manager gets one card, and nothing is
+-- confirmed to the renter until they tap. That keeps a human in control of who
+-- is in the building out of hours without putting one in the ordinary
+-- ten-o'clock-at-night path.
+-- ---------------------------------------------------------------------------
+CREATE TABLE tour_policy (
+    id                  SERIAL PRIMARY KEY,
+    name                TEXT        NOT NULL,
+    -- Self-guided hours, local time. Matches the published tour_options fact.
+    earliest_hour       INTEGER     NOT NULL DEFAULT 9,
+    latest_hour         INTEGER     NOT NULL DEFAULT 18,
+    allow_weekends      BOOLEAN     NOT NULL DEFAULT TRUE,
+    -- A tour starting sooner than this is an exception: nobody has had a chance
+    -- to notice it, and the unit may not be ready to show.
+    min_notice_hours    INTEGER     NOT NULL DEFAULT 12,
+    is_active           BOOLEAN     NOT NULL DEFAULT TRUE,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- ---------------------------------------------------------------------------
@@ -131,6 +159,14 @@ CREATE TABLE leads (
     prequal_reasons         JSONB NOT NULL DEFAULT '[]'::jsonb,
 
     -- Tour
+    --
+    -- A slot the assistant wants to book but is holding for manager approval.
+    -- Nothing is confirmed to the renter while this is pending, and the slot is
+    -- only booked in Cal.com after the tap - so a declined request never
+    -- occupies the calendar.
+    pending_tour_starts_at TIMESTAMPTZ,
+    tour_approval_state TEXT NOT NULL DEFAULT 'none'
+                        CHECK (tour_approval_state IN ('none','pending','approved','declined')),
     calcom_booking_uid  TEXT,
     tour_starts_at      TIMESTAMPTZ,
     lock_code           TEXT,

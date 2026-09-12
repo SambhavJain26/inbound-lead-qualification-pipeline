@@ -38,7 +38,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// callback_data is capped at 64 bytes, so it carries a three-letter action\n// and the application reference only - never a decision payload.\nconst ACTIONS = {\n  apr: { decision: 'approved', label: 'Approved', triggers_lease: true },\n  con: { decision: 'conditional', label: 'Approved with conditions', triggers_lease: true },\n  rev: { decision: 'sent_to_review', label: 'Sent for closer review', triggers_lease: false },\n};\n\nconst out = [];\nfor (const item of $input.all()) {\n  const update = item.json;\n  const callback = update.callback_query;\n\n  if (!callback) {\n    // Not a button tap. Nothing else enters this workflow yet.\n    continue;\n  }\n\n  const raw = String(callback.data || '');\n  const separator = raw.indexOf(':');\n  const prefix = separator === -1 ? '' : raw.slice(0, separator);\n  const refToken = separator === -1 ? '' : raw.slice(separator + 1);\n  const action = ACTIONS[prefix];\n\n  if (!action || !refToken) {\n    throw new Error('Unrecognised callback_data: ' + raw);\n  }\n\n  const from = callback.from || {};\n  const actor = from.username ? '@' + from.username\n    : [from.first_name, from.last_name].filter(Boolean).join(' ') || String(from.id || 'unknown');\n\n  out.push({ json: {\n    ref_token: refToken,\n    decision: action.decision,\n    decision_label: action.label,\n    triggers_lease: action.triggers_lease,\n    actor: actor,\n    callback_query_id: callback.id,\n    chat_id: (callback.message && callback.message.chat && callback.message.chat.id) || null,\n  } });\n}\nreturn out;"
+        "jsCode": "// callback_data is capped at 64 bytes, so it carries a three-letter action\n// and the application reference only - never a decision payload.\nconst ACTIONS = {\n  apr: { decision: 'approved', label: 'Approved', triggers_lease: true },\n  con: { decision: 'conditional', label: 'Approved with conditions', triggers_lease: true },\n  rev: { decision: 'sent_to_review', label: 'Sent for closer review', triggers_lease: false },\n};\n\nconst out = [];\nfor (const item of $input.all()) {\n  const update = item.json;\n  const callback = update.callback_query;\n\n  if (!callback) {\n    // Not a button tap. Nothing else enters this workflow yet.\n    continue;\n  }\n\n  const raw = String(callback.data || '');\n  const separator = raw.indexOf(':');\n  const prefix = separator === -1 ? '' : raw.slice(0, separator);\n  const refToken = separator === -1 ? '' : raw.slice(separator + 1);\n  const action = ACTIONS[prefix];\n\n  // Tour approvals are a different kind of tap: they decide a viewing time,\n  // not an application, and they must never touch the applications table.\n  const TOUR = { tba: true, tbd: false };\n  const isTour = Object.prototype.hasOwnProperty.call(TOUR, prefix);\n\n  if ((!action && !isTour) || !refToken) {\n    throw new Error('Unrecognised callback_data: ' + raw);\n  }\n\n  const from = callback.from || {};\n  const actor = from.username ? '@' + from.username\n    : [from.first_name, from.last_name].filter(Boolean).join(' ') || String(from.id || 'unknown');\n\n  out.push({ json: {\n    ref_token: refToken,\n    is_tour_decision: isTour,\n    tour_approved: isTour ? TOUR[prefix] : null,\n    decision: isTour ? null : action.decision,\n    decision_label: isTour ? (TOUR[prefix] ? 'Tour approved' : 'Tour time declined') : action.label,\n    triggers_lease: isTour ? false : action.triggers_lease,\n    actor: actor,\n    callback_query_id: callback.id,\n    chat_id: (callback.message && callback.message.chat && callback.message.chat.id) || null,\n  } });\n}\nreturn out;"
       }
     },
     {
@@ -59,6 +59,86 @@
         "jsonBody": "={{ JSON.stringify({ callback_query_id: $json.callback_query_id }) }}",
         "options": {
           "timeout": 10000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "is-a-tour-decision",
+      "name": "Is A Tour Decision?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -100,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "parse-manager-action-first-jso",
+              "leftValue": "={{ $('Parse Manager Action').first().json.is_tour_decision }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "send-tour-decision-to-wf5",
+      "name": "Send Tour Decision To WF5",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        40,
+        -200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=__TUNNEL_URL__webhook/tour-decision",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  ref_token: $('Parse Manager Action').first().json.ref_token,\n  approved: $('Parse Manager Action').first().json.tour_approved\n}) }}",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "confirm-tour-decision",
+      "name": "Confirm Tour Decision",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        -200
+      ],
+      "parameters": {
+        "chatId": "={{ $('Parse Manager Action').item.json.chat_id }}",
+        "text": "={{ $('Parse Manager Action').item.json.decision_label }} for {{ $('Parse Manager Action').item.json.ref_token }}, recorded against {{ $('Parse Manager Action').item.json.actor }}.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram (manager bot)"
         }
       },
       "onError": "continueRegularOutput"
@@ -276,7 +356,36 @@
       "main": [
         [
           {
+            "node": "Is A Tour Decision?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is A Tour Decision?": {
+      "main": [
+        [
+          {
+            "node": "Send Tour Decision To WF5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Load Application For Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Tour Decision To WF5": {
+      "main": [
+        [
+          {
+            "node": "Confirm Tour Decision",
             "type": "main",
             "index": 0
           }

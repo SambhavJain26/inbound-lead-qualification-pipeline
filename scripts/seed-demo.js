@@ -17,7 +17,7 @@ const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
 const { REPO_ROOT, loadEnv } = require("./lib/env");
-const { criteriaConfig, units } = require("../fixtures/demo-data");
+const { criteriaConfig, tourPolicy, units } = require("../fixtures/demo-data");
 
 const env = loadEnv();
 const DB_USER = env.POSTGRES_USER || "leasing";
@@ -75,6 +75,21 @@ function seedCriteria() {
   );
 }
 
+function seedTourPolicy() {
+  const t = tourPolicy;
+  psql(`
+    INSERT INTO tour_policy
+      (name, earliest_hour, latest_hour, allow_weekends, min_notice_hours, is_active)
+    VALUES
+      (${lit(t.name)}, ${t.earliest_hour}, ${t.latest_hour},
+       ${t.allow_weekends ? "TRUE" : "FALSE"}, ${t.min_notice_hours}, TRUE);
+  `);
+  console.log(
+    `  tour policy: ${t.earliest_hour}:00-${t.latest_hour}:00, ` +
+      `${t.min_notice_hours}h notice, weekends ${t.allow_weekends ? "allowed" : "held"}`
+  );
+}
+
 function seedUnits() {
   for (const u of units) {
     psql(`
@@ -117,6 +132,7 @@ function main() {
 
   if (!process.argv.includes("--schema-only")) {
     seedCriteria();
+    seedTourPolicy();
     seedUnits();
   }
 

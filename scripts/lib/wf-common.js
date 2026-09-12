@@ -451,6 +451,7 @@ function writeWorkflow(workflow, outPath) {
 }
 
 module.exports = {
+  slugFor: slug,
   PLACEHOLDER,
   CREDENTIAL,
   inlineLib,

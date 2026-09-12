@@ -1417,3 +1417,81 @@ fallback replies. They are delivered - execution records confirm it - but the lo
 what the renter actually received. This predates Stage 7 (the tour and application messages
 were never logged either) and is worth closing before the board is used as evidence of "every
 message in and out".
+
+---
+
+## 2026-09-13 — Plan Revision: The Assistant Books The Tour, Manager Approves Exceptions
+
+Scope addition on instruction, after a question about where the manager actually has control.
+
+### What the manager had before this
+
+Exactly **one** action in the whole build: the decision card in WF2. Everything else - eleven
+Telegram nodes - is notification. Rules once in `criteria_config`, then one tap per applicant.
+Tour booking was entirely self-serve through a Cal.com link, with no manager involvement.
+
+### The decision, and why not full approval
+
+Three options were weighed. Per-tour approval was rejected: it puts a human back in the
+ten-o'clock-at-night path, which is the exact thing the demo sells against, and it makes the
+manager appear three times instead of twice.
+
+**Exception-based approval** was chosen instead. Anything inside the published self-guided
+hours books itself; anything outside them is held for a tap. The manager's routine control is
+their Cal.com availability, set once - the same shape as the criteria engine, and worth saying
+out loud in a pitch: published rules, applied identically, no case-by-case judgement.
+
+### Built: WF5 `tour-booking`
+
+**A fifth workflow, which is a change to the locked four.** WF1 was already 74 nodes and
+scheduling is a coherent responsibility of its own; folding it in would have made WF1
+unreadable. WF5 is reached the same way WF4 already is - an internal webhook call.
+
+- `tour_policy` table: `earliest_hour` 9, `latest_hour` 18, `allow_weekends` true,
+  `min_notice_hours` 12. Data, not code, like every other threshold in the build.
+- `leads.pending_tour_starts_at` + `tour_approval_state`.
+- The model extracts `tour_preference` and **nothing else about scheduling**.
+  `matchTourSlot()` picks the nearest slot Cal.com actually returned, so the assistant can only
+  book a time that genuinely exists; `classifyTourRequest()` decides exception or not. Every
+  message from that point is fixed wording.
+- A held slot is **not booked**. A declined request therefore never occupied the calendar -
+  verified.
+
+### Verified live, all four paths
+
+```
+2pm Tuesday      -> booked directly   Tue 15 Sep 14:00, lock 793682, no manager involved
+8pm Thursday     -> HELD              approval=pending, booking=NONE
+  ... approve    -> booked            Thu 17 Sep 20:00, lock 816650, approval=approved
+  ... decline    -> not booked        booking=NONE, pending cleared, alternatives offered
+```
+
+### Six findings, every one silent
+
+1. **Cal.com's BOOKING_CREATED webhook does not carry metadata set via the API.** The booking
+   stores `metadata.ref_token` - the API response shows it - but the webhook payload omits it,
+   so the lead cannot be identified. The first design relied on that round trip and every
+   booking produced a failed execution that died three nodes later at the mail node with
+   "No recipients defined". WF5 now records and confirms its own bookings; WF1's Cal.com branch
+   stays for public-page bookings, where the token travels in the URL, and now has a guard that
+   alerts the manager instead of failing cryptically.
+2. **A naive datetime from the model means property-local time.** "Tuesday at 2pm" comes back
+   as `2026-09-15T14:00`, and `new Date()` reads a zone-less string as UTC in a container - so
+   the first working booking was made for **9:30am when the renter asked for 2pm**. Nothing
+   errored. The only way to notice is to read the time that was booked.
+   `naiveLocalToUtcIso()` now pins the zone, with tests covering DST.
+3. **After an HTTP node, `$json` is that node's API response.** WF3's `Acknowledge Tap` answers
+   Telegram, so a condition reading `$json.is_tour_decision` saw `undefined` and sent every
+   tour tap down the application path. The pre-existing node avoided this by naming the parse
+   node explicitly; the new one copied the wrong pattern.
+4. **Cal.com validates the attendee email domain** - `example.com` is rejected with
+   `email_domain_cannot_receive_mail`, so the fixture address cannot be used.
+5. **Cal.com API versions differ per endpoint**: slots `2024-09-04`, bookings `2024-08-13`.
+6. **OpenAI strict mode requires every key in `properties` to appear in `required`.** Adding
+   `tour_preference` to one and not the other rejected every conversation turn.
+
+All six are now in CLAUDE.md and AGENTS.md.
+
+### State
+
+5 workflows, 79 + 18 + 13 + 18 + 22 nodes. 32 + 19 unit tests pass. Stage 7 gate passes.

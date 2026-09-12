@@ -1646,3 +1646,87 @@ Canvas 1780 x 994, 102 elements: 11 green, 2 amber, 1 blue, 15 grey.
 4. `PROSPECT_GMAIL_ADDRESS` is still the account with 10,000+ real messages, and is now also
    the Cal.com attendee. The Cal.com event type is still named "30 min meeting".
 5. Record the demo.
+
+---
+
+## 2026-09-13 — Devon's Fraud Path Re-Verified After The Tour And Logging Work
+
+Re-run on a fresh environment bring-up (new tunnel, all five workflows re-imported), because the
+screening engine had not been exercised since WF5, the message_log work and the node-reference
+validator landed.
+
+### The numbers
+
+```
+app A-7043   Devon Clarke   MAPLE-5A
+
+claimed   : 7800.00
+paystub   : 7800.00
+verified  : 4996.33   (real Plaid Sandbox call)
+variance  : 56.1%
+credit    : 688   evictions=0
+criteria  : does_not_meet
+status    : stopped_for_human
+```
+
+### The evidence trail, every value traced to its source
+
+```
+FAIL income_multiple        $4996.33/mo verified against $1950 tenant-responsible rent
+                            = 2.56x, threshold 3.00x   [plaid_payroll_income.verified_monthly_income]
+FAIL income_document_match  pay stub implies $7800/mo against $4996.33/mo verified,
+                            variance 56.1% (tolerance 10%)   [uploaded_paystub.gross_this_period]
+PASS credit_score           688 against a 650 threshold   [screening_bureau_mock.credit_score]
+PASS eviction_history       0 filing(s) in the last 5 years, maximum 0   [screening_bureau_mock.eviction_filings]
+PASS identity_check         document and applicant details matched   [identity_check_mock.match]
+```
+
+Note the income multiple is applied to **tenant-responsible** rent, not gross rent - the
+source-of-income detail that most systems get wrong is still in the evidence line itself.
+
+### The compliance assertions, which are the point
+
+```
+applicant-facing messages sent : 0
+decision recorded              : NONE
+lease / envelope               : NONE
+unit MAPLE-5A                  : still available
+```
+
+And from the execution record:
+
+```
+RAN     Run Criteria Engine
+RAN     Meets Criteria Or Conditional?
+not run Send Decision Card          <- the card WITH the Approve button never fires
+RAN     Stop For Human Review
+RAN     Mark Stopped For Human
+```
+
+`Send Decision Card` carries `replyMarkup: inlineKeyboard`. `Stop For Human Review` carries
+**none** - there is no button on a `does_not_meet` file, so there is no path by which one can
+be approved or declined from Telegram at all. The card says so in as many words, and lists what
+a lawful decline actually requires.
+
+### Also confirmed on this pass
+
+- `sync-airtable.js` still rebuilds the board from Postgres, including an application with no
+  lead behind it: `A-7043 · Devon Clarke · Stopped For Review · MISMATCH 56% over verified`.
+  That flag rendering on the board is what makes the third demo window worth having on screen.
+- **Stage 7 gate: PASS**, all 31 checks, on the fresh environment - conversation, dedupe,
+  grounding, pre-qualification, and all four tour paths.
+- 32 + 19 unit tests pass.
+- Stage 2 reports one failure, `Workflow tables empty (clean demo state)`, purely because
+  Devon's row was left in place as the evidence above. It passes after a reset; not a
+  regression.
+
+### Still open
+
+1. Real photos into `site-assets/`.
+2. **A genuine hand-run** - every conversation to date has been the simulator posting synthetic
+   Telegram updates. Replies arrive and the webhook is healthy, but a message actually typed
+   into Telegram by a person has never been proven end to end, and that is the product.
+3. `PROSPECT_GMAIL_ADDRESS` is still the account holding 10,000+ real messages, and is now also
+   the Cal.com attendee address. The Cal.com event type is still named "30 min meeting", which
+   the renter sees on the booking page.
+4. Record the demo.

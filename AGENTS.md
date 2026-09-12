@@ -144,18 +144,27 @@ Known gotchas, carried forward from builds 01–04:
 - Keep schema changes in versioned files under `db/`; never mutate the schema by hand in a running container.
 - Airtable is a **display mirror only**, never the system of record: its free tier enforces 1,000 API calls per month per workspace. Mirror at phase boundaries, fire-and-forget, and rebuild the board from Postgres with `scripts/sync-airtable.js`.
 
+**HTTP Request**
+- Set `contentType: "json"` alongside `sendBody` and `specifyBody: "json"`. Without it the body is form-encoded and a JSON API answers 400 with nothing useful in the message.
+- **`httpCustomAuth` is a GENERIC credential type**: `authentication: "genericCredentialType"` plus `genericAuthType: "httpCustomAuth"`. Declaring it as `predefinedCredentialType` applies no auth at all, and the API reports the credentials as missing as though they were never configured.
+- Credential types like `airtableTokenApi` *are* predefined and use `authentication: "predefinedCredentialType"` with `nodeCredentialType`.
+
 **Code nodes and data shape**
 - When generating Code nodes from a builder script, avoid backticks and escape sequences inside template literals; they are consumed before reaching the node. Parse every generated Code node before importing.
 - Code nodes may not have reliable `$env` / `process.env`. Prefer config-table values or import-time substitution.
 - Strict IF nodes require booleans. Normalize truthy strings in a Code node before routing.
 - AI structured output may arrive wrapped. Downstream code should handle both wrapped and direct JSON shapes; `unwrapAiPayload(data, anchorKey)` in `scripts/lib/leasing-lib.js` probes for a known key rather than assuming a shape, and both AI-consuming Code nodes share it.
 - **OpenAI node: `options.textFormat.textOptions` must be an OBJECT, not an array.** The field's own default shows an array, but the node reads `textFormat.textOptions.type` directly. Pass an array and the format is never sent - the model returns prose instead of JSON, with no error anywhere.
+- The Responses payload nests as `output[0].content[0].text`. Always use the shared `unwrapAiPayload`; a trimmed local copy that forgets one hop reports "unexpected shape" on a payload that is perfectly correct, which is a genuinely confusing way to lose an hour.
 - An empty or unexpected model payload must **throw**, not flow onward. A guardrail that finds no problems in an empty string will happily send a blank email.
 
 **Webhooks, forms, tunnels**
 - Imported Webhook/Form Trigger nodes may register under generated paths. Verify actual URLs after import.
 - Form Trigger submissions can produce generic keys like `field-0`. Normalize before writing to the state store or an AI step.
 - Scripted form submissions must use `multipart/form-data`.
+- **A Form Trigger submits fields as `field-0`, `field-1`, ... in declaration order**, then maps them back to labels on arrival. Posting the labels themselves is accepted and every value arrives `null` - the submission looks successful and the workflow runs on empty data. Read the field order from the built workflow JSON rather than hardcoding indices.
+- **An uploaded file is keyed after the submitted field name (`field-N`), not the field label.** Re-key it to a stable name in the first Code node; a downstream Extract From File node cannot rely on the label.
+- **Postgres nodes drop binary data.** Anything that needs an uploaded file must reach the extract node before any database node runs.
 - Respond-to-Webhook status-code expressions are unreliable. Use separate literal-status Respond nodes when status matters.
 - cloudflared quick tunnels get a new hostname every run, and n8n reads `WEBHOOK_URL` only at container start. Re-run the tunnel script after any tunnel or Docker restart, then re-import the trigger workflow.
 - Docker Compose `restart` may not apply changed environment variables. Recreate the container when changing webhook/tunnel settings.

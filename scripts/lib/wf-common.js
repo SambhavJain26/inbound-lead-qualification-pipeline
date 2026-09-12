@@ -137,6 +137,73 @@ function telegramNode(name, { chatId, text }, position) {
   return built;
 }
 
+/**
+ * Telegram message carrying inline buttons.
+ *
+ * `replyMarkup` is a top-level enum and the buttons come from this fixed
+ * collection. A JSON string in additionalFields.reply_markup is ignored and the
+ * card posts with no buttons at all, so keep one node per card layout and drive
+ * callback_data with an expression.
+ *
+ * callback_data is capped at 64 bytes; a short prefix plus a ref token is ~12.
+ */
+function telegramCardNode(name, { chatId, text, buttonRows }, position) {
+  const built = node(name, "n8n-nodes-base.telegram", 1.2, {
+    chatId,
+    text,
+    replyMarkup: "inlineKeyboard",
+    inlineKeyboard: {
+      rows: buttonRows.map((row) => ({
+        row: {
+          buttons: row.map((button) => ({
+            text: button.text,
+            additionalFields: { callback_data: button.callbackData },
+          })),
+        },
+      })),
+    },
+    additionalFields: { appendAttribution: false },
+  }, position, { credentials: CREDENTIAL.telegram });
+  built.onError = "continueRegularOutput";
+  return built;
+}
+
+/** HTTP Request against Plaid Sandbox, authenticated by the header credential. */
+function plaidNode(name, endpoint, bodyExpression, position) {
+  return node(name, "n8n-nodes-base.httpRequest", 4.2, {
+    method: "POST",
+    url: `https://sandbox.plaid.com${endpoint}`,
+    // Custom Auth is a GENERIC credential type, not a predefined one. Declaring
+    // it as predefined silently applies no auth at all, and Plaid answers
+    // MISSING_FIELDS for client_id and secret as though they were never sent.
+    authentication: "genericCredentialType",
+    genericAuthType: "httpCustomAuth",
+    sendBody: true,
+    contentType: "json",
+    specifyBody: "json",
+    jsonBody: bodyExpression,
+    options: { timeout: 30000 },
+  }, position, { credentials: CREDENTIAL.plaid });
+}
+
+/**
+ * n8n-hosted form.
+ *
+ * Built from scratch rather than from webhookNode: a Form Trigger registers two
+ * webhooks (the page and the submission), and leftover webhook-only parameters
+ * such as httpMethod stop the POST one from registering at all - the form page
+ * still renders, so it looks fine until a submission silently 404s.
+ */
+function formTriggerNode(name, { formPath, title, description, fields }, position) {
+  return node(name, "n8n-nodes-base.formTrigger", 2.2, {
+    path: formPath,
+    formTitle: title,
+    formDescription: description,
+    formFields: { values: fields },
+    options: {},
+  }, position, { webhookId: formPath });
+}
+
 function webhookNode(name, urlPath, position, options = {}) {
   return node(name, "n8n-nodes-base.webhook", 2.1, {
     httpMethod: options.method || "POST",
@@ -179,6 +246,7 @@ function airtableMirrorNode(name, { tableName, bodyExpression }, position) {
     authentication: "predefinedCredentialType",
     nodeCredentialType: "airtableTokenApi",
     sendBody: true,
+    contentType: "json",
     specifyBody: "json",
     jsonBody: bodyExpression,
     options: { timeout: 10000 },
@@ -251,7 +319,10 @@ module.exports = {
   imapTriggerNode,
   emailSendNode,
   telegramNode,
+  telegramCardNode,
+  plaidNode,
   webhookNode,
+  formTriggerNode,
   ifNode,
   booleanCondition,
   airtableMirrorNode,

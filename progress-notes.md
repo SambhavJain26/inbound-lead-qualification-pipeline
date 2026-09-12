@@ -660,3 +660,78 @@ curl -X POST "$TUNNEL/webhook/tour-completed" -d '{"ref_token":"R-xxxx"}'
 ```
 
 Next: Stage 4 — WF2 application intake and verification.
+
+---
+
+## 2026-09-12 — Stage 4: WF2 Working, Both Demo Paths Verified
+
+The screening engine runs end to end on both fixtures, with a real Plaid Sandbox call in the
+middle.
+
+**Maya — clean approval**
+
+```
+extracted_monthly_income | 4996.33   <- AI read it off the uploaded PDF
+verified_monthly_income  | 4996.33   <- real Plaid Sandbox call
+credit_score             | 712
+criteria_result          | meets_criteria
+status                   | awaiting_decision
+```
+
+**Devon — the moment the demo exists for**
+
+```
+claimed_monthly_income   | 7800.00
+extracted_monthly_income | 7800.00   <- what his pay stub says
+verified_monthly_income  | 4996.33   <- what his payroll deposits show
+document_variance_pct    | 56.1
+criteria_result          | does_not_meet
+status                   | stopped_for_human
+```
+
+Devon clears 4.0x on his paperwork. Verified against actual deposits he is at 2.56x. The
+system stops, sends him nothing, and hands the manager the FCRA adverse-action requirements
+rather than generating a denial.
+
+### Built
+
+- `scripts/lib/screening-lib.js` — SSN masking, Plaid normalisation, the three-number income
+  comparison, and the deterministic criteria engine. 19 tests in
+  `scripts/test-screening-lib.js`, including a source-of-income case proving the income
+  multiple is applied to tenant-responsible rent, and an assertion that the engine's output
+  never contains a decision, score, or recommendation.
+- `scripts/build-wf2-application-verify.js` — 18 nodes.
+- `scripts/submit-application.js` — submits a fixture application with its pay stub.
+
+### Six n8n findings, all now in CLAUDE.md
+
+Stage 4 cost more debugging than any other, almost entirely on n8n's own conventions rather
+than on logic. Each of these failed *silently* or with a message pointing somewhere else:
+
+1. **A Form Trigger submits `field-0`, `field-1`, ... in declaration order**, not by label.
+   Posting labels is accepted and every field arrives `null` — the submission succeeds, the
+   workflow runs, and the data is empty. `submit-application.js` now reads the field order
+   out of the built workflow JSON so it cannot drift.
+2. **An uploaded file is keyed after `field-N`, not the field label.** Re-keyed to `paystub`
+   in the first Code node.
+3. **Postgres nodes drop binary data.** The pay stub has to reach the extract node before any
+   database node. WF2 is one sequential chain for this reason, not parallel branches.
+4. **HTTP Request needs `contentType: "json"`** alongside `sendBody` and `specifyBody`.
+   Without it the body is form-encoded and Plaid answered a bare 400.
+5. **`httpCustomAuth` is a GENERIC credential type**, not a predefined one. Declared wrongly
+   it applies no auth at all and Plaid reported `MISSING_FIELDS: client_id, secret` as though
+   the credential had never been created.
+6. **A trimmed copy of a shared helper is a bug waiting to happen.** WF2 had a local copy of
+   the AI unwrapper missing the `text` hop, so a perfectly correct extraction was rejected as
+   "unexpected shape". Both workflows now use `unwrapAiPayload` from the library. This is
+   exactly what the "never duplicate logic between a lib and a workflow" rule is for.
+
+Also worth remembering: `alwaysOutputData: true` on a Postgres node turns "no rows" into an
+empty item, which then writes a null foreign key instead of failing. Removed from the unit
+lookup so a missing unit fails loudly.
+
+### Remaining in Stage 4
+
+- Confirm the Telegram decision card renders with its three buttons, and the stop card with
+  the adverse-action requirements
+- Verify the double-tap guard once WF3 exists to receive the callbacks

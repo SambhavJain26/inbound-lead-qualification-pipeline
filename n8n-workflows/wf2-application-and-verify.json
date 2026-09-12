@@ -1,0 +1,795 @@
+{
+  "id": "wf2-application-and-verify",
+  "name": "WF2 Application And Verify",
+  "active": true,
+  "nodes": [
+    {
+      "id": "rental-application-form",
+      "name": "Rental Application Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -720,
+        0
+      ],
+      "parameters": {
+        "path": "rental-application",
+        "formTitle": "Rental Application",
+        "formDescription": "412 Maple Street, Springfield. Applying does not commit you to anything - it puts you forward for consideration.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "ref_token",
+              "fieldType": "text",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "unit_code",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "full_name",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "phone",
+              "fieldType": "text",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "ssn",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "current_address",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "prior_address",
+              "fieldType": "text",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "desired_move_in",
+              "fieldType": "date",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "employer_name",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "job_title",
+              "fieldType": "text",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "claimed_monthly_income",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "rental_assistance_amount",
+              "fieldType": "number",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "occupants",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "pets",
+              "fieldType": "text",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "vehicles",
+              "fieldType": "text",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "prior_eviction",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "No"
+                  },
+                  {
+                    "option": "Yes"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "broken_lease",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "No"
+                  },
+                  {
+                    "option": "Yes"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "bankruptcy",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "No"
+                  },
+                  {
+                    "option": "Yes"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "paystub",
+              "fieldType": "file",
+              "requiredField": true,
+              "acceptFileTypes": ".pdf",
+              "multipleFiles": false
+            },
+            {
+              "fieldLabel": "fcra_consent",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "I authorise these checks"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "webhookId": "rental-application"
+    },
+    {
+      "id": "normalise-and-mask-application",
+      "name": "Normalise And Mask Application",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -500,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "/**\n * Screening logic: income comparison and the deterministic criteria engine.\n *\n * Inlined into n8n Code nodes, so it stays dependency-free and avoids backticks\n * and template literals - those are consumed before the code reaches the node.\n *\n * NOTHING HERE CALLS A MODEL. The criteria engine reads manager-configured\n * thresholds and applies them identically to every applicant, which is what\n * HUD's May 2024 guidance describes when it says a screening tool should\n * \"implement, rather than set\" the housing provider's policies.\n *\n * It emits a classification and an evidence trail. It never emits a decision,\n * a score, a rank, or a recommendation - a human does that.\n */\n\n/* --------------------------------------------------------------------- PII */\n\n/**\n * An application form collects an SSN because a real one does. We keep the last\n * four and discard the rest on arrival; the raw value is never stored.\n */\nfunction maskSsn(raw) {\n  var digits = String(raw || \"\").replace(/\\D/g, \"\");\n  if (digits.length < 4) return null;\n  return digits.slice(-4);\n}\n\n/* ------------------------------------------------------- Plaid normalisation */\n\nvar PERIODS_PER_YEAR = {\n  WEEKLY: 52,\n  BIWEEKLY: 26,\n  SEMI_MONTHLY: 24,\n  SEMIMONTHLY: 24,\n  MONTHLY: 12,\n  ANNUALLY: 1,\n  ANNUAL: 1,\n};\n\nfunction monthlyFromPeriod(amount, frequency) {\n  var perYear = PERIODS_PER_YEAR[String(frequency || \"\").toUpperCase()];\n  if (!perYear || !amount) return null;\n  return Math.round((amount * perYear) / 12 * 100) / 100;\n}\n\n/**\n * Pulls verified monthly income out of a /credit/payroll_income/get response.\n *\n * Uses the most recent pay stub and its stated frequency rather than summing\n * year-to-date, because YTD in Sandbox is not a full year and would understate\n * the figure.\n */\nfunction parsePlaidPayrollIncome(response) {\n  var result = {\n    verified_monthly_income: null,\n    employer_name: null,\n    pay_frequency: null,\n    gross_per_period: null,\n    pay_period_end: null,\n    employee_name: null,\n    source: \"plaid_sandbox\",\n    warnings: [],\n  };\n\n  var items = (response && response.items) || [];\n  var stub = null;\n  var source = null;\n\n  for (var i = 0; i < items.length && !stub; i++) {\n    var sources = items[i].payroll_income || [];\n    for (var j = 0; j < sources.length && !stub; j++) {\n      var stubs = sources[j].pay_stubs || [];\n      if (stubs.length) {\n        source = sources[j];\n        // Most recent period first.\n        stub = stubs.slice().sort(function (a, b) {\n          var ea = (a.pay_period_details || {}).end_date || \"\";\n          var eb = (b.pay_period_details || {}).end_date || \"\";\n          return eb.localeCompare(ea);\n        })[0];\n      }\n    }\n  }\n\n  if (!stub) {\n    result.warnings.push(\"no pay stubs in the Plaid response\");\n    return result;\n  }\n\n  var details = stub.pay_period_details || {};\n  result.employer_name = (source && source.employer && source.employer.name) || null;\n  result.employee_name = (stub.employee && stub.employee.name) || null;\n  result.pay_frequency = details.pay_frequency || null;\n  result.gross_per_period = details.gross_earnings === undefined ? null : details.gross_earnings;\n  result.pay_period_end = details.end_date || null;\n\n  result.verified_monthly_income = monthlyFromPeriod(result.gross_per_period, result.pay_frequency);\n  if (result.verified_monthly_income === null) {\n    result.warnings.push(\"could not derive a monthly figure from gross \" +\n      result.gross_per_period + \" at frequency \" + result.pay_frequency);\n  }\n\n  return result;\n}\n\n/* ------------------------------------------------------- income comparison */\n\n/**\n * The three numbers the demo puts side by side.\n *\n *   claimed   - what the applicant typed on the form\n *   extracted - what the model read off the uploaded pay stub\n *   verified  - what the bank actually shows\n *\n * A pay stub can be edited in a photo editor. A deposit history cannot. When\n * these disagree beyond tolerance the file is flagged for a human.\n */\nfunction computeIncomeComparison(input) {\n  var claimed = input.claimed === null || input.claimed === undefined ? null : Number(input.claimed);\n  var extracted = input.extracted === null || input.extracted === undefined ? null : Number(input.extracted);\n  var verified = input.verified === null || input.verified === undefined ? null : Number(input.verified);\n  var tolerance = Number(input.tolerancePct === undefined ? 10 : input.tolerancePct);\n\n  function variance(value) {\n    if (value === null || verified === null || verified === 0) return null;\n    return Math.round(Math.abs(value - verified) / verified * 1000) / 10;\n  }\n\n  var documentVariance = variance(extracted);\n  var claimedVariance = variance(claimed);\n\n  return {\n    claimed_monthly: claimed,\n    extracted_monthly: extracted,\n    verified_monthly: verified,\n    tolerance_pct: tolerance,\n    document_variance_pct: documentVariance,\n    claimed_variance_pct: claimedVariance,\n    document_matches: documentVariance === null ? null : documentVariance <= tolerance,\n    claimed_matches: claimedVariance === null ? null : claimedVariance <= tolerance,\n    // The single fact the manager needs at a glance.\n    mismatch_flagged:\n      (documentVariance !== null && documentVariance > tolerance) ||\n      (claimedVariance !== null && claimedVariance > tolerance),\n  };\n}\n\n/* ---------------------------------------------------------- criteria engine */\n\nfunction evidence(criterion, met, detail, source) {\n  return { criterion: criterion, met: met, detail: detail, source: source || null };\n}\n\n/**\n * Applies the manager's published criteria.\n *\n * @returns {{result: string, evidence: Array, tenant_responsible_rent: number}}\n *   result is one of meets_criteria | conditional | does_not_meet.\n */\nfunction runCriteriaEngine(input) {\n  var app = input.application || {};\n  var unit = input.unit || {};\n  var config = input.config || {};\n  var comparison = input.comparison || {};\n\n  var incomeMultiple = Number(config.income_multiple || 3);\n  var minCredit = Number(config.min_credit_score || 650);\n  var conditionalCredit = Number(config.conditional_credit_min || 600);\n  var maxEvictions = Number(config.max_eviction_filings || 0);\n\n  var rent = Number(unit.rent_amount || 0);\n  var assistance = Number(app.rental_assistance_amount || 0);\n\n  // The income multiple applies to the tenant's share of rent, not gross rent.\n  // Requiring a voucher holder to earn 3x the FULL rent is treated as\n  // source-of-income discrimination in the jurisdictions that protect it.\n  var tenantRent = Math.max(rent - assistance, 0);\n\n  var trail = [];\n  var verified = comparison.verified_monthly === undefined ? null : comparison.verified_monthly;\n\n  /* income multiple, against verified income only */\n  if (verified === null || !tenantRent) {\n    trail.push(evidence(\"income_multiple\", null,\n      \"cannot evaluate: verified income or rent is missing\", null));\n  } else {\n    var ratio = Math.round(verified / tenantRent * 100) / 100;\n    var detail = \"$\" + verified + \"/mo verified against $\" + tenantRent +\n      \" tenant-responsible rent = \" + ratio.toFixed(2) + \"x, threshold \" +\n      incomeMultiple.toFixed(2) + \"x\";\n    if (assistance > 0) {\n      detail += \" (rent $\" + rent + \" less $\" + assistance + \" rental assistance)\";\n    }\n    trail.push(evidence(\"income_multiple\", ratio >= incomeMultiple, detail, {\n      document: \"plaid_payroll_income\",\n      field: \"verified_monthly_income\",\n      value: verified,\n    }));\n  }\n\n  /* documented income vs verified income */\n  if (comparison.document_matches === null || comparison.document_matches === undefined) {\n    trail.push(evidence(\"income_document_match\", null,\n      \"cannot evaluate: no extracted document income\", null));\n  } else {\n    trail.push(evidence(\"income_document_match\", comparison.document_matches,\n      \"pay stub implies $\" + comparison.extracted_monthly + \"/mo against $\" +\n        comparison.verified_monthly + \"/mo verified, variance \" +\n        comparison.document_variance_pct + \"% (tolerance \" + comparison.tolerance_pct + \"%)\",\n      { document: \"uploaded_paystub\", field: \"gross_this_period\", value: comparison.extracted_monthly }));\n  }\n\n  /* credit - mocked data, real threshold */\n  var credit = app.credit_score === null || app.credit_score === undefined ? null : Number(app.credit_score);\n  if (credit === null) {\n    trail.push(evidence(\"credit_score\", null, \"cannot evaluate: no credit score\", null));\n  } else {\n    trail.push(evidence(\"credit_score\", credit >= minCredit,\n      credit + \" against a \" + minCredit + \" threshold\" +\n        (credit < minCredit && credit >= conditionalCredit\n          ? \", within the \" + conditionalCredit + \"-\" + (minCredit - 1) + \" conditional band\"\n          : \"\"),\n      { document: \"screening_bureau_mock\", field: \"credit_score\", value: credit }));\n  }\n\n  /* eviction filings - mocked data, real threshold */\n  var evictions = app.eviction_filings === null || app.eviction_filings === undefined\n    ? null : Number(app.eviction_filings);\n  if (evictions === null) {\n    trail.push(evidence(\"eviction_history\", null, \"cannot evaluate: no eviction data\", null));\n  } else {\n    trail.push(evidence(\"eviction_history\", evictions <= maxEvictions,\n      evictions + \" filing(s) in the last \" + (config.eviction_lookback_years || 5) +\n        \" years, maximum \" + maxEvictions,\n      { document: \"screening_bureau_mock\", field: \"eviction_filings\", value: evictions }));\n  }\n\n  /* identity - mocked */\n  if (app.identity_match === null || app.identity_match === undefined) {\n    trail.push(evidence(\"identity_check\", null, \"cannot evaluate: no identity result\", null));\n  } else {\n    trail.push(evidence(\"identity_check\", Boolean(app.identity_match),\n      app.identity_match ? \"document and applicant details matched\" : \"identity did not match\",\n      { document: \"identity_check_mock\", field: \"match\", value: app.identity_match }));\n  }\n\n  /* ------------------------------------------------------------ outcome */\n\n  var failed = trail.filter(function (e) { return e.met === false; });\n  var unknown = trail.filter(function (e) { return e.met === null; });\n\n  var result;\n  if (failed.length === 0 && unknown.length === 0) {\n    result = \"meets_criteria\";\n  } else if (failed.length === 0) {\n    // Nothing failed, but something could not be evaluated. That is a human's\n    // call, not a pass.\n    result = \"conditional\";\n  } else {\n    var onlyCreditInBand =\n      failed.length === 1 &&\n      failed[0].criterion === \"credit_score\" &&\n      credit !== null &&\n      credit >= conditionalCredit;\n    result = onlyCreditInBand ? \"conditional\" : \"does_not_meet\";\n  }\n\n  return {\n    result: result,\n    evidence: trail,\n    tenant_responsible_rent: tenantRent,\n    failed_criteria: failed.map(function (e) { return e.criterion; }),\n    unevaluated_criteria: unknown.map(function (e) { return e.criterion; }),\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/**\n * What a real FCRA adverse-action process would require. Shown to the manager\n * on the stop path so the demo makes the point explicitly.\n *\n * This build never generates any of these documents.\n */\nfunction adverseActionRequirements() {\n  return [\n    \"Pre-adverse-action notice, including a copy of the consumer report\",\n    \"A copy of the FCRA Summary of Rights\",\n    \"A waiting period for the applicant to dispute (commonly five business days)\",\n    \"A final adverse-action notice naming the bureau that supplied the report\",\n  ];\n}\n\n/**\n * Shared front-of-funnel logic.\n *\n * This file is the single source of truth for lead parsing, reference tokens,\n * Tier A guardrails, and the pre-qualification gate. The build scripts inline it\n * into n8n Code nodes, so it must stay dependency-free and must not use\n * backticks or template literals - those are consumed before reaching the node.\n *\n * Nothing here calls a model. Everything here is deterministic.\n */\n\n/* ------------------------------------------------------------------ tokens */\n\n/**\n * Reference token carried in every subject line. Replies are matched on this\n * first and on sender address only as a fallback - the model never decides\n * which lead a message belongs to.\n */\nfunction makeRefToken(prefix, seed) {\n  var n = seed === undefined ? Math.floor(Math.random() * 9000) + 1000 : seed;\n  return prefix + \"-\" + String(n).slice(0, 4);\n}\n\nfunction extractRefToken(text) {\n  if (!text) return null;\n  var match = String(text).match(/\\[([RA]-\\d{4})\\]/);\n  return match ? match[1] : null;\n}\n\nfunction subjectWithToken(subject, token) {\n  if (extractRefToken(subject)) return subject;\n  return subject + \" [\" + token + \"]\";\n}\n\n/* ------------------------------------------------------- lead email parsing */\n\n/**\n * Parses a listing-site lead notification.\n *\n * Zillow delivers these as email with an anonymised relay reply-to and no phone\n * number, so the parser must tolerate a missing phone rather than treat it as a\n * failure. Anything it cannot determine is left null and flagged, never guessed.\n */\nfunction parseLeadEmail(input) {\n  var subject = input.subject || \"\";\n  var body = input.body || \"\";\n  var replyTo = input.replyTo || input.from || \"\";\n\n  var result = {\n    prospect_name: null,\n    prospect_email: null,\n    prospect_phone: null,\n    unit_hint: null,\n    inquiry_text: null,\n    source: \"zillow_email\",\n    parse_warnings: [],\n  };\n\n  var nameMatch = body.match(/^\\s*Renter:\\s*(.+)$/m);\n  if (nameMatch) result.prospect_name = nameMatch[1].trim();\n  else result.parse_warnings.push(\"no renter name found\");\n\n  var propertyMatch = body.match(/^\\s*Property:\\s*(.+)$/m);\n  if (propertyMatch) result.unit_hint = propertyMatch[1].trim();\n  else {\n    var subjectUnit = subject.match(/:\\s*(.+)$/);\n    if (subjectUnit) result.unit_hint = subjectUnit[1].trim();\n    else result.parse_warnings.push(\"no property reference found\");\n  }\n\n  // The renter's own words, between the quotes after \"Message:\".\n  var messageMatch = body.match(/Message:\\s*\"([\\s\\S]*?)\"/);\n  if (messageMatch) result.inquiry_text = messageMatch[1].replace(/\\s+/g, \" \").trim();\n  else result.parse_warnings.push(\"no inquiry text found\");\n\n  var emailMatch = String(replyTo).match(/[\\w.+-]+@[\\w.-]+\\.\\w+/);\n  if (emailMatch) result.prospect_email = emailMatch[0];\n  else result.parse_warnings.push(\"no reply address found\");\n\n  var phoneMatch = body.match(/(\\+?1[\\s.-]?)?\\(?\\d{3}\\)?[\\s.-]\\d{3}[\\s.-]\\d{4}/);\n  if (phoneMatch) result.prospect_phone = phoneMatch[0].trim();\n\n  return result;\n}\n\n/* ------------------------------------------------- unit knowledge for the AI */\n\n/**\n * Flattens a unit row into the only facts the FAQ model is allowed to use.\n * If a fact is not in here, the correct answer is \"I don't have that\".\n */\nfunction buildUnitKnowledge(unit) {\n  if (!unit) return null;\n  var facts = unit.faq_facts || {};\n  var knowledge = {\n    unit_code: unit.unit_code,\n    address: unit.address,\n    bedrooms: unit.beds,\n    bathrooms: Number(unit.baths),\n    square_feet: unit.sqft,\n    monthly_rent: Number(unit.rent_amount),\n    security_deposit: Number(unit.deposit_amount),\n    available_from: unit.available_from,\n    lease_term_months: unit.lease_term_months,\n    pet_policy: unit.pet_policy,\n    pet_fee_monthly: unit.pet_fee_monthly === null ? null : Number(unit.pet_fee_monthly),\n    parking: unit.parking,\n    utilities: unit.utilities_included,\n    laundry: unit.laundry,\n  };\n  Object.keys(facts).forEach(function (key) {\n    knowledge[key] = facts[key];\n  });\n  return knowledge;\n}\n\n/* -------------------------------------------------------------- guardrails */\n\n/**\n * Tier A guardrail. Runs on every message before it leaves, and again at send\n * time, because a manager may have edited the wording after it was drafted.\n *\n * Blocks: protected-class content, legal or lease commitments, rent negotiation,\n * availability promises, and invented numbers that are not in the unit facts.\n */\nvar PROTECTED_CLASS_PATTERNS = [\n  { pattern: /\\b(kids?|children|child|family friendly|families|school district)\\b/i, label: \"familial status\" },\n  { pattern: /\\b(disab|wheelchair|handicap|mental health|service animal policy)\\b/i, label: \"disability\" },\n  { pattern: /\\b(race|ethnic|nationality|immigration|citizen|visa status)\\b/i, label: \"national origin / race\" },\n  { pattern: /\\b(church|mosque|temple|synagogue|religio)\\b/i, label: \"religion\" },\n  { pattern: /\\b(marital status|married|single people|couples only)\\b/i, label: \"marital status\" },\n  { pattern: /\\b(section 8|voucher|housing assistance|welfare)\\b/i, label: \"source of income\" },\n  { pattern: /\\b(good neighborhood for|safe area for|type of people)\\b/i, label: \"steering\" },\n];\n\nvar COMMITMENT_PATTERNS = [\n  { pattern: /\\b(guarantee|guaranteed|we promise|you will be approved|pre-?approved)\\b/i, label: \"approval commitment\" },\n  { pattern: /\\b(hold (it|the unit) for you|reserved for you|it'?s yours)\\b/i, label: \"availability commitment\" },\n  { pattern: /\\b(we can lower|discount the rent|negotiate the rent|reduce the rent)\\b/i, label: \"rent negotiation\" },\n  { pattern: /\\b(legally|by law|you are entitled|your rights under)\\b/i, label: \"legal statement\" },\n  { pattern: /\\b(denied|rejected|you do not qualify|we cannot rent to you)\\b/i, label: \"adverse decision language\" },\n];\n\nfunction guardrailCheck(text, knowledge) {\n  var findings = [];\n  var body = String(text || \"\");\n\n  PROTECTED_CLASS_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"protected_class\", detail: rule.label });\n    }\n  });\n\n  COMMITMENT_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"commitment\", detail: rule.label });\n    }\n  });\n\n  // Any dollar figure in the message must appear in the unit facts. Catches the\n  // model inventing a rent, fee, or deposit.\n  if (knowledge) {\n    var allowed = [];\n    Object.keys(knowledge).forEach(function (key) {\n      var value = knowledge[key];\n      if (typeof value === \"number\") allowed.push(Math.round(value));\n      if (typeof value === \"string\") {\n        var found = value.match(/\\d[\\d,]*(\\.\\d+)?/g) || [];\n        found.forEach(function (n) { allowed.push(Math.round(Number(n.replace(/,/g, \"\")))); });\n      }\n    });\n\n    var quoted = body.match(/\\$\\s?\\d[\\d,]*(\\.\\d+)?/g) || [];\n    quoted.forEach(function (raw) {\n      var amount = Math.round(Number(raw.replace(/[$,\\s]/g, \"\")));\n      if (allowed.indexOf(amount) === -1) {\n        findings.push({\n          severity: \"block\",\n          category: \"unsupported_figure\",\n          detail: raw.trim() + \" is not in the unit facts\",\n        });\n      }\n    });\n  }\n\n  var blocking = findings.filter(function (f) { return f.severity === \"block\"; });\n  return {\n    passed: blocking.length === 0,\n    findings: findings,\n    checked_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- pre-qualification */\n\n/**\n * Scheduling triage only. This is NOT a rental decision and its output must\n * never be phrased to a prospect as a denial.\n *\n * Deliberately narrow: move-in timing, self-reported income against the\n * published multiple, pet policy, and occupancy. Nothing else is considered and\n * nothing here is verified.\n */\nfunction prequalGate(answers, unit, config) {\n  var reasons = [];\n  var missing = [];\n  var incomeMultiple = config && config.income_multiple ? Number(config.income_multiple) : 3;\n\n  if (!answers || answers.move_in_date === null || answers.move_in_date === undefined) {\n    missing.push(\"move_in_date\");\n  } else {\n    var availableFrom = new Date(unit.available_from);\n    var wanted = new Date(answers.move_in_date);\n    var daysAfter = (wanted - availableFrom) / 86400000;\n\n    if (daysAfter < -14) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"wants \" + answers.move_in_date + \", unit is available from \" + unit.available_from,\n      });\n    } else if (daysAfter > 60) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"move-in is more than 60 days after the unit is available\",\n      });\n    } else {\n      reasons.push({ criterion: \"move_in_timing\", met: true, detail: answers.move_in_date });\n    }\n  }\n\n  if (answers && (answers.stated_monthly_income === null || answers.stated_monthly_income === undefined)) {\n    missing.push(\"stated_monthly_income\");\n  } else if (answers) {\n    // Self-reported and unverified. Verification happens after an application.\n    var rent = Number(unit.rent_amount);\n    var stated = Number(answers.stated_monthly_income);\n    var ratio = stated / rent;\n    reasons.push({\n      criterion: \"stated_income\",\n      met: ratio >= incomeMultiple,\n      detail: \"$\" + stated + \"/mo stated against $\" + rent + \" rent = \" + ratio.toFixed(2) + \"x (unverified)\",\n    });\n  }\n\n  if (answers && answers.pets && String(answers.pets).toLowerCase() !== \"none\") {\n    var weightMatch = String(answers.pets).match(/(\\d+)\\s?(lb|pound)/i);\n    var overLimit = weightMatch && Number(weightMatch[1]) > 50;\n    reasons.push({\n      criterion: \"pets\",\n      met: !overLimit,\n      detail: overLimit ? \"stated pet is over the 50 lb limit\" : String(answers.pets),\n    });\n  }\n\n  var failed = reasons.filter(function (r) { return r.met === false; });\n  var result = missing.length ? \"incomplete\" : failed.length ? \"not_clear\" : \"clear\";\n\n  return {\n    result: result,\n    reasons: reasons,\n    missing: missing,\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- AI output shape */\n\n/**\n * Unwraps structured output from the OpenAI node.\n *\n * The payload arrives wrapped differently depending on node version, whether\n * simplify is on, and whether a JSON schema was applied - sometimes a parsed\n * object, sometimes a JSON string under `output`, sometimes nested one level\n * deeper. Probing for a known key is more robust than assuming a shape.\n *\n * @param {*} data       the item's json\n * @param {string} anchor a key that must exist on the real payload\n */\nfunction unwrapAiPayload(data, anchor) {\n  var value = data;\n\n  for (var depth = 0; depth < 6; depth++) {\n    if (value === null || value === undefined) break;\n\n    if (typeof value === \"string\") {\n      var trimmed = value.trim();\n      if (trimmed.charAt(0) !== \"{\" && trimmed.charAt(0) !== \"[\") break;\n      try {\n        value = JSON.parse(trimmed);\n      } catch (error) {\n        break;\n      }\n      continue;\n    }\n\n    if (Array.isArray(value)) {\n      value = value[0];\n      continue;\n    }\n\n    if (typeof value === \"object\") {\n      if (Object.prototype.hasOwnProperty.call(value, anchor)) return value;\n\n      var next =\n        value.output !== undefined ? value.output :\n        value.message !== undefined ? value.message :\n        value.content !== undefined ? value.content :\n        value.text !== undefined ? value.text :\n        value.json !== undefined ? value.json : undefined;\n\n      if (next === undefined) break;\n      value = next;\n      continue;\n    }\n\n    break;\n  }\n\n  return value;\n}\n\n/* ------------------------------------------------------------- lock code */\n\n/**\n * Self-guided tour entry code.\n *\n * MOCK. A real deployment issues this through a smart-lock platform\n * (Rently, Tour24, ButterflyMX) bound to the booking window. Here it is\n * generated locally and logged, and every record it touches is marked\n * source: \"mock\".\n */\nfunction generateLockCode() {\n  var code = String(Math.floor(Math.random() * 900000) + 100000);\n  return { code: code, source: \"mock\", issued_at: new Date().toISOString() };\n}\n\n// Normalises the submitted form and discards the raw SSN immediately.\nconst out = [];\nfor (const item of $input.all()) {\n  const form = item.json;\n\n  // Form Trigger field keys can arrive generically, so read defensively.\n  function field(names, fallback) {\n    for (const name of names) {\n      if (form[name] !== undefined && form[name] !== '') return form[name];\n    }\n    return fallback === undefined ? null : fallback;\n  }\n\n  function toNumber(value) {\n    if (value === null || value === undefined || value === '') return null;\n    const n = Number(String(value).replace(/[^0-9.\\-]/g, ''));\n    return Number.isFinite(n) ? n : null;\n  }\n\n  // The raw SSN is reduced to its last four digits here and never stored.\n  const ssnLast4 = maskSsn(field(['ssn', 'SSN', 'Social Security Number']));\n\n  const refToken = extractRefToken(String(field(['ref_token', 'Reference Code'], '')));\n\n  out.push({\n    json: {\n      lead_ref_token: refToken,\n      application_ref_token: makeRefToken('A'),\n      full_name: field(['full_name', 'Full Name']),\n      email: field(['email', 'Email']),\n      phone: field(['phone', 'Phone']),\n      ssn_last4: ssnLast4,\n      current_address: field(['current_address', 'Current Address']),\n      prior_address: field(['prior_address', 'Prior Address']),\n      desired_move_in: field(['desired_move_in', 'Desired Move-In Date']),\n      employer_name: field(['employer_name', 'Employer']),\n      job_title: field(['job_title', 'Job Title']),\n      claimed_monthly_income: toNumber(field(['claimed_monthly_income', 'Gross Monthly Income'])),\n      rental_assistance_amount: toNumber(field(['rental_assistance_amount', 'Monthly Rental Assistance'])) || 0,\n      occupants: toNumber(field(['occupants', 'Adults Living There'])),\n      pets: field(['pets', 'Pets'], 'none'),\n      vehicles: field(['vehicles', 'Vehicles'], 'none'),\n      disclosures: {\n        prior_eviction_filing: String(field(['prior_eviction', 'Prior Eviction Filing'], 'No')) === 'Yes',\n        broken_lease: String(field(['broken_lease', 'Broken Lease'], 'No')) === 'Yes',\n        bankruptcy_7_years: String(field(['bankruptcy', 'Bankruptcy In Last 7 Years'], 'No')) === 'Yes',\n      },\n      fcra_consent: true,\n      unit_code: field(['unit_code', 'Unit'], 'MAPLE-2B'),\n    },\n    // Re-key the upload to a stable name. The Form Trigger names the binary\n    // after the submitted field (field-N), not the field label, so the\n    // downstream Extract node cannot rely on a fixed key otherwise.\n    binary: (function () {\n      const incoming = item.binary || {};\n      const keys = Object.keys(incoming);\n      if (!keys.length) return {};\n      const pdfKey = keys.find(function (k) {\n        const mime = (incoming[k] || {}).mimeType || '';\n        return mime.indexOf('pdf') !== -1;\n      }) || keys[0];\n      return { paystub: incoming[pdfKey] };\n    })(),\n  });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "load-unit-for-application",
+      "name": "Load Unit For Application",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -280,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM units WHERE unit_code = $1 LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [$('Normalise And Mask Application').first().json.unit_code] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      }
+    },
+    {
+      "id": "load-screening-criteria",
+      "name": "Load Screening Criteria",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -60,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM criteria_config WHERE is_active ORDER BY id DESC LIMIT 1;",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      }
+    },
+    {
+      "id": "create-application-record",
+      "name": "Create Application Record",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        160,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO applications\n  (ref_token, lead_id, unit_id, full_name, email, phone, ssn_last4,\n   current_address, prior_address, desired_move_in, employer_name, job_title,\n   claimed_monthly_income, rental_assistance_amount, occupants, pets, vehicles,\n   disclosures, fcra_consent_at, status)\nVALUES\n  ($1, (SELECT id FROM leads WHERE ref_token = NULLIF($2::text,'')),\n   $3::int,\n   $4, $5, NULLIF($6::text,''), NULLIF($7::text,''),\n   NULLIF($8::text,''), NULLIF($9::text,''), NULLIF($10::text,'')::date,\n   NULLIF($11::text,''), NULLIF($12::text,''),\n   NULLIF($13::text,'')::numeric, NULLIF($14::text,'')::numeric,\n   jsonb_build_array(jsonb_build_object('count', NULLIF($15::text,'')::int)),\n   jsonb_build_array(jsonb_build_object('description', $16)),\n   jsonb_build_array(jsonb_build_object('description', $17)),\n   $18::jsonb, now(), 'verifying')\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [$('Normalise And Mask Application').first().json.application_ref_token,($('Normalise And Mask Application').first().json.lead_ref_token ?? ''),$('Load Unit For Application').first().json.id,$('Normalise And Mask Application').first().json.full_name,$('Normalise And Mask Application').first().json.email,($('Normalise And Mask Application').first().json.phone ?? ''),($('Normalise And Mask Application').first().json.ssn_last4 ?? ''),($('Normalise And Mask Application').first().json.current_address ?? ''),($('Normalise And Mask Application').first().json.prior_address ?? ''),($('Normalise And Mask Application').first().json.desired_move_in ?? ''),($('Normalise And Mask Application').first().json.employer_name ?? ''),($('Normalise And Mask Application').first().json.job_title ?? ''),($('Normalise And Mask Application').first().json.claimed_monthly_income ?? ''),($('Normalise And Mask Application').first().json.rental_assistance_amount ?? 0),($('Normalise And Mask Application').first().json.occupants ?? ''),($('Normalise And Mask Application').first().json.pets ?? 'none'),($('Normalise And Mask Application').first().json.vehicles ?? 'none'),JSON.stringify($('Normalise And Mask Application').first().json.disclosures)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      }
+    },
+    {
+      "id": "extract-paystub-text",
+      "name": "Extract Paystub Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        380,
+        -160
+      ],
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "paystub",
+        "options": {}
+      }
+    },
+    {
+      "id": "extract-paystub-fields",
+      "name": "Extract Paystub Fields",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        600,
+        -160
+      ],
+      "parameters": {
+        "resource": "text",
+        "operation": "response",
+        "modelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gpt-5.6-luna"
+        },
+        "responses": {
+          "values": [
+            {
+              "type": "text",
+              "role": "user",
+              "content": "=Pay stub text:\n\n{{ $json.text }}"
+            }
+          ]
+        },
+        "simplify": true,
+        "options": {
+          "instructions": "Extract figures from a pay stub. Report only what is printed on the document.\n\nNever estimate, never infer, never annualise, and never fill in a plausible value.\nIf a field is not printed on the document, return null for it.\n\ngross_this_period is the gross for THIS pay period only. Do not return the year-to-date\ncolumn. If both appear, take the 'this period' one.\n\nFor every figure you report, add the verbatim line you read it from to source_quotes, so a\nhuman can check the value against the document.\n\nDo not record anything about the person beyond their name as printed. Do not output any\njudgement, assessment, score, or recommendation about the applicant.",
+          "maxTokens": 700,
+          "textFormat": {
+            "textOptions": {
+              "type": "json_schema",
+              "name": "paystub_fields",
+              "schema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"employer_name\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Employer as printed on the stub.\"\n    },\n    \"employee_name\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Employee as printed on the stub.\"\n    },\n    \"gross_this_period\": {\n      \"type\": [\n        \"number\",\n        \"null\"\n      ],\n      \"description\": \"Gross pay for this period only, not year to date.\"\n    },\n    \"pay_frequency\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"One of WEEKLY, BIWEEKLY, SEMI_MONTHLY, MONTHLY, or null if not stated.\"\n    },\n    \"pay_period_end\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"ISO date of the period end.\"\n    },\n    \"net_pay\": {\n      \"type\": [\n        \"number\",\n        \"null\"\n      ],\n      \"description\": \"Net pay for this period.\"\n    },\n    \"source_quotes\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      },\n      \"description\": \"Verbatim lines from the document that each figure was read from.\"\n    }\n  },\n  \"additionalProperties\": false,\n  \"required\": [\n    \"employer_name\",\n    \"employee_name\",\n    \"gross_this_period\",\n    \"pay_frequency\",\n    \"pay_period_end\",\n    \"net_pay\",\n    \"source_quotes\"\n  ]\n}"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "__OPENAI_CREDENTIAL_ID__",
+          "name": "Leasing OpenAI"
+        }
+      }
+    },
+    {
+      "id": "plaid-create-user",
+      "name": "Plaid: Create User",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        380,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://sandbox.plaid.com/user/create",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ client_user_id: 'leasing-' + $('Create Application Record').first().json.ref_token + '-' + Date.now() }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpCustomAuth": {
+          "id": "__PLAID_CREDENTIAL_ID__",
+          "name": "Leasing Plaid Sandbox"
+        }
+      }
+    },
+    {
+      "id": "plaid-init-sandbox-item",
+      "name": "Plaid: Init Sandbox Item",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        600,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://sandbox.plaid.com/sandbox/public_token/create",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ institution_id: 'ins_135842', initial_products: ['income_verification'], user_id: $json.user_id }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpCustomAuth": {
+          "id": "__PLAID_CREDENTIAL_ID__",
+          "name": "Leasing Plaid Sandbox"
+        }
+      }
+    },
+    {
+      "id": "plaid-get-payroll-income",
+      "name": "Plaid: Get Payroll Income",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        820,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://sandbox.plaid.com/credit/payroll_income/get",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ user_id: $('Plaid: Create User').first().json.user_id }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpCustomAuth": {
+          "id": "__PLAID_CREDENTIAL_ID__",
+          "name": "Leasing Plaid Sandbox"
+        }
+      }
+    },
+    {
+      "id": "compare-income-sources",
+      "name": "Compare Income Sources",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "/**\n * Screening logic: income comparison and the deterministic criteria engine.\n *\n * Inlined into n8n Code nodes, so it stays dependency-free and avoids backticks\n * and template literals - those are consumed before the code reaches the node.\n *\n * NOTHING HERE CALLS A MODEL. The criteria engine reads manager-configured\n * thresholds and applies them identically to every applicant, which is what\n * HUD's May 2024 guidance describes when it says a screening tool should\n * \"implement, rather than set\" the housing provider's policies.\n *\n * It emits a classification and an evidence trail. It never emits a decision,\n * a score, a rank, or a recommendation - a human does that.\n */\n\n/* --------------------------------------------------------------------- PII */\n\n/**\n * An application form collects an SSN because a real one does. We keep the last\n * four and discard the rest on arrival; the raw value is never stored.\n */\nfunction maskSsn(raw) {\n  var digits = String(raw || \"\").replace(/\\D/g, \"\");\n  if (digits.length < 4) return null;\n  return digits.slice(-4);\n}\n\n/* ------------------------------------------------------- Plaid normalisation */\n\nvar PERIODS_PER_YEAR = {\n  WEEKLY: 52,\n  BIWEEKLY: 26,\n  SEMI_MONTHLY: 24,\n  SEMIMONTHLY: 24,\n  MONTHLY: 12,\n  ANNUALLY: 1,\n  ANNUAL: 1,\n};\n\nfunction monthlyFromPeriod(amount, frequency) {\n  var perYear = PERIODS_PER_YEAR[String(frequency || \"\").toUpperCase()];\n  if (!perYear || !amount) return null;\n  return Math.round((amount * perYear) / 12 * 100) / 100;\n}\n\n/**\n * Pulls verified monthly income out of a /credit/payroll_income/get response.\n *\n * Uses the most recent pay stub and its stated frequency rather than summing\n * year-to-date, because YTD in Sandbox is not a full year and would understate\n * the figure.\n */\nfunction parsePlaidPayrollIncome(response) {\n  var result = {\n    verified_monthly_income: null,\n    employer_name: null,\n    pay_frequency: null,\n    gross_per_period: null,\n    pay_period_end: null,\n    employee_name: null,\n    source: \"plaid_sandbox\",\n    warnings: [],\n  };\n\n  var items = (response && response.items) || [];\n  var stub = null;\n  var source = null;\n\n  for (var i = 0; i < items.length && !stub; i++) {\n    var sources = items[i].payroll_income || [];\n    for (var j = 0; j < sources.length && !stub; j++) {\n      var stubs = sources[j].pay_stubs || [];\n      if (stubs.length) {\n        source = sources[j];\n        // Most recent period first.\n        stub = stubs.slice().sort(function (a, b) {\n          var ea = (a.pay_period_details || {}).end_date || \"\";\n          var eb = (b.pay_period_details || {}).end_date || \"\";\n          return eb.localeCompare(ea);\n        })[0];\n      }\n    }\n  }\n\n  if (!stub) {\n    result.warnings.push(\"no pay stubs in the Plaid response\");\n    return result;\n  }\n\n  var details = stub.pay_period_details || {};\n  result.employer_name = (source && source.employer && source.employer.name) || null;\n  result.employee_name = (stub.employee && stub.employee.name) || null;\n  result.pay_frequency = details.pay_frequency || null;\n  result.gross_per_period = details.gross_earnings === undefined ? null : details.gross_earnings;\n  result.pay_period_end = details.end_date || null;\n\n  result.verified_monthly_income = monthlyFromPeriod(result.gross_per_period, result.pay_frequency);\n  if (result.verified_monthly_income === null) {\n    result.warnings.push(\"could not derive a monthly figure from gross \" +\n      result.gross_per_period + \" at frequency \" + result.pay_frequency);\n  }\n\n  return result;\n}\n\n/* ------------------------------------------------------- income comparison */\n\n/**\n * The three numbers the demo puts side by side.\n *\n *   claimed   - what the applicant typed on the form\n *   extracted - what the model read off the uploaded pay stub\n *   verified  - what the bank actually shows\n *\n * A pay stub can be edited in a photo editor. A deposit history cannot. When\n * these disagree beyond tolerance the file is flagged for a human.\n */\nfunction computeIncomeComparison(input) {\n  var claimed = input.claimed === null || input.claimed === undefined ? null : Number(input.claimed);\n  var extracted = input.extracted === null || input.extracted === undefined ? null : Number(input.extracted);\n  var verified = input.verified === null || input.verified === undefined ? null : Number(input.verified);\n  var tolerance = Number(input.tolerancePct === undefined ? 10 : input.tolerancePct);\n\n  function variance(value) {\n    if (value === null || verified === null || verified === 0) return null;\n    return Math.round(Math.abs(value - verified) / verified * 1000) / 10;\n  }\n\n  var documentVariance = variance(extracted);\n  var claimedVariance = variance(claimed);\n\n  return {\n    claimed_monthly: claimed,\n    extracted_monthly: extracted,\n    verified_monthly: verified,\n    tolerance_pct: tolerance,\n    document_variance_pct: documentVariance,\n    claimed_variance_pct: claimedVariance,\n    document_matches: documentVariance === null ? null : documentVariance <= tolerance,\n    claimed_matches: claimedVariance === null ? null : claimedVariance <= tolerance,\n    // The single fact the manager needs at a glance.\n    mismatch_flagged:\n      (documentVariance !== null && documentVariance > tolerance) ||\n      (claimedVariance !== null && claimedVariance > tolerance),\n  };\n}\n\n/* ---------------------------------------------------------- criteria engine */\n\nfunction evidence(criterion, met, detail, source) {\n  return { criterion: criterion, met: met, detail: detail, source: source || null };\n}\n\n/**\n * Applies the manager's published criteria.\n *\n * @returns {{result: string, evidence: Array, tenant_responsible_rent: number}}\n *   result is one of meets_criteria | conditional | does_not_meet.\n */\nfunction runCriteriaEngine(input) {\n  var app = input.application || {};\n  var unit = input.unit || {};\n  var config = input.config || {};\n  var comparison = input.comparison || {};\n\n  var incomeMultiple = Number(config.income_multiple || 3);\n  var minCredit = Number(config.min_credit_score || 650);\n  var conditionalCredit = Number(config.conditional_credit_min || 600);\n  var maxEvictions = Number(config.max_eviction_filings || 0);\n\n  var rent = Number(unit.rent_amount || 0);\n  var assistance = Number(app.rental_assistance_amount || 0);\n\n  // The income multiple applies to the tenant's share of rent, not gross rent.\n  // Requiring a voucher holder to earn 3x the FULL rent is treated as\n  // source-of-income discrimination in the jurisdictions that protect it.\n  var tenantRent = Math.max(rent - assistance, 0);\n\n  var trail = [];\n  var verified = comparison.verified_monthly === undefined ? null : comparison.verified_monthly;\n\n  /* income multiple, against verified income only */\n  if (verified === null || !tenantRent) {\n    trail.push(evidence(\"income_multiple\", null,\n      \"cannot evaluate: verified income or rent is missing\", null));\n  } else {\n    var ratio = Math.round(verified / tenantRent * 100) / 100;\n    var detail = \"$\" + verified + \"/mo verified against $\" + tenantRent +\n      \" tenant-responsible rent = \" + ratio.toFixed(2) + \"x, threshold \" +\n      incomeMultiple.toFixed(2) + \"x\";\n    if (assistance > 0) {\n      detail += \" (rent $\" + rent + \" less $\" + assistance + \" rental assistance)\";\n    }\n    trail.push(evidence(\"income_multiple\", ratio >= incomeMultiple, detail, {\n      document: \"plaid_payroll_income\",\n      field: \"verified_monthly_income\",\n      value: verified,\n    }));\n  }\n\n  /* documented income vs verified income */\n  if (comparison.document_matches === null || comparison.document_matches === undefined) {\n    trail.push(evidence(\"income_document_match\", null,\n      \"cannot evaluate: no extracted document income\", null));\n  } else {\n    trail.push(evidence(\"income_document_match\", comparison.document_matches,\n      \"pay stub implies $\" + comparison.extracted_monthly + \"/mo against $\" +\n        comparison.verified_monthly + \"/mo verified, variance \" +\n        comparison.document_variance_pct + \"% (tolerance \" + comparison.tolerance_pct + \"%)\",\n      { document: \"uploaded_paystub\", field: \"gross_this_period\", value: comparison.extracted_monthly }));\n  }\n\n  /* credit - mocked data, real threshold */\n  var credit = app.credit_score === null || app.credit_score === undefined ? null : Number(app.credit_score);\n  if (credit === null) {\n    trail.push(evidence(\"credit_score\", null, \"cannot evaluate: no credit score\", null));\n  } else {\n    trail.push(evidence(\"credit_score\", credit >= minCredit,\n      credit + \" against a \" + minCredit + \" threshold\" +\n        (credit < minCredit && credit >= conditionalCredit\n          ? \", within the \" + conditionalCredit + \"-\" + (minCredit - 1) + \" conditional band\"\n          : \"\"),\n      { document: \"screening_bureau_mock\", field: \"credit_score\", value: credit }));\n  }\n\n  /* eviction filings - mocked data, real threshold */\n  var evictions = app.eviction_filings === null || app.eviction_filings === undefined\n    ? null : Number(app.eviction_filings);\n  if (evictions === null) {\n    trail.push(evidence(\"eviction_history\", null, \"cannot evaluate: no eviction data\", null));\n  } else {\n    trail.push(evidence(\"eviction_history\", evictions <= maxEvictions,\n      evictions + \" filing(s) in the last \" + (config.eviction_lookback_years || 5) +\n        \" years, maximum \" + maxEvictions,\n      { document: \"screening_bureau_mock\", field: \"eviction_filings\", value: evictions }));\n  }\n\n  /* identity - mocked */\n  if (app.identity_match === null || app.identity_match === undefined) {\n    trail.push(evidence(\"identity_check\", null, \"cannot evaluate: no identity result\", null));\n  } else {\n    trail.push(evidence(\"identity_check\", Boolean(app.identity_match),\n      app.identity_match ? \"document and applicant details matched\" : \"identity did not match\",\n      { document: \"identity_check_mock\", field: \"match\", value: app.identity_match }));\n  }\n\n  /* ------------------------------------------------------------ outcome */\n\n  var failed = trail.filter(function (e) { return e.met === false; });\n  var unknown = trail.filter(function (e) { return e.met === null; });\n\n  var result;\n  if (failed.length === 0 && unknown.length === 0) {\n    result = \"meets_criteria\";\n  } else if (failed.length === 0) {\n    // Nothing failed, but something could not be evaluated. That is a human's\n    // call, not a pass.\n    result = \"conditional\";\n  } else {\n    var onlyCreditInBand =\n      failed.length === 1 &&\n      failed[0].criterion === \"credit_score\" &&\n      credit !== null &&\n      credit >= conditionalCredit;\n    result = onlyCreditInBand ? \"conditional\" : \"does_not_meet\";\n  }\n\n  return {\n    result: result,\n    evidence: trail,\n    tenant_responsible_rent: tenantRent,\n    failed_criteria: failed.map(function (e) { return e.criterion; }),\n    unevaluated_criteria: unknown.map(function (e) { return e.criterion; }),\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/**\n * What a real FCRA adverse-action process would require. Shown to the manager\n * on the stop path so the demo makes the point explicitly.\n *\n * This build never generates any of these documents.\n */\nfunction adverseActionRequirements() {\n  return [\n    \"Pre-adverse-action notice, including a copy of the consumer report\",\n    \"A copy of the FCRA Summary of Rights\",\n    \"A waiting period for the applicant to dispute (commonly five business days)\",\n    \"A final adverse-action notice naming the bureau that supplied the report\",\n  ];\n}\n\n/**\n * Shared front-of-funnel logic.\n *\n * This file is the single source of truth for lead parsing, reference tokens,\n * Tier A guardrails, and the pre-qualification gate. The build scripts inline it\n * into n8n Code nodes, so it must stay dependency-free and must not use\n * backticks or template literals - those are consumed before reaching the node.\n *\n * Nothing here calls a model. Everything here is deterministic.\n */\n\n/* ------------------------------------------------------------------ tokens */\n\n/**\n * Reference token carried in every subject line. Replies are matched on this\n * first and on sender address only as a fallback - the model never decides\n * which lead a message belongs to.\n */\nfunction makeRefToken(prefix, seed) {\n  var n = seed === undefined ? Math.floor(Math.random() * 9000) + 1000 : seed;\n  return prefix + \"-\" + String(n).slice(0, 4);\n}\n\nfunction extractRefToken(text) {\n  if (!text) return null;\n  var match = String(text).match(/\\[([RA]-\\d{4})\\]/);\n  return match ? match[1] : null;\n}\n\nfunction subjectWithToken(subject, token) {\n  if (extractRefToken(subject)) return subject;\n  return subject + \" [\" + token + \"]\";\n}\n\n/* ------------------------------------------------------- lead email parsing */\n\n/**\n * Parses a listing-site lead notification.\n *\n * Zillow delivers these as email with an anonymised relay reply-to and no phone\n * number, so the parser must tolerate a missing phone rather than treat it as a\n * failure. Anything it cannot determine is left null and flagged, never guessed.\n */\nfunction parseLeadEmail(input) {\n  var subject = input.subject || \"\";\n  var body = input.body || \"\";\n  var replyTo = input.replyTo || input.from || \"\";\n\n  var result = {\n    prospect_name: null,\n    prospect_email: null,\n    prospect_phone: null,\n    unit_hint: null,\n    inquiry_text: null,\n    source: \"zillow_email\",\n    parse_warnings: [],\n  };\n\n  var nameMatch = body.match(/^\\s*Renter:\\s*(.+)$/m);\n  if (nameMatch) result.prospect_name = nameMatch[1].trim();\n  else result.parse_warnings.push(\"no renter name found\");\n\n  var propertyMatch = body.match(/^\\s*Property:\\s*(.+)$/m);\n  if (propertyMatch) result.unit_hint = propertyMatch[1].trim();\n  else {\n    var subjectUnit = subject.match(/:\\s*(.+)$/);\n    if (subjectUnit) result.unit_hint = subjectUnit[1].trim();\n    else result.parse_warnings.push(\"no property reference found\");\n  }\n\n  // The renter's own words, between the quotes after \"Message:\".\n  var messageMatch = body.match(/Message:\\s*\"([\\s\\S]*?)\"/);\n  if (messageMatch) result.inquiry_text = messageMatch[1].replace(/\\s+/g, \" \").trim();\n  else result.parse_warnings.push(\"no inquiry text found\");\n\n  var emailMatch = String(replyTo).match(/[\\w.+-]+@[\\w.-]+\\.\\w+/);\n  if (emailMatch) result.prospect_email = emailMatch[0];\n  else result.parse_warnings.push(\"no reply address found\");\n\n  var phoneMatch = body.match(/(\\+?1[\\s.-]?)?\\(?\\d{3}\\)?[\\s.-]\\d{3}[\\s.-]\\d{4}/);\n  if (phoneMatch) result.prospect_phone = phoneMatch[0].trim();\n\n  return result;\n}\n\n/* ------------------------------------------------- unit knowledge for the AI */\n\n/**\n * Flattens a unit row into the only facts the FAQ model is allowed to use.\n * If a fact is not in here, the correct answer is \"I don't have that\".\n */\nfunction buildUnitKnowledge(unit) {\n  if (!unit) return null;\n  var facts = unit.faq_facts || {};\n  var knowledge = {\n    unit_code: unit.unit_code,\n    address: unit.address,\n    bedrooms: unit.beds,\n    bathrooms: Number(unit.baths),\n    square_feet: unit.sqft,\n    monthly_rent: Number(unit.rent_amount),\n    security_deposit: Number(unit.deposit_amount),\n    available_from: unit.available_from,\n    lease_term_months: unit.lease_term_months,\n    pet_policy: unit.pet_policy,\n    pet_fee_monthly: unit.pet_fee_monthly === null ? null : Number(unit.pet_fee_monthly),\n    parking: unit.parking,\n    utilities: unit.utilities_included,\n    laundry: unit.laundry,\n  };\n  Object.keys(facts).forEach(function (key) {\n    knowledge[key] = facts[key];\n  });\n  return knowledge;\n}\n\n/* -------------------------------------------------------------- guardrails */\n\n/**\n * Tier A guardrail. Runs on every message before it leaves, and again at send\n * time, because a manager may have edited the wording after it was drafted.\n *\n * Blocks: protected-class content, legal or lease commitments, rent negotiation,\n * availability promises, and invented numbers that are not in the unit facts.\n */\nvar PROTECTED_CLASS_PATTERNS = [\n  { pattern: /\\b(kids?|children|child|family friendly|families|school district)\\b/i, label: \"familial status\" },\n  { pattern: /\\b(disab|wheelchair|handicap|mental health|service animal policy)\\b/i, label: \"disability\" },\n  { pattern: /\\b(race|ethnic|nationality|immigration|citizen|visa status)\\b/i, label: \"national origin / race\" },\n  { pattern: /\\b(church|mosque|temple|synagogue|religio)\\b/i, label: \"religion\" },\n  { pattern: /\\b(marital status|married|single people|couples only)\\b/i, label: \"marital status\" },\n  { pattern: /\\b(section 8|voucher|housing assistance|welfare)\\b/i, label: \"source of income\" },\n  { pattern: /\\b(good neighborhood for|safe area for|type of people)\\b/i, label: \"steering\" },\n];\n\nvar COMMITMENT_PATTERNS = [\n  { pattern: /\\b(guarantee|guaranteed|we promise|you will be approved|pre-?approved)\\b/i, label: \"approval commitment\" },\n  { pattern: /\\b(hold (it|the unit) for you|reserved for you|it'?s yours)\\b/i, label: \"availability commitment\" },\n  { pattern: /\\b(we can lower|discount the rent|negotiate the rent|reduce the rent)\\b/i, label: \"rent negotiation\" },\n  { pattern: /\\b(legally|by law|you are entitled|your rights under)\\b/i, label: \"legal statement\" },\n  { pattern: /\\b(denied|rejected|you do not qualify|we cannot rent to you)\\b/i, label: \"adverse decision language\" },\n];\n\nfunction guardrailCheck(text, knowledge) {\n  var findings = [];\n  var body = String(text || \"\");\n\n  PROTECTED_CLASS_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"protected_class\", detail: rule.label });\n    }\n  });\n\n  COMMITMENT_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"commitment\", detail: rule.label });\n    }\n  });\n\n  // Any dollar figure in the message must appear in the unit facts. Catches the\n  // model inventing a rent, fee, or deposit.\n  if (knowledge) {\n    var allowed = [];\n    Object.keys(knowledge).forEach(function (key) {\n      var value = knowledge[key];\n      if (typeof value === \"number\") allowed.push(Math.round(value));\n      if (typeof value === \"string\") {\n        var found = value.match(/\\d[\\d,]*(\\.\\d+)?/g) || [];\n        found.forEach(function (n) { allowed.push(Math.round(Number(n.replace(/,/g, \"\")))); });\n      }\n    });\n\n    var quoted = body.match(/\\$\\s?\\d[\\d,]*(\\.\\d+)?/g) || [];\n    quoted.forEach(function (raw) {\n      var amount = Math.round(Number(raw.replace(/[$,\\s]/g, \"\")));\n      if (allowed.indexOf(amount) === -1) {\n        findings.push({\n          severity: \"block\",\n          category: \"unsupported_figure\",\n          detail: raw.trim() + \" is not in the unit facts\",\n        });\n      }\n    });\n  }\n\n  var blocking = findings.filter(function (f) { return f.severity === \"block\"; });\n  return {\n    passed: blocking.length === 0,\n    findings: findings,\n    checked_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- pre-qualification */\n\n/**\n * Scheduling triage only. This is NOT a rental decision and its output must\n * never be phrased to a prospect as a denial.\n *\n * Deliberately narrow: move-in timing, self-reported income against the\n * published multiple, pet policy, and occupancy. Nothing else is considered and\n * nothing here is verified.\n */\nfunction prequalGate(answers, unit, config) {\n  var reasons = [];\n  var missing = [];\n  var incomeMultiple = config && config.income_multiple ? Number(config.income_multiple) : 3;\n\n  if (!answers || answers.move_in_date === null || answers.move_in_date === undefined) {\n    missing.push(\"move_in_date\");\n  } else {\n    var availableFrom = new Date(unit.available_from);\n    var wanted = new Date(answers.move_in_date);\n    var daysAfter = (wanted - availableFrom) / 86400000;\n\n    if (daysAfter < -14) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"wants \" + answers.move_in_date + \", unit is available from \" + unit.available_from,\n      });\n    } else if (daysAfter > 60) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"move-in is more than 60 days after the unit is available\",\n      });\n    } else {\n      reasons.push({ criterion: \"move_in_timing\", met: true, detail: answers.move_in_date });\n    }\n  }\n\n  if (answers && (answers.stated_monthly_income === null || answers.stated_monthly_income === undefined)) {\n    missing.push(\"stated_monthly_income\");\n  } else if (answers) {\n    // Self-reported and unverified. Verification happens after an application.\n    var rent = Number(unit.rent_amount);\n    var stated = Number(answers.stated_monthly_income);\n    var ratio = stated / rent;\n    reasons.push({\n      criterion: \"stated_income\",\n      met: ratio >= incomeMultiple,\n      detail: \"$\" + stated + \"/mo stated against $\" + rent + \" rent = \" + ratio.toFixed(2) + \"x (unverified)\",\n    });\n  }\n\n  if (answers && answers.pets && String(answers.pets).toLowerCase() !== \"none\") {\n    var weightMatch = String(answers.pets).match(/(\\d+)\\s?(lb|pound)/i);\n    var overLimit = weightMatch && Number(weightMatch[1]) > 50;\n    reasons.push({\n      criterion: \"pets\",\n      met: !overLimit,\n      detail: overLimit ? \"stated pet is over the 50 lb limit\" : String(answers.pets),\n    });\n  }\n\n  var failed = reasons.filter(function (r) { return r.met === false; });\n  var result = missing.length ? \"incomplete\" : failed.length ? \"not_clear\" : \"clear\";\n\n  return {\n    result: result,\n    reasons: reasons,\n    missing: missing,\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- AI output shape */\n\n/**\n * Unwraps structured output from the OpenAI node.\n *\n * The payload arrives wrapped differently depending on node version, whether\n * simplify is on, and whether a JSON schema was applied - sometimes a parsed\n * object, sometimes a JSON string under `output`, sometimes nested one level\n * deeper. Probing for a known key is more robust than assuming a shape.\n *\n * @param {*} data       the item's json\n * @param {string} anchor a key that must exist on the real payload\n */\nfunction unwrapAiPayload(data, anchor) {\n  var value = data;\n\n  for (var depth = 0; depth < 6; depth++) {\n    if (value === null || value === undefined) break;\n\n    if (typeof value === \"string\") {\n      var trimmed = value.trim();\n      if (trimmed.charAt(0) !== \"{\" && trimmed.charAt(0) !== \"[\") break;\n      try {\n        value = JSON.parse(trimmed);\n      } catch (error) {\n        break;\n      }\n      continue;\n    }\n\n    if (Array.isArray(value)) {\n      value = value[0];\n      continue;\n    }\n\n    if (typeof value === \"object\") {\n      if (Object.prototype.hasOwnProperty.call(value, anchor)) return value;\n\n      var next =\n        value.output !== undefined ? value.output :\n        value.message !== undefined ? value.message :\n        value.content !== undefined ? value.content :\n        value.text !== undefined ? value.text :\n        value.json !== undefined ? value.json : undefined;\n\n      if (next === undefined) break;\n      value = next;\n      continue;\n    }\n\n    break;\n  }\n\n  return value;\n}\n\n/* ------------------------------------------------------------- lock code */\n\n/**\n * Self-guided tour entry code.\n *\n * MOCK. A real deployment issues this through a smart-lock platform\n * (Rently, Tour24, ButterflyMX) bound to the booking window. Here it is\n * generated locally and logged, and every record it touches is marked\n * source: \"mock\".\n */\nfunction generateLockCode() {\n  var code = String(Math.floor(Math.random() * 900000) + 100000);\n  return { code: code, source: \"mock\", issued_at: new Date().toISOString() };\n}\n\n// Brings the three income figures together: what the applicant claimed, what\n// their document says, and what their payroll deposits actually show.\nconst application = $('Create Application Record').first().json;\nconst criteria = $('Load Screening Criteria').first().json;\n\n// Extracted document figures\nconst extractionRaw = $('Extract Paystub Fields').first().json;\n// Uses the shared unwrapper rather than a local copy. The Responses payload\n// nests as output[0].content[0].text, and a trimmed copy that forgets one of\n// those hops fails with a payload that is actually correct.\nconst extraction = unwrapAiPayload(extractionRaw, 'gross_this_period') || {};\n\nif (!extraction || typeof extraction !== 'object' || !('gross_this_period' in extraction)) {\n  throw new Error('Paystub extraction returned an unexpected shape: ' +\n    JSON.stringify(extractionRaw).slice(0, 300));\n}\n\nconst documentMonthly = monthlyFromPeriod(extraction.gross_this_period, extraction.pay_frequency);\n\n// Verified figures from the real Plaid Sandbox call\nconst plaidRaw = $('Plaid: Get Payroll Income').first().json;\nconst plaid = parsePlaidPayrollIncome(plaidRaw);\n\nif (plaid.verified_monthly_income === null) {\n  throw new Error('Plaid returned no usable income: ' + plaid.warnings.join('; '));\n}\n\nconst comparison = computeIncomeComparison({\n  claimed: application.claimed_monthly_income,\n  extracted: documentMonthly,\n  verified: plaid.verified_monthly_income,\n  tolerancePct: criteria.income_mismatch_tolerance_pct,\n});\n\nreturn [{ json: {\n  ref_token: application.ref_token,\n  application_id: application.id,\n  extraction: extraction,\n  extracted_monthly_income: documentMonthly,\n  plaid: plaid,\n  plaid_raw: plaidRaw,\n  verified_monthly_income: plaid.verified_monthly_income,\n  comparison: comparison,\n} }];"
+      }
+    },
+    {
+      "id": "screening-bureau-identity-mock",
+      "name": "Screening Bureau + Identity (MOCK)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Screening Bureau (MOCK) and Identity Check (MOCK).\n//\n// Real credit, eviction and criminal data requires FCRA permissible-purpose\n// credentialing - a bureau contract, a registered business, and usually a site\n// inspection. There is no developer sandbox at TransUnion or Experian, so this\n// is a licensing gate rather than a pricing one.\n//\n// The response is shaped like the public TransUnion ShareAble v3 payload so\n// swapping in the live endpoint is a one-node change. Every record it produces\n// is stamped source: 'mock'.\nconst application = $('Create Application Record').first().json;\n\n// Deterministic per applicant so a demo replay gives the same result.\nconst profiles = {\n  'maya.restrepo.demo@example.com': { credit: 712, evictions: 0, identity: 0.97 },\n  'devon.clarke.demo@example.com': { credit: 688, evictions: 0, identity: 0.94 },\n};\nconst fallback = { credit: 705, evictions: 0, identity: 0.95 };\nconst profile = profiles[String(application.email || '').toLowerCase()] || fallback;\n\nreturn [{ json: {\n  ref_token: application.ref_token,\n  bureau_source: 'mock',\n  credit_score: profile.credit,\n  eviction_filings: profile.evictions,\n  bureau_raw: {\n    source: 'mock',\n    schema: 'transunion_shareable_v3_shape',\n    generated_at: new Date().toISOString(),\n    report: {\n      creditScore: { score: profile.credit, model: 'VantageScore 3.0 (MOCK)' },\n      evictionRecords: { recordCount: profile.evictions, records: [] },\n      criminalRecords: { recordCount: 0, records: [] },\n    },\n  },\n  identity_source: 'mock',\n  identity_match: true,\n  identity_confidence: profile.identity,\n} }];"
+      }
+    },
+    {
+      "id": "run-criteria-engine",
+      "name": "Run Criteria Engine",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1480,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "/**\n * Screening logic: income comparison and the deterministic criteria engine.\n *\n * Inlined into n8n Code nodes, so it stays dependency-free and avoids backticks\n * and template literals - those are consumed before the code reaches the node.\n *\n * NOTHING HERE CALLS A MODEL. The criteria engine reads manager-configured\n * thresholds and applies them identically to every applicant, which is what\n * HUD's May 2024 guidance describes when it says a screening tool should\n * \"implement, rather than set\" the housing provider's policies.\n *\n * It emits a classification and an evidence trail. It never emits a decision,\n * a score, a rank, or a recommendation - a human does that.\n */\n\n/* --------------------------------------------------------------------- PII */\n\n/**\n * An application form collects an SSN because a real one does. We keep the last\n * four and discard the rest on arrival; the raw value is never stored.\n */\nfunction maskSsn(raw) {\n  var digits = String(raw || \"\").replace(/\\D/g, \"\");\n  if (digits.length < 4) return null;\n  return digits.slice(-4);\n}\n\n/* ------------------------------------------------------- Plaid normalisation */\n\nvar PERIODS_PER_YEAR = {\n  WEEKLY: 52,\n  BIWEEKLY: 26,\n  SEMI_MONTHLY: 24,\n  SEMIMONTHLY: 24,\n  MONTHLY: 12,\n  ANNUALLY: 1,\n  ANNUAL: 1,\n};\n\nfunction monthlyFromPeriod(amount, frequency) {\n  var perYear = PERIODS_PER_YEAR[String(frequency || \"\").toUpperCase()];\n  if (!perYear || !amount) return null;\n  return Math.round((amount * perYear) / 12 * 100) / 100;\n}\n\n/**\n * Pulls verified monthly income out of a /credit/payroll_income/get response.\n *\n * Uses the most recent pay stub and its stated frequency rather than summing\n * year-to-date, because YTD in Sandbox is not a full year and would understate\n * the figure.\n */\nfunction parsePlaidPayrollIncome(response) {\n  var result = {\n    verified_monthly_income: null,\n    employer_name: null,\n    pay_frequency: null,\n    gross_per_period: null,\n    pay_period_end: null,\n    employee_name: null,\n    source: \"plaid_sandbox\",\n    warnings: [],\n  };\n\n  var items = (response && response.items) || [];\n  var stub = null;\n  var source = null;\n\n  for (var i = 0; i < items.length && !stub; i++) {\n    var sources = items[i].payroll_income || [];\n    for (var j = 0; j < sources.length && !stub; j++) {\n      var stubs = sources[j].pay_stubs || [];\n      if (stubs.length) {\n        source = sources[j];\n        // Most recent period first.\n        stub = stubs.slice().sort(function (a, b) {\n          var ea = (a.pay_period_details || {}).end_date || \"\";\n          var eb = (b.pay_period_details || {}).end_date || \"\";\n          return eb.localeCompare(ea);\n        })[0];\n      }\n    }\n  }\n\n  if (!stub) {\n    result.warnings.push(\"no pay stubs in the Plaid response\");\n    return result;\n  }\n\n  var details = stub.pay_period_details || {};\n  result.employer_name = (source && source.employer && source.employer.name) || null;\n  result.employee_name = (stub.employee && stub.employee.name) || null;\n  result.pay_frequency = details.pay_frequency || null;\n  result.gross_per_period = details.gross_earnings === undefined ? null : details.gross_earnings;\n  result.pay_period_end = details.end_date || null;\n\n  result.verified_monthly_income = monthlyFromPeriod(result.gross_per_period, result.pay_frequency);\n  if (result.verified_monthly_income === null) {\n    result.warnings.push(\"could not derive a monthly figure from gross \" +\n      result.gross_per_period + \" at frequency \" + result.pay_frequency);\n  }\n\n  return result;\n}\n\n/* ------------------------------------------------------- income comparison */\n\n/**\n * The three numbers the demo puts side by side.\n *\n *   claimed   - what the applicant typed on the form\n *   extracted - what the model read off the uploaded pay stub\n *   verified  - what the bank actually shows\n *\n * A pay stub can be edited in a photo editor. A deposit history cannot. When\n * these disagree beyond tolerance the file is flagged for a human.\n */\nfunction computeIncomeComparison(input) {\n  var claimed = input.claimed === null || input.claimed === undefined ? null : Number(input.claimed);\n  var extracted = input.extracted === null || input.extracted === undefined ? null : Number(input.extracted);\n  var verified = input.verified === null || input.verified === undefined ? null : Number(input.verified);\n  var tolerance = Number(input.tolerancePct === undefined ? 10 : input.tolerancePct);\n\n  function variance(value) {\n    if (value === null || verified === null || verified === 0) return null;\n    return Math.round(Math.abs(value - verified) / verified * 1000) / 10;\n  }\n\n  var documentVariance = variance(extracted);\n  var claimedVariance = variance(claimed);\n\n  return {\n    claimed_monthly: claimed,\n    extracted_monthly: extracted,\n    verified_monthly: verified,\n    tolerance_pct: tolerance,\n    document_variance_pct: documentVariance,\n    claimed_variance_pct: claimedVariance,\n    document_matches: documentVariance === null ? null : documentVariance <= tolerance,\n    claimed_matches: claimedVariance === null ? null : claimedVariance <= tolerance,\n    // The single fact the manager needs at a glance.\n    mismatch_flagged:\n      (documentVariance !== null && documentVariance > tolerance) ||\n      (claimedVariance !== null && claimedVariance > tolerance),\n  };\n}\n\n/* ---------------------------------------------------------- criteria engine */\n\nfunction evidence(criterion, met, detail, source) {\n  return { criterion: criterion, met: met, detail: detail, source: source || null };\n}\n\n/**\n * Applies the manager's published criteria.\n *\n * @returns {{result: string, evidence: Array, tenant_responsible_rent: number}}\n *   result is one of meets_criteria | conditional | does_not_meet.\n */\nfunction runCriteriaEngine(input) {\n  var app = input.application || {};\n  var unit = input.unit || {};\n  var config = input.config || {};\n  var comparison = input.comparison || {};\n\n  var incomeMultiple = Number(config.income_multiple || 3);\n  var minCredit = Number(config.min_credit_score || 650);\n  var conditionalCredit = Number(config.conditional_credit_min || 600);\n  var maxEvictions = Number(config.max_eviction_filings || 0);\n\n  var rent = Number(unit.rent_amount || 0);\n  var assistance = Number(app.rental_assistance_amount || 0);\n\n  // The income multiple applies to the tenant's share of rent, not gross rent.\n  // Requiring a voucher holder to earn 3x the FULL rent is treated as\n  // source-of-income discrimination in the jurisdictions that protect it.\n  var tenantRent = Math.max(rent - assistance, 0);\n\n  var trail = [];\n  var verified = comparison.verified_monthly === undefined ? null : comparison.verified_monthly;\n\n  /* income multiple, against verified income only */\n  if (verified === null || !tenantRent) {\n    trail.push(evidence(\"income_multiple\", null,\n      \"cannot evaluate: verified income or rent is missing\", null));\n  } else {\n    var ratio = Math.round(verified / tenantRent * 100) / 100;\n    var detail = \"$\" + verified + \"/mo verified against $\" + tenantRent +\n      \" tenant-responsible rent = \" + ratio.toFixed(2) + \"x, threshold \" +\n      incomeMultiple.toFixed(2) + \"x\";\n    if (assistance > 0) {\n      detail += \" (rent $\" + rent + \" less $\" + assistance + \" rental assistance)\";\n    }\n    trail.push(evidence(\"income_multiple\", ratio >= incomeMultiple, detail, {\n      document: \"plaid_payroll_income\",\n      field: \"verified_monthly_income\",\n      value: verified,\n    }));\n  }\n\n  /* documented income vs verified income */\n  if (comparison.document_matches === null || comparison.document_matches === undefined) {\n    trail.push(evidence(\"income_document_match\", null,\n      \"cannot evaluate: no extracted document income\", null));\n  } else {\n    trail.push(evidence(\"income_document_match\", comparison.document_matches,\n      \"pay stub implies $\" + comparison.extracted_monthly + \"/mo against $\" +\n        comparison.verified_monthly + \"/mo verified, variance \" +\n        comparison.document_variance_pct + \"% (tolerance \" + comparison.tolerance_pct + \"%)\",\n      { document: \"uploaded_paystub\", field: \"gross_this_period\", value: comparison.extracted_monthly }));\n  }\n\n  /* credit - mocked data, real threshold */\n  var credit = app.credit_score === null || app.credit_score === undefined ? null : Number(app.credit_score);\n  if (credit === null) {\n    trail.push(evidence(\"credit_score\", null, \"cannot evaluate: no credit score\", null));\n  } else {\n    trail.push(evidence(\"credit_score\", credit >= minCredit,\n      credit + \" against a \" + minCredit + \" threshold\" +\n        (credit < minCredit && credit >= conditionalCredit\n          ? \", within the \" + conditionalCredit + \"-\" + (minCredit - 1) + \" conditional band\"\n          : \"\"),\n      { document: \"screening_bureau_mock\", field: \"credit_score\", value: credit }));\n  }\n\n  /* eviction filings - mocked data, real threshold */\n  var evictions = app.eviction_filings === null || app.eviction_filings === undefined\n    ? null : Number(app.eviction_filings);\n  if (evictions === null) {\n    trail.push(evidence(\"eviction_history\", null, \"cannot evaluate: no eviction data\", null));\n  } else {\n    trail.push(evidence(\"eviction_history\", evictions <= maxEvictions,\n      evictions + \" filing(s) in the last \" + (config.eviction_lookback_years || 5) +\n        \" years, maximum \" + maxEvictions,\n      { document: \"screening_bureau_mock\", field: \"eviction_filings\", value: evictions }));\n  }\n\n  /* identity - mocked */\n  if (app.identity_match === null || app.identity_match === undefined) {\n    trail.push(evidence(\"identity_check\", null, \"cannot evaluate: no identity result\", null));\n  } else {\n    trail.push(evidence(\"identity_check\", Boolean(app.identity_match),\n      app.identity_match ? \"document and applicant details matched\" : \"identity did not match\",\n      { document: \"identity_check_mock\", field: \"match\", value: app.identity_match }));\n  }\n\n  /* ------------------------------------------------------------ outcome */\n\n  var failed = trail.filter(function (e) { return e.met === false; });\n  var unknown = trail.filter(function (e) { return e.met === null; });\n\n  var result;\n  if (failed.length === 0 && unknown.length === 0) {\n    result = \"meets_criteria\";\n  } else if (failed.length === 0) {\n    // Nothing failed, but something could not be evaluated. That is a human's\n    // call, not a pass.\n    result = \"conditional\";\n  } else {\n    var onlyCreditInBand =\n      failed.length === 1 &&\n      failed[0].criterion === \"credit_score\" &&\n      credit !== null &&\n      credit >= conditionalCredit;\n    result = onlyCreditInBand ? \"conditional\" : \"does_not_meet\";\n  }\n\n  return {\n    result: result,\n    evidence: trail,\n    tenant_responsible_rent: tenantRent,\n    failed_criteria: failed.map(function (e) { return e.criterion; }),\n    unevaluated_criteria: unknown.map(function (e) { return e.criterion; }),\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/**\n * What a real FCRA adverse-action process would require. Shown to the manager\n * on the stop path so the demo makes the point explicitly.\n *\n * This build never generates any of these documents.\n */\nfunction adverseActionRequirements() {\n  return [\n    \"Pre-adverse-action notice, including a copy of the consumer report\",\n    \"A copy of the FCRA Summary of Rights\",\n    \"A waiting period for the applicant to dispute (commonly five business days)\",\n    \"A final adverse-action notice naming the bureau that supplied the report\",\n  ];\n}\n\n// The deterministic criteria engine. Reads the manager's published thresholds\n// and applies them identically to every applicant. It never calls a model and\n// it never produces a decision - only a classification and an evidence trail.\nconst application = $('Create Application Record').first().json;\nconst unit = $('Load Unit For Application').first().json;\nconst config = $('Load Screening Criteria').first().json;\nconst verification = $('Compare Income Sources').first().json;\nconst checks = $('Screening Bureau + Identity (MOCK)').first().json;\n\nconst outcome = runCriteriaEngine({\n  application: {\n    credit_score: checks.credit_score,\n    eviction_filings: checks.eviction_filings,\n    identity_match: checks.identity_match,\n    rental_assistance_amount: application.rental_assistance_amount,\n  },\n  unit: unit,\n  config: config,\n  comparison: verification.comparison,\n});\n\nconst c = verification.comparison;\nfunction money(value) {\n  return value === null || value === undefined ? 'n/a' : '$' + Number(value).toLocaleString('en-US');\n}\n\n// The three numbers, side by side. This is the moment the demo exists for.\nconst incomeBlock = [\n  'Claimed on form:   ' + money(c.claimed_monthly) + '/mo',\n  'Pay stub says:     ' + money(c.extracted_monthly) + '/mo',\n  'Bank verified:     ' + money(c.verified_monthly) + '/mo  (Plaid)',\n].join('\\n');\n\nconst evidenceBlock = outcome.evidence.map(function (e) {\n  const mark = e.met === true ? 'PASS' : e.met === false ? 'FAIL' : 'N/A ';\n  return mark + '  ' + e.criterion + '\\n      ' + e.detail;\n}).join('\\n');\n\nconst header = c.mismatch_flagged\n  ? 'INCOME MISMATCH - ' + c.document_variance_pct + '% above verified'\n  : 'Income verified, documents agree';\n\nconst summary = [\n  'Application ' + application.ref_token + ' - ' + application.full_name,\n  unit.unit_code + ' at ' + money(unit.rent_amount) + '/mo',\n  '',\n  header,\n  '',\n  incomeBlock,\n  '',\n  'Criteria (' + config.name + ')',\n  evidenceBlock,\n  '',\n  'Engine result: ' + outcome.result.replace(/_/g, ' '),\n].join('\\n');\n\nreturn [{ json: {\n  ref_token: application.ref_token,\n  application_id: application.id,\n  criteria_result: outcome.result,\n  criteria_evidence: outcome.evidence,\n  tenant_responsible_rent: outcome.tenant_responsible_rent,\n  failed_criteria: outcome.failed_criteria,\n  mismatch_flagged: c.mismatch_flagged,\n  meets_or_conditional: outcome.result !== 'does_not_meet',\n  summary: summary,\n  adverse_action_requirements: adverseActionRequirements(),\n} }];"
+      }
+    },
+    {
+      "id": "save-verification-results",
+      "name": "Save Verification Results",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1700,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE applications SET\n  extracted_monthly_income = NULLIF($2::text,'')::numeric,\n  extraction_evidence = $3::jsonb,\n  verified_monthly_income = NULLIF($4::text,'')::numeric,\n  plaid_raw = $5::jsonb,\n  plaid_verified_at = now(),\n  income_comparison = $6::jsonb,\n  bureau_source = 'mock',\n  credit_score = NULLIF($7::text,'')::int,\n  eviction_filings = NULLIF($8::text,'')::int,\n  bureau_raw = $9::jsonb,\n  identity_source = 'mock',\n  identity_match = TRUE,\n  identity_confidence = NULLIF($10::text,'')::numeric,\n  criteria_result = $11,\n  criteria_evidence = $12::jsonb,\n  criteria_evaluated_at = now(),\n  status = 'awaiting_decision'\nWHERE ref_token = $1 RETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [$json.ref_token,($('Compare Income Sources').first().json.extracted_monthly_income ?? ''),JSON.stringify($('Compare Income Sources').first().json.extraction),($('Compare Income Sources').first().json.verified_monthly_income ?? ''),JSON.stringify($('Compare Income Sources').first().json.plaid_raw),JSON.stringify($('Compare Income Sources').first().json.comparison),($('Screening Bureau + Identity (MOCK)').first().json.credit_score ?? ''),($('Screening Bureau + Identity (MOCK)').first().json.eviction_filings ?? ''),JSON.stringify($('Screening Bureau + Identity (MOCK)').first().json.bureau_raw),($('Screening Bureau + Identity (MOCK)').first().json.identity_confidence ?? ''),$json.criteria_result,JSON.stringify($json.criteria_evidence)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      }
+    },
+    {
+      "id": "meets-criteria-or-conditional",
+      "name": "Meets Criteria Or Conditional?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1920,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "run-criteria-engine-first-json",
+              "leftValue": "={{ $('Run Criteria Engine').first().json.meets_or_conditional }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "send-decision-card",
+      "name": "Send Decision Card",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2140,
+        -120
+      ],
+      "parameters": {
+        "chatId": "=__TELEGRAM_CHAT_ID__",
+        "text": "={{ $('Run Criteria Engine').first().json.summary }}\n\nNothing has been sent to the applicant. Your call.",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Approve",
+                    "additionalFields": {
+                      "callback_data": "=apr:{{ $('Run Criteria Engine').first().json.ref_token }}"
+                    }
+                  },
+                  {
+                    "text": "Conditional",
+                    "additionalFields": {
+                      "callback_data": "=con:{{ $('Run Criteria Engine').first().json.ref_token }}"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Send to review",
+                    "additionalFields": {
+                      "callback_data": "=rev:{{ $('Run Criteria Engine').first().json.ref_token }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "stop-for-human-review",
+      "name": "Stop For Human Review",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2140,
+        120
+      ],
+      "parameters": {
+        "chatId": "=__TELEGRAM_CHAT_ID__",
+        "text": "={{ $('Run Criteria Engine').first().json.summary }}\n\nSTOPPED. This file does not meet the published criteria, so the system has taken no further action and sent the applicant nothing.\n\nDeclining on the basis of a consumer report is a formal FCRA process and must be done by a person:\n{{ $('Run Criteria Engine').first().json.adverse_action_requirements.map(r => '  - ' + r).join('\\n') }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "mark-stopped-for-human",
+      "name": "Mark Stopped For Human",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2360,
+        120
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE applications SET status = 'stopped_for_human' WHERE ref_token = $1;",
+        "options": {
+          "queryReplacement": "={{ [$('Run Criteria Engine').first().json.ref_token] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Rental Application Form": {
+      "main": [
+        [
+          {
+            "node": "Normalise And Mask Application",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalise And Mask Application": {
+      "main": [
+        [
+          {
+            "node": "Extract Paystub Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Paystub Text": {
+      "main": [
+        [
+          {
+            "node": "Extract Paystub Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Paystub Fields": {
+      "main": [
+        [
+          {
+            "node": "Load Unit For Application",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Unit For Application": {
+      "main": [
+        [
+          {
+            "node": "Load Screening Criteria",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Screening Criteria": {
+      "main": [
+        [
+          {
+            "node": "Create Application Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Application Record": {
+      "main": [
+        [
+          {
+            "node": "Plaid: Create User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plaid: Create User": {
+      "main": [
+        [
+          {
+            "node": "Plaid: Init Sandbox Item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plaid: Init Sandbox Item": {
+      "main": [
+        [
+          {
+            "node": "Plaid: Get Payroll Income",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plaid: Get Payroll Income": {
+      "main": [
+        [
+          {
+            "node": "Compare Income Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Income Sources": {
+      "main": [
+        [
+          {
+            "node": "Screening Bureau + Identity (MOCK)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Screening Bureau + Identity (MOCK)": {
+      "main": [
+        [
+          {
+            "node": "Run Criteria Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Criteria Engine": {
+      "main": [
+        [
+          {
+            "node": "Save Verification Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Verification Results": {
+      "main": [
+        [
+          {
+            "node": "Meets Criteria Or Conditional?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meets Criteria Or Conditional?": {
+      "main": [
+        [
+          {
+            "node": "Send Decision Card",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop For Human Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stop For Human Review": {
+      "main": [
+        [
+          {
+            "node": "Mark Stopped For Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

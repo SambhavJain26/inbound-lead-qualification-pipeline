@@ -279,6 +279,7 @@
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "airtableTokenApi",
         "sendBody": true,
+        "contentType": "json",
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ fields: {\n  'Ref Token': $('Check Tier A Guardrails').item.json.ref_token,\n  'Prospect': $('Check Tier A Guardrails').item.json.prospect_name,\n  'Email': $('Check Tier A Guardrails').item.json.prospect_email,\n  'Unit': $('Check Tier A Guardrails').item.json.unit_code,\n  'Status': 'Engaged'\n} }) }}",
         "options": {

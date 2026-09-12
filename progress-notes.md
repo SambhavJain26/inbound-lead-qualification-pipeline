@@ -602,3 +602,61 @@ query string, so the booking webhook can match it back to the lead.
 - Register the Cal.com booking webhook against the current tunnel URL
 - Test booking → lock code (MOCK) → confirmation email
 - Test tour-completed → application link
+
+---
+
+## 2026-09-12 — Stage 3 Gate: PASS
+
+WF1 complete. `node scripts/verify-stage-3.js` drives the whole front of funnel with real
+mail and real webhooks, then asserts the resulting state:
+
+```
+PASS  WF1 imported and active
+PASS  Cal.com webhook points at current tunnel
+PASS  Clean demo state seeded
+PASS  Lead created from listing email - R-4220
+PASS  Grounded reply sent and logged - guardrail_passed=true, 613 chars
+PASS  No invented figures in the reply - 2 figures, all grounded
+PASS  Pre-qualification extracted and evaluated - clear, move-in 2026-10-05, $5000/mo, 1 vehicle
+PASS  Prequal evidence labelled unverified, no decision language
+PASS  Tour booking recorded with lock code - tour_booked, code 457194, source=mock
+PASS  Application link sent after tour - status=toured
+```
+
+The gate is deliberately end-to-end rather than a set of unit checks. Every failure that
+actually bit during this stage — a dropped query parameter, a JSON schema that was never
+sent, an empty email — passed every static check and only appeared when a real message went
+through.
+
+Two checks in it are compliance assertions rather than plumbing checks, and are worth
+keeping: one re-derives every dollar figure in the AI's reply and fails if any of them is not
+in the unit facts; the other asserts the pre-qualification evidence trail still carries the
+"unverified" label and contains no decision language.
+
+### Added
+
+- `scripts/register-calcom-webhook.js` — points BOOKING_CREATED at the current tunnel and
+  cleans up dead `trycloudflare.com` subscribers from previous runs. **Must be re-run after
+  every tunnel restart**: Cal.com does not surface delivery failures, so a webhook aimed at a
+  dead hostname simply goes quiet.
+- `scripts/verify-stage-3.js` — the gate. `--skip-mail` runs only the webhook paths in ~20s.
+
+### Stage 3 deviation: no web chat
+
+`build-plan.md` listed an n8n Chat Trigger alongside the email path in WF1. Not built. The
+email path is the spine that connects to the rest of the funnel, and a second entry point
+would have duplicated the FAQ logic for a surface that tells the same story. Under the depth
+discipline rule this is diagram material, not build material. Revisit only if the recording
+turns out to need a live-typing moment.
+
+### Demo sequence for WF1, all one command each
+
+```bash
+node scripts/seed-demo.js
+node scripts/send-as-prospect.js lead
+node scripts/send-as-prospect.js reply "Re: 412 Maple Street, Apt 2B, Springfield [R-xxxx]" "..."
+# book a slot on the Cal.com link, or POST the fixture payload
+curl -X POST "$TUNNEL/webhook/tour-completed" -d '{"ref_token":"R-xxxx"}'
+```
+
+Next: Stage 4 — WF2 application intake and verification.

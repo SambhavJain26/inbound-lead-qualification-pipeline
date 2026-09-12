@@ -1146,3 +1146,104 @@ Stage 2 gate re-run and passing against the new schema. All 38 unit tests passin
 4. Not yet done, deliberately: `the-full-flow.md` and `docs/recording-checklist.md` still
    describe the email journey. They get rewritten **after** the live run, so the quotes and
    timings in them are real — that file's own premise is that every timing came from a real run.
+
+---
+
+## 2026-09-12 — Stage 7 Gate: PASS, And Three Failures Found By Running It
+
+The listing site and the Telegram conversation run end to end on real services.
+`node scripts/verify-stage-7.js --chat <id>` passes all 23 checks.
+
+### Proven in one live run
+
+listing site -> contact form -> lead row + HTML handoff page -> Telegram deep link ->
+/start binds the chat -> grounded answer to the question typed on the site ->
+pre-qualification gathered across turns -> tour booked with entry code (MOCK) ->
+application link -> application + pay stub -> **real Plaid Sandbox call** -> mocked bureau ->
+criteria engine -> decision card on the manager bot -> Approve -> DocuSign envelope sent.
+
+```
+lead  R-9949  listing_site  prequalified   move_in 2026-10-01, $5000/mo, small dog, 1 car, 1 adult
+app   A-4216  claimed 5000.00 | extracted 4996.33 | verified 4996.33 | 712 | meets_criteria
+      decision=approved by=@demo_manager  lease=sent  envelope=3d8220e9-e2c6-86ce-803d-2c04ec9c0c18
+```
+
+Both Telegram bots hold their own webhook, which is the whole point of the two-bot design:
+
+```
+manager   /webhook/leasing-telegram-router/webhook
+prospect  /webhook/leasing-prospect-bot/webhook
+```
+
+### Three failures, none of which any static check would have caught
+
+**1. Telegram rejects any message containing an underscore.**
+
+The application link carries `?ref_token=`, and the send failed with
+`Bad request - please check your parameters`. The real error was four layers down in the
+execution record: `can't parse entities: Can't find end of the entity starting at byte
+offset 208` - byte 208 being the `_` in `ref_token`.
+
+**The Telegram node always sends a `parse_mode`**, so text is parsed for entities whether you
+asked for it or not, and under the legacy Markdown default a lone underscore opens an italic
+run that never closes. The tour confirmation worked only because it happens to contain no URL.
+
+Fixed by pinning `parse_mode` to HTML, adding `escapeTelegramHtml()` to `leasing-lib.js`, and
+moving message composition out of the Telegram node's own parameter into the Code node that
+already runs before it - a parameter cannot be escaped, a Code node can. The guardrail and
+`message_log` still see the real text; only the copy handed to Telegram is escaped.
+
+**2. The guardrail blocked the assistant from repeating the prospect's own income.**
+
+The prospect says "about $5,000 a month"; the assistant replies "got it, $5,000 a month" and
+the Tier A unsupported-figure rule blocks it, because $5,000 is not a unit fact. Nothing is
+sent, the prospect gets silence, and the conversation stalls on the most ordinary turn there
+is. In the old email flow this never surfaced: the system replied with a fixed tour link and
+never echoed anything.
+
+The rule exists to stop the model inventing a rent or a fee, not to stop it confirming what
+someone just told it. `buildConversationKnowledge(unit, answers)` now adds the recorded slot
+values to the allowlist and nothing else, so an invented figure is still caught. Three unit
+tests cover it, including one asserting a made-up rent is still blocked.
+
+**3. The Airtable mirror created a row per turn instead of upserting.**
+
+`airtableMirrorNode` POSTed, which always creates. With the old single mirror write per lead
+that was invisible; a chat has many turns, and `R-1000` ended up on the board five times.
+
+Now `PATCH` with `performUpsert.fieldsToMergeOn: ['Ref Token']` - one call, no read-back, so
+Postgres stays the only thing ever read - and the write is gated on an actual status
+transition, which is what "mirror at phase boundaries only" was supposed to mean. Verified:
+one row, upserted New -> Prequalified, email preserved from the first write.
+
+### A note on how the first one was found
+
+n8n reported only `Bad request - please check your parameters`. The REST API needs auth and
+there is no sqlite CLI in the container, but **Node's built-in `node:sqlite` is there**:
+
+```bash
+docker compose exec -T n8n sh -lc 'node -e "
+const {DatabaseSync}=require(\"node:sqlite\");
+const db=new DatabaseSync(\"/home/node/.n8n/database.sqlite\",{readOnly:true});
+console.log(db.prepare(\"SELECT id,status FROM execution_entity ORDER BY id DESC LIMIT 5\").all());
+"'
+```
+
+`execution_data` for that id carries the real provider error. This is now in CLAUDE.md and is
+worth reaching for immediately whenever a node reports something generic.
+
+### Also changed
+
+- Prospect-facing Telegram sends use `failOnError`, so a failed send is never followed by a
+  `message_log` row claiming the message went out. Manager alerts still swallow errors.
+- `get-telegram-chat-id.js --prospect` writes `TELEGRAM_PROSPECT_CHAT_ID`. It initially wrote
+  the manager variable - a string replacement that silently did not match, shipped because
+  that one edit was not asserted. A private chat id is the user's own Telegram user id, so
+  both variables legitimately hold the same number.
+
+### Still open
+
+1. Real photos into `site-assets/` (placeholders render fine meanwhile).
+2. Sign the DocuSign envelope by hand to close the loop on this run, as in the earlier build.
+3. `the-full-flow.md` and `docs/recording-checklist.md` still describe the email journey.
+   Rewriting next, now that there are real quotes and timings to use.

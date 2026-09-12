@@ -903,6 +903,34 @@ const lockCodeCode = [
 ].join("\n");
 
 /**
+ * One logger for every prospect-facing Telegram send in this workflow.
+ *
+ * Telegram's sendMessage response carries the text, the chat and the message id
+ * it just delivered, so a single node fed by every sender can record all of
+ * them - no duplicated SQL, and no message that quietly goes unlogged because
+ * someone added a send and forgot the logging node next to it.
+ *
+ * The lead is found from the chat id, deterministically, exactly as the
+ * conversation itself resolves identity.
+ */
+const LOG_PROSPECT_TELEGRAM_SQL =
+  "INSERT INTO message_log\n" +
+  "  (ref_token, direction, channel, tier, from_addr, to_addr, body, message_id)\n" +
+  "SELECT l.ref_token, 'outbound', 'telegram', 'A', 'leasing-assistant', $1, $2, $3\n" +
+  "  FROM leads l\n" +
+  " WHERE l.telegram_chat_id = NULLIF($1::text,'')::bigint\n" +
+  " ORDER BY l.id DESC LIMIT 1\n" +
+  "ON CONFLICT (message_id) DO NOTHING;";
+
+/** Reads the Telegram API response the send node just produced. */
+const LOG_PROSPECT_TELEGRAM_PARAMS =
+  "={{ [" +
+  "String($json.result?.chat?.id ?? ''), " +
+  "($json.result?.text ?? ''), " +
+  "'tg-out-' + ($json.result?.chat?.id ?? 'x') + '-' + ($json.result?.message_id ?? Date.now())" +
+  "] }}";
+
+/**
  * A Cal.com booking that matches no lead.
  *
  * Cal.com's webhook does NOT carry the metadata set when a booking is created
@@ -1528,6 +1556,64 @@ const nodes = [
     }
   ),
 
+  // Fed by every prospect-facing Telegram send in this workflow.
+  wf.postgresNode(
+    "Log Prospect Telegram Message",
+    LOG_PROSPECT_TELEGRAM_SQL,
+    [3840, -400],
+    {
+      queryOptions: { queryReplacement: LOG_PROSPECT_TELEGRAM_PARAMS },
+      // Logging must never take down a send that already succeeded.
+      continueOnFail: true,
+    }
+  ),
+
+  // The emailSend response carries no body, so these two read the text from the
+  // Code node that composed it rather than from the send.
+  wf.postgresNode(
+    "Log Tour Confirmation Email",
+    "INSERT INTO message_log\n" +
+      "  (ref_token, direction, channel, tier, from_addr, to_addr, subject, body, message_id)\n" +
+      "VALUES ($1, 'outbound', 'email', 'A', '__SYSTEM_EMAIL__', $2, $3, $4, $5)\n" +
+      "ON CONFLICT (message_id) DO NOTHING;",
+    [560, 220],
+    {
+      queryOptions: {
+        queryReplacement:
+          "={{ [" +
+          "$('Tour: Pick Delivery Channel').item.json.ref_token, " +
+          "($('Tour: Pick Delivery Channel').item.json.prospect_email ?? ''), " +
+          "'Your tour is booked', " +
+          "$('Tour: Pick Delivery Channel').item.json.message_text, " +
+          "'mail-tour-' + $('Tour: Pick Delivery Channel').item.json.ref_token + '-' + Date.now()" +
+          "] }}",
+      },
+      continueOnFail: true,
+    }
+  ),
+
+  wf.postgresNode(
+    "Log Application Link Email",
+    "INSERT INTO message_log\n" +
+      "  (ref_token, direction, channel, tier, from_addr, to_addr, subject, body, message_id)\n" +
+      "VALUES ($1, 'outbound', 'email', 'A', '__SYSTEM_EMAIL__', $2, $3, $4, $5)\n" +
+      "ON CONFLICT (message_id) DO NOTHING;",
+    [320, 520],
+    {
+      queryOptions: {
+        queryReplacement:
+          "={{ [" +
+          "$('Application: Pick Delivery Channel').item.json.ref_token, " +
+          "($('Application: Pick Delivery Channel').item.json.prospect_email ?? ''), " +
+          "'Your application link', " +
+          "$('Application: Pick Delivery Channel').item.json.message_text, " +
+          "'mail-app-' + $('Application: Pick Delivery Channel').item.json.ref_token + '-' + Date.now()" +
+          "] }}",
+      },
+      continueOnFail: true,
+    }
+  ),
+
   wf.codeNode("Booking Matches A Lead?", bookingGuardCode, [-230, 120]),
 
   wf.ifNode(
@@ -1890,6 +1976,31 @@ const nodes = [
     [1200, 700]
   ),
 
+  wf.postgresNode(
+    "Log Prequal Email",
+    "INSERT INTO message_log\n" +
+      "  (ref_token, direction, channel, tier, from_addr, to_addr, subject, body, message_id)\n" +
+      "VALUES ($1, 'outbound', 'email', 'A', '__SYSTEM_EMAIL__', $2, $3, $4, $5)\n" +
+      "ON CONFLICT (message_id) DO NOTHING;",
+    [1420, 520],
+    {
+      queryOptions: {
+        queryReplacement:
+          "={{ [" +
+          "$('Run Prequal Gate').item.json.ref_token, " +
+          "($('Run Prequal Gate').item.json.prospect_email ?? ''), " +
+          "$('Run Prequal Gate').item.json.subject_line, " +
+          // The emailSend response carries no body, so the branch is named
+          // rather than read back from the send.
+          "($('Run Prequal Gate').item.json.is_clear ? 'Tour booking link sent' " +
+          ": 'Alternatives offered - no refusal, pre-qual is scheduling triage'), " +
+          "'mail-prequal-' + $('Run Prequal Gate').item.json.ref_token + '-' + Date.now()" +
+          "] }}",
+      },
+      continueOnFail: true,
+    }
+  ),
+
   wf.telegramNode(
     "Notify Manager: Email Prequal Needs Review",
     {
@@ -1931,9 +2042,12 @@ const connections = wf.connect({
   // false branch is a dead end on purpose: a re-delivered update does nothing.
   "Is New Message?": [["Is Text Message?"], []],
   "Is Text Message?": [["Bind Lead Identity"], ["Reply: Text Only Please"]],
+  "Reply: Text Only Please": [["Log Prospect Telegram Message"]],
+  "Reply: Handing To A Colleague": [["Log Prospect Telegram Message"]],
   "Bind Lead Identity": [["Check Identity Binding"]],
   "Check Identity Binding": [["Lead Identified?"]],
   "Lead Identified?": [["Load Active Criteria"], ["Send: Start From A Listing"]],
+  "Send: Start From A Listing": [["Log Prospect Telegram Message"]],
   "Load Active Criteria": [["Load Recent Messages"]],
   "Load Recent Messages": [["Build Conversation Context"]],
   "Build Conversation Context": [["Show Typing"]],
@@ -1972,6 +2086,8 @@ const connections = wf.connect({
   "Tour Lead Found?": [["Tour: Pick Delivery Channel"], ["Alert Manager: Unmatched Booking"]],
   "Tour: Pick Delivery Channel": [["Tour: On Telegram?"]],
   "Tour: On Telegram?": [["Send Tour Confirmation (Telegram)"], ["Send Tour Confirmation (Email)"]],
+  "Send Tour Confirmation (Telegram)": [["Log Prospect Telegram Message"]],
+  "Send Tour Confirmation (Email)": [["Log Tour Confirmation Email"]],
 
   /* tour completed */
   "Receive Tour Completed (Demo)": [["Mark Lead Toured"]],
@@ -1981,6 +2097,8 @@ const connections = wf.connect({
     ["Send Application Link (Telegram)"],
     ["Send Application Link (Email)"],
   ],
+  "Send Application Link (Telegram)": [["Log Prospect Telegram Message"]],
+  "Send Application Link (Email)": [["Log Application Link Email"]],
 
   /* email path */
   "Receive Prospect Mail (IMAP)": [["Classify Inbound Mail"]],
@@ -2000,7 +2118,8 @@ const connections = wf.connect({
   "Run Prequal Gate": [["Update Lead After Prequal"]],
   "Update Lead After Prequal": [["Prequal Clear For Tour?"]],
   "Prequal Clear For Tour?": [["Send Tour Booking Link"], ["Send Alternatives Offer"]],
-  "Send Alternatives Offer": [["Notify Manager: Email Prequal Needs Review"]],
+  "Send Tour Booking Link": [["Log Prequal Email"]],
+  "Send Alternatives Offer": [["Notify Manager: Email Prequal Needs Review", "Log Prequal Email"]],
 });
 
 const workflow = wf.buildWorkflow({

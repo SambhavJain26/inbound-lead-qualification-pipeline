@@ -350,6 +350,29 @@ const nodes = [
     [380, 220]
   ),
 
+  wf.postgresNode(
+    "Log Welcome Packet",
+    "INSERT INTO message_log\n" +
+      "  (ref_token, direction, channel, tier, from_addr, to_addr, subject, body, message_id)\n" +
+      "VALUES ($1, 'outbound', 'email', 'A', '__SYSTEM_EMAIL__', $2, $3, $4, $5)\n" +
+      "ON CONFLICT (message_id) DO NOTHING;",
+    [600, 320],
+    {
+      queryOptions: {
+        queryReplacement:
+          "={{ [" +
+          "$('Mark Lease Signed').first().json.ref_token, " +
+          "($('Mark Lease Signed').first().json.email ?? ''), " +
+          "'Welcome to ' + $('Mark Lease Signed').first().json.address, " +
+          "'Welcome packet: insurance, utilities and the permanent entry code', " +
+          "'mail-welcome-' + $('Mark Lease Signed').first().json.ref_token" +
+          "] }}",
+      },
+      // Logging must never take down a send that already succeeded.
+      continueOnFail: true,
+    }
+  ),
+
   wf.telegramNode(
     "Notify Manager: Lease Signed",
     {
@@ -380,7 +403,7 @@ const connections = wf.connect({
   "Application Found For Envelope?": [["Signature Matches An Application?"]],
   "Signature Matches An Application?": [["Mark Unit Leased"], ["Alert Manager: Unknown Envelope"]],
   "Mark Unit Leased": [["Send Welcome Packet"]],
-  "Send Welcome Packet": [["Notify Manager: Lease Signed"]],
+  "Send Welcome Packet": [["Log Welcome Packet", "Notify Manager: Lease Signed"]],
 });
 
 const workflow = wf.buildWorkflow({

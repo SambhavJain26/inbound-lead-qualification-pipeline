@@ -227,6 +227,27 @@ function calBookingNode(name, startExpression, position) {
   };
 }
 
+/**
+ * One logger for every prospect-facing Telegram send here, same as WF1.
+ * Telegram's response carries the text and chat, so the lead is resolved from
+ * the chat id deterministically.
+ */
+const LOG_SQL =
+  "INSERT INTO message_log\n" +
+  "  (ref_token, direction, channel, tier, from_addr, to_addr, body, message_id)\n" +
+  "SELECT l.ref_token, 'outbound', 'telegram', 'A', 'leasing-assistant', $1, $2, $3\n" +
+  "  FROM leads l\n" +
+  " WHERE l.telegram_chat_id = NULLIF($1::text,'')::bigint\n" +
+  " ORDER BY l.id DESC LIMIT 1\n" +
+  "ON CONFLICT (message_id) DO NOTHING;";
+
+const LOG_PARAMS =
+  "={{ [" +
+  "String($json.result?.chat?.id ?? ''), " +
+  "($json.result?.text ?? ''), " +
+  "'tg-out-' + ($json.result?.chat?.id ?? 'x') + '-' + ($json.result?.message_id ?? Date.now())" +
+  "] }}";
+
 /* ------------------------------------------------------------------ nodes */
 
 const nodes = [
@@ -286,6 +307,12 @@ const nodes = [
     },
     [340, 0]
   ),
+
+  wf.postgresNode("Log Prospect Telegram Message", LOG_SQL, [1440, 200], {
+    queryOptions: { queryReplacement: LOG_PARAMS },
+    // Logging must never take down a send that already succeeded.
+    continueOnFail: true,
+  }),
 
   wf.ifNode(
     "Book Without Asking?",
@@ -484,10 +511,13 @@ const connections = wf.connect({
   // The renter is told what is happening before anything else, so there is never
   // a silent gap between naming a time and hearing back.
   "Match Slot And Check Policy": [["Tell Prospect What Is Happening"]],
-  "Tell Prospect What Is Happening": [["Book Without Asking?"]],
+  // Log branch first: n8n runs branches in order, so this keeps message_log in
+  // the same order the renter actually received the messages.
+  "Tell Prospect What Is Happening": [["Log Prospect Telegram Message", "Book Without Asking?"]],
   "Book Without Asking?": [["Cal.com: Create Booking"], ["Hold For Manager?"]],
   "Cal.com: Create Booking": [["Record Direct Booking"]],
   "Record Direct Booking": [["Confirm Tour Booked"]],
+  "Confirm Tour Booked": [["Log Prospect Telegram Message"]],
   "Hold For Manager?": [["Hold Slot For Approval"], []],
   "Hold Slot For Approval": [["Ask Manager: Approve This Tour"]],
 
@@ -497,7 +527,9 @@ const connections = wf.connect({
   "Tour Approved?": [["Cal.com: Create Approved Booking"], ["Mark Tour Declined"]],
   "Cal.com: Create Approved Booking": [["Record Approved Booking"]],
   "Record Approved Booking": [["Confirm Approved Tour"]],
+  "Confirm Approved Tour": [["Log Prospect Telegram Message"]],
   "Mark Tour Declined": [["Tell Prospect: Another Time"]],
+  "Tell Prospect: Another Time": [["Log Prospect Telegram Message"]],
 });
 
 const workflow = wf.buildWorkflow({

@@ -404,6 +404,30 @@
       }
     },
     {
+      "id": "log-welcome-packet",
+      "name": "Log Welcome Packet",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        600,
+        320
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO message_log\n  (ref_token, direction, channel, tier, from_addr, to_addr, subject, body, message_id)\nVALUES ($1, 'outbound', 'email', 'A', '__SYSTEM_EMAIL__', $2, $3, $4, $5)\nON CONFLICT (message_id) DO NOTHING;",
+        "options": {
+          "queryReplacement": "={{ [$('Mark Lease Signed').first().json.ref_token, ($('Mark Lease Signed').first().json.email ?? ''), 'Welcome to ' + $('Mark Lease Signed').first().json.address, 'Welcome packet: insurance, utilities and the permanent entry code', 'mail-welcome-' + $('Mark Lease Signed').first().json.ref_token] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
       "id": "notify-manager-lease-signed",
       "name": "Notify Manager: Lease Signed",
       "type": "n8n-nodes-base.telegram",
@@ -595,6 +619,11 @@
     "Send Welcome Packet": {
       "main": [
         [
+          {
+            "node": "Log Welcome Packet",
+            "type": "main",
+            "index": 0
+          },
           {
             "node": "Notify Manager: Lease Signed",
             "type": "main",

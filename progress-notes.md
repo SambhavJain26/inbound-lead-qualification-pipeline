@@ -417,3 +417,54 @@ or add a second app password so it can be scripted. Decide at the start of Stage
 
 Also: the containers had exited overnight and the tunnel is dead. `docker compose up -d` then
 `node scripts/start-tunnel.js` before Stage 3.
+
+---
+
+## 2026-09-12 — Prospect Mail Round Trip Verified
+
+`node scripts/send-as-prospect.js lead` → `node scripts/check-inbox.js` confirms the full
+path works:
+
+```
+From:     "Zillow Rental Manager" <worksambhav26@gmail.com>
+Reply-To: maya.restrepo.demo@convo.zillow.com
+Subject:  New rental inquiry: 412 Maple Street, Apt 2B
+Msg-ID:   <a7d6b159-...@gmail.com>
+```
+
+Display name survives, the relay Reply-To is intact, and a Message-ID is present for dedupe.
+As expected, Gmail rewrites the From **address** to the authenticated account; only the
+display name is ours. That is acceptable and matches how the demo is narrated.
+
+Added `scripts/lib/imap.js` (dependency-free IMAP client) and `scripts/check-inbox.js`, which
+reads either mailbox. Both will be the primary debugging tool for the Stage 3 IMAP trigger —
+far better than guessing from n8n's execution list.
+
+Mailbox variables consolidated: `DEMO_RECIPIENT_EMAIL` and `DEMO_FROM_EMAIL` are gone. There
+are two mailboxes and two variables, `GMAIL_ADDRESS` and `PROSPECT_GMAIL_ADDRESS`, and each
+mailbox both sends and receives.
+
+### Two issues found, both needing a decision before Stage 3
+
+**1. The IMAP trigger will see unrelated mail.** The system mailbox INBOX already holds 51
+messages, including marketing from Plaid and Cal.com that arrived during setup. An IMAP
+trigger on `UNSEEN` in INBOX would happily process those. Options:
+
+- Search criteria on the trigger, e.g. only messages whose subject matches the lead or
+  `[R-xxxx]` reply pattern
+- A Gmail filter that labels demo mail and an IMAP trigger bound to that label/folder
+- A first Code node that drops anything not matching, before any AI or DB step
+
+The label approach is cleanest and is also the most production-honest: a real deployment
+would have leads arriving to a dedicated address or label, not a human's general inbox.
+
+**2. The prospect mailbox is not a throwaway account.** `worksambhav26@gmail.com` holds
+**10,649 messages** — it is a real, in-use account. Two consequences:
+
+- On camera, showing the prospect's inbox exposes thousands of real emails. Bad for the
+  recording and a privacy problem if the video is shared.
+- Demo mail is interleaved with real mail, making a clean take harder.
+
+Recommendation: create a genuinely empty Gmail for the prospect before recording. If that is
+not wanted, at minimum set up a label + filter so a clean filtered view can be shown instead
+of the raw inbox.

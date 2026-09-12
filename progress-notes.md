@@ -1247,3 +1247,86 @@ worth reaching for immediately whenever a node reports something generic.
 2. Sign the DocuSign envelope by hand to close the loop on this run, as in the earlier build.
 3. `the-full-flow.md` and `docs/recording-checklist.md` still describe the email journey.
    Rewriting next, now that there are real quotes and timings to use.
+
+---
+
+## 2026-09-13 — Full Pipeline Closed On The New Front Of Funnel
+
+The lease was signed and the final path completed on its own. Every stage of the rebuilt
+pipeline is now proven end to end in this build, not carried over from the previous one.
+
+```
+lead R-1574   listing_site   prequalified -> tour_booked -> toured
+app  A-8745   claimed 5000.00 | extracted 4996.33 | verified 4996.33 | credit 712
+              meets_criteria -> approved -> lease sent
+              envelope 057c2a1f-6fd1-8ced-81fc-48ad9b9b0cbd
+              status=lease_signed  lease=signed  signed_at=2026-09-12 18:40:08
+
+MAPLE-2B -> leased
+MAPLE-5A -> available
+```
+
+The signature callback ran clean, and the guard added earlier took the correct branch:
+
+```
+18:40:07.966 -> 18:40:12.627   wf4-lease-and-signature   success
+
+RAN  Signature Returned (DocuSign) -> Parse Connect Event -> Envelope Completed?
+     -> Mark Lease Signed -> Application Found For Envelope?
+     -> Signature Matches An Application? -> Mark Unit Leased
+     -> Send Welcome Packet -> Notify Manager: Lease Signed
+not run  Alert Manager: Unknown Envelope
+```
+
+**4.7 seconds** from DocuSign's completion callback to the welcome packet going out and the
+unit flipping to leased.
+
+### The whole journey, on real services
+
+listing site -> contact form -> lead + HTML handoff page -> Telegram deep link -> /start binds
+the chat -> grounded answer to the question typed on the site -> pre-qualification gathered
+across turns -> Cal.com tour with a one-time entry code (MOCK) -> application link ->
+application with a pay stub -> paystub extraction -> **real Plaid Sandbox income verification**
+-> mocked bureau in ShareAble shape -> deterministic criteria engine -> decision card on the
+**manager** bot -> Approve -> DocuSign envelope -> signed -> unit leased -> welcome packet.
+
+### How the signature path came to be unverified in the first place
+
+Worth recording because it was a process failure rather than a code one. The first signed
+lease was approved, then the database was reset **underneath it** by running the Stage 7 gate
+(which reseeds) and then `reset-demo`. The callback arrived against an application row that no
+longer existed, so `Mark Lease Signed` matched nothing and the run died three nodes later at
+`Send Welcome Packet` with `No recipients defined` - an error that says nothing at all about
+the actual problem.
+
+Two things came out of it:
+
+- **A guard.** `Application Found For Envelope?` plus `Signature Matches An Application?` now
+  stop the branch and alert the manager when a completion callback has no application behind
+  it. This is the "messy rows are flagged for a human, never silently dropped" invariant
+  applied to a path that did not have it.
+- **A sequencing rule for demos:** never reset between an approval and a signature. The
+  envelope outlives the database; DocuSign has no idea the demo was reseeded.
+
+### Documentation rewritten
+
+Held back deliberately until the new path had actually run, so the quotes are real output:
+
+- `the-full-flow.md` - rewritten around the listing site and the Telegram conversation. The
+  strongest new beat is one the email flow could not produce: the assistant does not ask for
+  the move-in date, because the prospect already said "early October" on the listing page.
+  Also adds the sharper version of the headline claim - the AI does not decide *what to ask
+  next* either; the gate picks the slot and the wording is fixed text.
+- `docs/recording-checklist.md` - new window layout (listing site, renter's chat, manager's
+  chat, Airtable), beats 1-4 rebuilt, and a troubleshooting row for the failure that would be
+  hardest to diagnose live: if both bot tokens are the same bot the approve button silently
+  stops working.
+- `docs/listing-site.md` - new. Photo drop-in, why the contact form must stay a plain HTML
+  form and not `fetch()`, and what production replaces.
+
+### Open
+
+1. Real photos into `site-assets/` (placeholders render fine meanwhile).
+2. `docs/architecture.excalidraw` still shows the email front of funnel - regenerate before
+   recording.
+3. Record the demo.

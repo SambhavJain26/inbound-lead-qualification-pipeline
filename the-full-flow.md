@@ -250,6 +250,15 @@ The moment it comes back signed:
 - The unit flips from *available* to *leased*
 - She gets a welcome message about insurance, utilities, and her permanent entry code
 
+In testing, all three happened **4.7 seconds** after the signature came back:
+
+```
+18:40:07   Signature completed      (signature service)
+18:40:12   Welcome packet sent, MAPLE-2B marked leased
+```
+
+Nobody touched anything in between.
+
 The lease and the welcome packet go by **email**, not chat. That's deliberate: a chat is the
 right place for a conversation, and email is the right place for a document somebody needs to
 keep and be able to find again in a year.

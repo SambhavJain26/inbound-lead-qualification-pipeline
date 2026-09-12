@@ -62,8 +62,8 @@ async function main() {
   }
 
   const [first] = [...chats.keys()];
-  setEnvValue("TELEGRAM_MANAGER_CHAT_ID", String(first));
-  console.log(`\nTELEGRAM_MANAGER_CHAT_ID set to ${first}`);
+  setEnvValue(CHAT_VAR, String(first));
+  console.log(`\n${CHAT_VAR} set to ${first}`);
   if (chats.size > 1) console.log("More than one chat found - edit .env if that picked the wrong one.");
 }
 

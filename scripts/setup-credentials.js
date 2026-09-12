@@ -97,7 +97,12 @@ const DEFINITIONS = [
     displayName: "Leasing Airtable (display mirror)",
     type: "airtableTokenApi",
     requires: ["AIRTABLE_PAT"],
-    build: () => ({ apiKey: env.AIRTABLE_PAT }),
+    // The field is `accessToken`, not `apiKey`. Credential field names differ
+    // per type - check the credential definition rather than assuming. Storing
+    // it under the wrong key leaves the token empty and every request fails with
+    // "Authorization failed - please check your credentials", which reads like a
+    // bad token rather than a missing one.
+    build: () => ({ accessToken: env.AIRTABLE_PAT }),
   },
   {
     name: "calcom",

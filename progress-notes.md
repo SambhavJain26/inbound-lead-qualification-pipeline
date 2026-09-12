@@ -879,3 +879,48 @@ messages and will be on screen. One `.env` line.
 
 Also rename the Cal.com event type from "30 min meeting" to "Unit Tour" — the prospect sees
 that title on the booking page.
+
+---
+
+## 2026-09-12 — Airtable Board Fixed
+
+The board had never worked. Two causes, both mine.
+
+**1. The `Leads` table did not exist.** The base only had Airtable's default `Table 1`, so
+every mirror write from WF1 404'd. Because the mirror node is fire-and-forget by design
+(`onError: continueRegularOutput`), it failed silently on every run and never appeared in any
+verification gate. Fixed by `scripts/setup-airtable-schema.js`, which creates the table and is
+safe to re-run.
+
+**2. The credential stored the token under the wrong key.** `airtableTokenApi` expects
+`accessToken`; it was written as `apiKey`, so the token was empty. n8n reported
+"Authorization failed - please check your credentials", which reads like a bad token rather
+than a missing one — the PAT itself was fine the whole time and had just created the table.
+
+**Lesson, now in CLAUDE.md:** a node whose errors are deliberately swallowed must be verified
+to succeed at least once, explicitly. "It never broke anything" is not evidence it works.
+
+### Added
+
+- `scripts/setup-airtable-schema.js` — creates the `Leads` table with 11 fields, idempotent,
+  adds only missing fields on re-run.
+- `scripts/sync-airtable.js` — rebuilds the board from Postgres, upserting on `Ref Token` so
+  repeated runs update rather than duplicate. Includes applications that have no lead, which
+  would otherwise be invisible.
+- `submit-application.js` now auto-links to the most recent lead, mirroring the real flow
+  where the application link email carries `?ref_token=R-xxxx`. `--standalone` opts out.
+
+### Verified
+
+```
+BOARD: 2 record(s)
+
+  A-7506   Devon Clarke    Stopped For Review  MISMATCH 56% over verified
+  R-2667   Maya Restrepo   Engaged
+```
+
+The mismatch flag renders on the board itself, which makes it a genuinely useful third window
+during the demo rather than decoration.
+
+One manual step remains: delete Airtable's default `Table 1` by hand. The Meta API can create
+tables but cannot delete them.

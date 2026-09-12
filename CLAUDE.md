@@ -152,6 +152,8 @@ Known gotchas, carried forward from builds 01–04:
 - Set `contentType: "json"` alongside `sendBody` and `specifyBody: "json"`. Without it the body is form-encoded and a JSON API answers 400 with nothing useful in the message.
 - **`httpCustomAuth` is a GENERIC credential type**: `authentication: "genericCredentialType"` plus `genericAuthType: "httpCustomAuth"`. Declaring it as `predefinedCredentialType` applies no auth at all, and the API reports the credentials as missing as though they were never configured.
 - Credential types like `airtableTokenApi` *are* predefined and use `authentication: "predefinedCredentialType"` with `nodeCredentialType`.
+- **Credential field names differ per type — check the credential definition, never assume `apiKey`.** `airtableTokenApi` stores the token under `accessToken`; putting it in `apiKey` leaves the token empty and every request fails with "Authorization failed - please check your credentials", which reads like a bad token rather than a missing one.
+- A mirror node with `onError: continueRegularOutput` will fail on every single run without ever showing up in a gate. Verify it writes at least once, explicitly.
 
 **Code nodes and data shape**
 - When generating Code nodes from a builder script, avoid backticks and escape sequences inside template literals; they are consumed before reaching the node. Parse every generated Code node before importing.

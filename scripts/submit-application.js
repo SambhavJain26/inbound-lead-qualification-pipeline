@@ -12,6 +12,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { execFileSync } = require("child_process");
 const { REPO_ROOT, loadEnv } = require("./lib/env");
 const { applicants } = require("../fixtures/demo-data");
 
@@ -57,10 +58,27 @@ async function main() {
     form.set(`field-${index}`, value === null || value === undefined ? "" : String(value));
   };
 
-  // A ref token links the application back to its lead. Left blank here unless
-  // one is passed, so the form also works standalone.
+  // A ref token links the application back to its lead. In the real flow the
+  // application link email carries ?ref_token=R-xxxx, so default to the most
+  // recent lead rather than submitting an orphan the board cannot show.
   const refIndex = args.indexOf("--ref");
-  set("ref_token", refIndex === -1 ? "" : args[refIndex + 1]);
+  let refToken = refIndex === -1 ? "" : args[refIndex + 1];
+
+  if (!refToken && !args.includes("--standalone")) {
+    try {
+      refToken = execFileSync(
+        "docker",
+        ["compose", "exec", "-T", "postgres", "psql", "-U", env.POSTGRES_USER || "leasing",
+         "-d", env.POSTGRES_DB || "leasing", "-tA", "-c",
+         "SELECT ref_token FROM leads ORDER BY id DESC LIMIT 1;"],
+        { cwd: REPO_ROOT, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] }
+      ).trim();
+      if (refToken) console.log(`  linking to lead ${refToken}`);
+    } catch {
+      /* no lead yet - submit standalone */
+    }
+  }
+  set("ref_token", refToken);
 
   set("full_name", applicant.full_name);
   // The committed fixture carries a generic address. The demo needs the lease

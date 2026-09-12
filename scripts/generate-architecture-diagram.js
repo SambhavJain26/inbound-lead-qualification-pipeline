@@ -117,26 +117,38 @@ function arrow({ id, x, y, dx, dy, color = "#495057", dashed = false }) {
 
 const STAGES = [
   {
-    title: "Lead arrives",
-    built: "Gmail (IMAP)\nZillow-format lead email",
+    title: "Listing seen",
+    built: "Listing site,\ngenerated from the\nunit record",
     kind: "real",
-    production: "ILS feed or\nZillow Rental Manager",
+    production: "Zillow / Apartments.com\nor the operator's site",
+  },
+  {
+    title: "Contact form",
+    built: "Creates the lead,\nhands off to chat\n(also: Gmail IMAP)",
+    kind: "real",
+    production: "ILS lead feed\nor site form",
   },
   {
     title: "Instant reply",
-    built: "OpenAI\ngrounded in unit facts\n+ Tier A guardrails",
+    built: "OpenAI, in Telegram\ngrounded in unit facts\n+ Tier A guardrails",
     kind: "real",
     production: "Same, plus SMS\n(A2P 10DLC registered)",
   },
   {
     title: "Pre-qualification",
-    built: "Deterministic gate\nself-reported answers",
+    built: "Deterministic gate\nasks for what is missing\nself-reported answers",
     kind: "real",
     production: "Same",
   },
   {
-    title: "Tour",
-    built: "Cal.com booking\n+ entry code (MOCK)",
+    title: "Tour booked",
+    built: "Cal.com real slots,\nbooked in the chat.\nOut-of-hours held\nfor the manager",
+    kind: "real",
+    production: "Same",
+  },
+  {
+    title: "Entry code",
+    built: "One-time code\n(MOCK)",
     kind: "mock",
     production: "Rently / Tour24\nreal smart lock",
   },
@@ -193,7 +205,7 @@ const STAGES = [
 const BOX_W = 205;
 const BOX_H = 108;
 const GAP_X = 44;
-const COLS = 6;
+const COLS = 7;
 const ROW_GAP_Y = 300;
 const ORIGIN_X = 80;
 const ORIGIN_Y = 210;
@@ -209,7 +221,8 @@ label({
   x: ORIGIN_X, y: 104, w: 1400,
   text:
     "Green = real integration running today.   Amber = labelled mock.   Blue = the human decision.\n" +
-    "Grey beneath each box = what a production deployment puts there instead.",
+    "Grey beneath each box = what a production deployment puts there instead.\n" +
+    "Two Telegram bots: the renter talks to the leasing assistant, the manager gets decisions. They never share a conversation.",
   size: 15, align: "left", color: "#495057",
 });
 
@@ -237,7 +250,7 @@ STAGES.forEach((stage, index) => {
   }
 });
 
-// Row 1 ends at stage 6 and continues on row 2. An arrow sweeping back across
+// Row 1 ends at stage 7 and continues on row 2. An arrow sweeping back across
 // the canvas would cross row 2's labels, so a note reads more clearly.
 label({
   id: "continues",
@@ -253,20 +266,21 @@ label({
 
 const calloutY = ORIGIN_Y + ROW_GAP_Y + BOX_H + 200;
 
-box({ id: "callout", x: ORIGIN_X, y: calloutY, w: 1450, h: 150, kind: "swap" });
+box({ id: "callout", x: ORIGIN_X, y: calloutY, w: 1700, h: 176, kind: "swap" });
 label({
   id: "callout-title",
-  x: ORIGIN_X + 20, y: calloutY + 16, w: 1400,
+  x: ORIGIN_X + 20, y: calloutY + 16, w: 1650,
   text: "What the system never does",
   size: 18, bold: true, align: "left",
 });
 label({
   id: "callout-body",
-  x: ORIGIN_X + 20, y: calloutY + 50, w: 1400,
+  x: ORIGIN_X + 20, y: calloutY + 50, w: 1650,
   text:
     "It never decides.  The AI reads documents and answers questions; a deterministic engine applies the manager's published criteria; a person makes every rental decision.\n" +
     "It never scores or ranks an applicant, and never infers anything about a protected class.\n" +
-    "It never sends a denial.  A file that fails criteria stops and hands to a human - real adverse action is a formal FCRA process, and automating it is how operators end up in class actions.",
+    "It never sends a denial.  A file that fails criteria stops and hands to a human - real adverse action is a formal FCRA process, and automating it is how operators end up in class actions.\n" +
+    "It does not even decide what to ask next, or when a tour may happen.  The gate picks the next question and its wording is fixed; tour hours are the manager's, published in advance and applied identically.",
   size: 14, align: "left", color: "#343a40",
 });
 

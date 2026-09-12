@@ -1560,3 +1560,89 @@ missing-node question.
 ### State
 
 5 workflows, 83 + 18 + 13 + 19 + 23 nodes. 32 + 19 unit tests pass. Stage 7 gate passes.
+
+---
+
+## 2026-09-13 — Gate Extended, Docs And Diagram Caught Up
+
+Three pieces of catch-up, and one real regression found by doing them.
+
+### The regression: the email pre-qualification path was broken
+
+Running `verify-stage-3.js` for the first time since the WF1 rebuild found it. The rebuild
+renamed `Load Active Criteria` to `Load Criteria For Email Prequal` for the email branch, but
+the email `Run Prequal Gate` kept the old name - **which resolves to a real node on the
+Telegram branch**. So every Telegram run passed and every email reply failed with
+`Node 'Load Active Criteria' hasn't been executed`. It had been broken for days, invisible,
+because all the testing had been on the Telegram path.
+
+Fixed, and **`writeWorkflow` now validates that every `$('Node Name')` reference resolves**
+before writing. A stale reference that happens to name a real node on another branch is the
+nastiest version of this bug, because it only fails on the runs where that branch did not
+execute. All five workflows build clean under the new check, and the validator was tested both
+ways - it catches a bad reference and does not false-positive on a good one.
+
+Stage 3 gate: PASS again.
+
+### Stage 7 gate now covers all four tour paths
+
+The tour work had been verified by hand and not in any gate - the same gap that let the email
+break go unnoticed. It now asserts:
+
+```
+PASS  A time inside the policy books itself, no manager involved
+PASS  No approval was required
+PASS  Entry code issued (MOCK)
+PASS  Booked the local time that was asked for, not a UTC-shifted one
+PASS  R-8001: an out-of-policy time is held for the manager
+PASS  R-8001: nothing is booked while it is held
+PASS  R-8001: approving books the held slot
+PASS  R-8002: a declined slot is never booked
+PASS  R-8002: the held slot is released
+```
+
+Two deliberate choices. The gate **reads real Cal.com availability** and picks one slot inside
+the policy and one outside, rather than hard-coding hours that might be taken - otherwise it
+fails for reasons that have nothing to do with the code. And the two exception leads are
+**seeded straight into Postgres** rather than replayed through a three-turn conversation each;
+the conversational handoff is covered once, properly, by the first lead.
+
+The timezone assertion is the one worth keeping forever: it compares the booked time in
+property-local terms against what was asked for, which is the only way the 9:30am-for-2pm bug
+would ever have shown itself.
+
+### Documentation caught up
+
+`the-full-flow.md` Scene 4 was still describing the link-based booking. Rewritten around what
+actually happens, including the beat that makes it credible: the renter asked for 2pm, 2pm was
+not free, and the assistant booked 1:30pm **and said so**. Added the out-of-hours variant as a
+sub-scene, because "nothing is booked and they have not been given a time - your call" is a
+better illustration of the whole design than any amount of description.
+
+Also corrected: the contact button is "Send message", not "Send and continue on Telegram"; the
+manager's appearances are now "twice, plus an optional third for out-of-hours tours".
+
+`docs/recording-checklist.md` beat 4 rewritten to type a time rather than open a link, with the
+out-of-hours approval as an optional extra beat.
+
+### Diagram regenerated
+
+`docs/architecture.excalidraw`: 14 stages, up from 12. The front of funnel is now
+Listing seen -> Contact form -> Instant reply -> Pre-qualification -> Tour booked -> Entry code,
+with the Zillow mention moved to where it belongs - the production swap **underneath** the
+listing site, not the built box. Tour booking went from amber to green (only the entry code is
+still a mock). Added the two-bot line to the subtitle, and a second line to the compliance
+callout: it does not decide what to ask next, or when a tour may happen.
+
+Canvas 1780 x 994, 102 elements: 11 green, 2 amber, 1 blue, 15 grey.
+
+### Still open
+
+1. Real photos into `site-assets/`.
+2. **A genuine hand-run.** Every conversation so far has been the simulator posting synthetic
+   updates. The webhook is registered and healthy and replies arrive, but a message actually
+   typed into Telegram has never been proven end to end - and that is the product.
+3. Devon's fraud path has not been re-run since the tour and logging work.
+4. `PROSPECT_GMAIL_ADDRESS` is still the account with 10,000+ real messages, and is now also
+   the Cal.com attendee. The Cal.com event type is still named "30 min meeting".
+5. Record the demo.

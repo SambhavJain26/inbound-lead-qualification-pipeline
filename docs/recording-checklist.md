@@ -55,7 +55,7 @@ working — with no error anywhere.
 |---|---|
 | Listing site | Where the renter starts |
 | Telegram — leasing assistant | The renter's side of the conversation |
-| Telegram — manager bot | The decision card |
+| Telegram — manager bot | The decision card, and any out-of-hours tour request |
 | Airtable board | The lead moving through the pipeline |
 | Terminal | Only if you want to show the commands |
 
@@ -117,13 +117,33 @@ Show the Airtable board moving to *Prequalified*.
 > it's only deciding whether a tour is worth booking. If she hadn't been a fit she'd have been
 > offered alternatives, not a refusal."
 
-### 4. Tour booked
+### 4. The tour books itself
 
-The tour link arrives in the same message. Open it and book a slot.
+Type a time, the way a renter would — pick one inside 9am-6pm and at least a day out:
 
-> "Self-guided tour. They get a one-time entry code just before the slot. In a real deployment
-> that comes from the smart lock; here it's simulated, and I'll show you exactly where that
-> swap happens at the end."
+> *"Can I come by next Tuesday at 2pm?"*
+
+> "No link, no back-and-forth. It reads the real calendar and books a slot that actually
+> exists."
+
+Point at the time it booked.
+
+> "And notice it tells you the time it booked. If two o'clock isn't free it takes the nearest
+> real slot and says so — it doesn't quietly move you by half an hour and hope you don't check."
+
+> "They get a one-time entry code for the slot. In a real deployment that comes from the smart
+> lock; here it's simulated, and I'll show you exactly where that swap happens at the end."
+
+**Optional, and it's a strong beat if you have the time.** Do it again from a second lead with
+an out-of-hours time — *"Could I see it Thursday at 8pm? I work late."*
+
+> "Nothing was booked. The manager published when self-guided tours can happen, and 8pm isn't
+> in it — so it puts a hold on the slot and asks."
+
+Show the card on the manager bot, tap **Approve tour**, show the confirmation arriving.
+
+> "Ordinary bookings never wait for anyone. Only the unusual one does, and the rule deciding
+> which is which was written down in advance."
 
 Then:
 

@@ -1,6 +1,6 @@
 # The Full Flow, End To End
 
-Last updated: 2026-09-12
+Last updated: 2026-09-13
 
 What actually happens, from a stranger browsing a listing to a new resident holding a signed
 lease. No technical detail — just the sequence, who does what, and how long it takes.
@@ -19,6 +19,9 @@ Every message quoted below is real output from a working run.
 
 The important thing to notice as you read: the property manager appears **twice**. Once at the
 start to set the rules, and once per applicant to make the call. That's it.
+
+(There is a third appearance, and it is optional: if a renter asks to tour outside the hours
+the manager published, that one waits for a tap. Ordinary bookings never do.)
 
 ---
 
@@ -39,7 +42,7 @@ She has two questions the listing doesn't quite answer, so she uses the contact 
 The office closed five hours ago. Normally this sits unread until tomorrow, and by then she's
 messaged four other places.
 
-She taps **Send and continue on Telegram**.
+She taps **Send message**.
 
 ---
 
@@ -112,24 +115,69 @@ mail poll, no "reply to this address".
 
 ## Scene 4 — 10:42pm
 
-> **Involved:** the rules engine (decides she's ready) · **Cal.com** (the booking page) · **Telegram**
+> **Involved:** the rules engine (decides she's ready) · **Cal.com** (real availability, and the booking) · **Telegram**
 
-Because nothing is outstanding and nothing failed, the same message carries the next step:
+Nothing is outstanding and nothing failed, so the same message invites her to pick a time. She
+answers the way anyone would:
 
-> Thanks, I've noted gross monthly income of about $5,000, one adult occupant, and one car.
-> The unit includes one assigned surface parking space.
+> *"Can I come by next Tuesday at 2pm?"*
+
+She doesn't get a link. She gets a booking:
+
+> I'm checking whether a self-guided tour is available Tuesday, September 15 at 2:00 PM.
 >
-> Everything looks like a fit so far. Here is the link to pick a tour time that suits you:
-> https://cal.com/…?metadata[ref_token]=R-1574
-
-She picks Saturday at 11am. Shortly before her slot, an entry code arrives in the same chat:
-
-> Entry code: 616464
+> Booking you in for Tuesday, September 15 at 1:30 PM. One moment.
+>
+> Your self-guided tour of 412 Maple Street, Apt 2B is confirmed for Tuesday, September 15 at
+> 1:30 PM.
+>
+> Entry code: 469266
 >
 > The code works during your booked slot only. Let yourself in, take your time, and pull the
 > door closed when you leave.
 
-Self-guided. No agent drives across town.
+Read that middle line again, because it is the honest part. She asked for **2pm**. 2pm was not
+free. It booked **1:30pm** — the nearest time that genuinely existed — and *said so*. It did not
+quietly shift her by half an hour and hope she didn't check.
+
+Two things are worth separating here.
+
+**The assistant cannot invent a time.** It reads Cal.com's actual availability and can only
+book a slot that is really there. If nothing is close, it offers the nearest real alternatives
+instead of guessing.
+
+**And it still isn't the one deciding.** The manager wrote down when self-guided tours may
+happen — 9am to 6pm, at least half a day's notice. Inside those hours the assistant books and
+nobody is disturbed. Outside them, it does something different.
+
+### The same conversation, at a different hour
+
+Suppose she'd asked for **8pm on Thursday**, because she works late. Nothing is booked. She gets:
+
+> I have put a hold on Thursday, September 17 at 8:00 PM. That one needs a quick check with the
+> team — I will confirm shortly.
+
+And the manager gets one card:
+
+> **Tour request outside the usual policy**
+> Maya Restrepo (R-9974) · MAPLE-2B
+> Requested: Thursday, September 17 at 8:00 PM
+>
+> Held because: outside self-guided hours (9:00–18:00)
+>
+> Nothing is booked and they have not been given a time. Your call.
+>
+> [ Approve tour ] [ Not that time ]
+
+If they approve, it books and she gets the confirmation and her code. If they decline, she is
+offered another time — and the slot **was never booked in the first place**, so nothing has to
+be cancelled and no one else was blocked out of it.
+
+That is the shape of the whole system in miniature: the ordinary case runs without anyone, the
+unusual case waits for a person, and the rule deciding which is which was written down in
+advance rather than judged case by case.
+
+Self-guided either way. No agent drives across town.
 
 ---
 
@@ -349,7 +397,8 @@ Plus a one-time setup: writing down the criteria they already use.
 | Answering the same questions | Every single time | Never |
 | Asking the same question twice | Constantly | Never — it remembers what you told it |
 | Pre-qualifying | A phone call | Already done, in chat |
-| Booking tours | Back-and-forth | Self-service |
+| Booking tours | Back-and-forth | Settled in the chat, in one message |
+| Out-of-hours tour requests | Ignored, or agreed and forgotten | Held, and put in front of a person |
 | Checking income | Reading a PDF and hoping | Verified against the bank |
 | Fake pay stub | Usually works | Caught in seconds |
 | Applying the rules | From memory, roughly | Identically, recorded |
@@ -387,7 +436,7 @@ its guidance on AI in tenant screening in 2024.
 | **The listing site** | Scenes 1, 2 | Where the renter finds the home and sends the first message. Every page is generated from the property record, so the listing and the assistant quote the same facts |
 | **Telegram** | Scenes 2–5, 8 | Two separate chats. The renter talks to the leasing assistant; the manager gets the decision card. They never share a conversation |
 | **OpenAI** | Scenes 2, 3, 7 | Answers from the property's own facts, pulls answers out of plain-English messages, and reads figures off the uploaded pay stub. It never decides anything |
-| **Cal.com** | Scene 4 | The booking page the renter picks a tour slot on, and the calendar behind it |
+| **Cal.com** | Scene 4 | The real calendar. The assistant reads actual availability from it and books into it, so it can only ever offer a time that genuinely exists |
 | **The application form** | Scene 6 | The online form, including the document upload |
 | **Plaid** | Scene 7 | Checks income against bank deposits rather than against the paperwork. The single most important check in the system. Running against Plaid's Sandbox here, so the figure is test data and there is no bank-login step |
 | **DocuSign** | Scene 9 | Sends the lease, collects the signature, and tells the system when it is done |
@@ -420,7 +469,8 @@ Worth being straight about, because it's part of the pitch.
 **Genuinely running:** the listing site, the conversation, the document reading, the
 **bank-based income check** (a real connection to the service thousands of banking apps use,
 running against its Sandbox, so the figures are test data and the renter never sees the
-bank-login screen), the criteria engine, tour booking, electronic signature, and every message.
+bank-login screen), the criteria engine, tour booking against a real calendar, electronic signature, and every
+message.
 
 **Simulated, and labelled everywhere it appears:** the credit and eviction check, the identity
 document check, and the smart-lock code.

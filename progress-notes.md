@@ -841,3 +841,41 @@ Both demo outcomes are proven: Maya reaches a signed lease, Devon stops for a hu
 
 Stages 1 to 5 are complete. Only Stage 6 remains: demo reset, the Excalidraw architecture
 diagram, the recording checklist, and the `my_builds/05-*` write-ups.
+
+---
+
+## 2026-09-12 — Stage 6: Demo Polish Complete
+
+All six stages done. The build is demo-ready.
+
+### Added
+
+- `scripts/reset-demo.js` — clean state between takes, optionally clearing the Airtable
+  mirror. Prints what it deliberately does not reset (DocuSign envelopes, mailboxes, Cal.com
+  bookings) rather than silently leaving them.
+- `scripts/generate-architecture-diagram.js` → `docs/architecture.excalidraw` — 12 pipeline
+  stages, each with its production swap directly beneath. Green = real, amber = labelled
+  mock, blue = the human decision, grey = what production puts there instead. Includes a
+  "what the system never does" callout. Layout verified by rendering an SVG preview rather
+  than trusting the coordinates.
+- `docs/recording-checklist.md` — setup commands, window layout, the run beat by beat with
+  suggested narration, a failure table, and the four lines worth saying to a prospect.
+- `my_builds/05-leasing-tenant-screening/how-the-system-works.md` — plain-language write-up
+  matching builds 01-04.
+- `my_builds/05-leasing-tenant-screening/build-technical-notes.md` — how it was assembled,
+  what broke, and what I would do differently.
+
+### Final state
+
+- 4 workflows, 71 nodes, 5 Postgres tables, **zero npm dependencies**
+- 38 unit tests plus an end-to-end gate per stage, all passing
+- Only paid dependency is OpenAI, a few dollars for the entire build
+- Both demo outcomes proven end to end on real services
+
+### The one thing still worth doing before recording
+
+Swap `PROSPECT_GMAIL_ADDRESS` to a genuinely empty Gmail. The current one holds 10,000+ real
+messages and will be on screen. One `.env` line.
+
+Also rename the Cal.com event type from "30 min meeting" to "Unit Tour" — the prospect sees
+that title on the booking page.

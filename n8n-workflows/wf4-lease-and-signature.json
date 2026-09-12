@@ -16,8 +16,8 @@
         "httpMethod": "POST",
         "path": "lease-create",
         "responseMode": "lastNode",
-        "responseData": "allEntries",
-        "options": {}
+        "options": {},
+        "responseData": "allEntries"
       },
       "webhookId": "lease-create"
     },
@@ -185,7 +185,7 @@
       "credentials": {
         "telegramApi": {
           "id": "__TELEGRAM_CREDENTIAL_ID__",
-          "name": "Leasing Telegram"
+          "name": "Leasing Telegram (manager bot)"
         }
       },
       "onError": "continueRegularOutput"
@@ -203,8 +203,8 @@
         "httpMethod": "POST",
         "path": "docusign-status",
         "responseMode": "lastNode",
-        "responseData": "allEntries",
-        "options": {}
+        "options": {},
+        "responseData": "allEntries"
       },
       "webhookId": "docusign-status"
     },
@@ -347,7 +347,7 @@
       "credentials": {
         "telegramApi": {
           "id": "__TELEGRAM_CREDENTIAL_ID__",
-          "name": "Leasing Telegram"
+          "name": "Leasing Telegram (manager bot)"
         }
       },
       "onError": "continueRegularOutput"

@@ -81,12 +81,13 @@ function seedUnits() {
       INSERT INTO units
         (unit_code, address, beds, baths, sqft, rent_amount, deposit_amount, available_from,
          pet_policy, pet_fee_monthly, parking, utilities_included, laundry,
-         lease_term_months, faq_facts, status)
+         lease_term_months, title, description, photos, faq_facts, status)
       VALUES
         (${lit(u.unit_code)}, ${lit(u.address)}, ${u.beds}, ${u.baths}, ${u.sqft},
          ${u.rent_amount}, ${u.deposit_amount}, ${lit(u.available_from)},
          ${lit(u.pet_policy)}, ${u.pet_fee_monthly}, ${lit(u.parking)},
          ${lit(u.utilities_included)}, ${lit(u.laundry)}, ${u.lease_term_months},
+         ${lit(u.title)}, ${lit(u.description)}, ${jsonLit(u.photos)},
          ${jsonLit(u.faq_facts)}, 'available');
     `);
     console.log(`  unit ${u.unit_code}: ${u.beds}bd/${u.baths}ba, $${u.rent_amount}/mo`);

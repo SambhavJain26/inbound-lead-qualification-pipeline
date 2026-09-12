@@ -62,6 +62,18 @@ CREATE TABLE units (
     utilities_included  TEXT,
     laundry             TEXT,
     lease_term_months   INTEGER     NOT NULL DEFAULT 12,
+
+    -- Listing-site presentation. The site is generated from these rows, so the
+    -- listing a prospect reads and the facts the assistant may quote come from
+    -- one record and cannot drift apart.
+    --
+    -- `description` must contain NO dollar figures. The Tier A guardrail only
+    -- permits numbers present in buildUnitKnowledge(unit), so a marketing
+    -- sentence carrying a new figure would teach the model an ungrounded number.
+    title               TEXT,
+    description         TEXT,
+    photos              JSONB       NOT NULL DEFAULT '[]'::jsonb,
+
     -- Free-form additional facts the FAQ bot may quote. Anything not here is
     -- "I don't have that - let me get someone to confirm."
     faq_facts           JSONB       NOT NULL DEFAULT '{}'::jsonb,
@@ -82,12 +94,28 @@ CREATE TABLE leads (
     id                  SERIAL PRIMARY KEY,
     ref_token           TEXT        NOT NULL UNIQUE,   -- R-xxxx, used to match replies
     unit_id             INTEGER     REFERENCES units(id),
-    source              TEXT        NOT NULL CHECK (source IN ('zillow_email', 'web_chat', 'manual')),
+    -- 'listing_site' is the primary path: the prospect submits the contact form
+    -- on our own listing site. 'zillow_email' is the retained second entry
+    -- point, where a listing-site lead arrives as email over IMAP.
+    source              TEXT        NOT NULL CHECK (source IN ('listing_site', 'zillow_email', 'web_chat', 'manual')),
     prospect_name       TEXT,
     prospect_email      TEXT,
     -- Zillow relays leads through an anonymised address and does not include a
     -- phone number, so this is usually null. That is real behaviour, not a gap.
     prospect_phone      TEXT,
+
+    -- Telegram is where the prospect conversation actually happens. The chat is
+    -- bound to a lead deterministically by the /start R-xxxx deep-link payload,
+    -- then by chat_id on every message after that. The model never resolves
+    -- identity.
+    --
+    -- Deliberately NOT unique: one Telegram account may inquire about two
+    -- units. The newest lead wins (ORDER BY id DESC LIMIT 1) and a fresh
+    -- /start R-xxxx switches the active conversation back. A unique index looks
+    -- tidier and silently breaks the second inquiry.
+    telegram_chat_id    BIGINT,
+    telegram_username   TEXT,       -- display only, for the manager's alert card
+    last_prospect_message_at TIMESTAMPTZ,
 
     status              TEXT        NOT NULL DEFAULT 'new'
                         CHECK (status IN ('new','engaged','prequalified','prequal_not_met',
@@ -108,7 +136,12 @@ CREATE TABLE leads (
     lock_code           TEXT,
     lock_code_source    TEXT,       -- always 'mock' in this build
 
-    -- Chat memory for the web widget, keyed by session
+    -- Telegram turn state. Written on every conversation turn:
+    --   { inquiry_text, asked: [], last_intent, reask_count, turn_count,
+    --     wants_human }
+    -- `asked` is what stops the assistant re-asking a pre-qualification
+    -- question it has already put to the prospect; the deterministic gate picks
+    -- the next slot from it, not the model.
     conversation_state  JSONB       NOT NULL DEFAULT '{}'::jsonb,
 
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -117,6 +150,7 @@ CREATE TABLE leads (
 
 CREATE INDEX leads_ref_token_idx ON leads (ref_token);
 CREATE INDEX leads_prospect_email_idx ON leads (prospect_email);
+CREATE INDEX leads_telegram_chat_id_idx ON leads (telegram_chat_id);
 
 -- ---------------------------------------------------------------------------
 -- applications
@@ -223,7 +257,9 @@ CREATE TABLE message_log (
     id                  SERIAL PRIMARY KEY,
     ref_token           TEXT,
     direction           TEXT        NOT NULL CHECK (direction IN ('inbound','outbound')),
-    channel             TEXT        NOT NULL CHECK (channel IN ('email','web_chat','telegram','docusign')),
+    -- 'web_form' is the listing-site contact form; 'telegram' is the prospect
+    -- conversation and the manager's card.
+    channel             TEXT        NOT NULL CHECK (channel IN ('email','web_form','web_chat','telegram','docusign')),
     tier                CHAR(1)     CHECK (tier IN ('A','B')),
 
     from_addr           TEXT,

@@ -134,10 +134,48 @@ async function main() {
     return `${body.data.length} models available`;
   });
 
-  await test("Telegram bot", async () => {
+  await test("Telegram bot (manager)", async () => {
     const body = await api(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getMe`);
     if (!body.ok) throw new Error(body.description);
     return `@${body.result.username}`;
+  });
+
+  await test("Telegram bot (prospect)", async () => {
+    if (!env.TELEGRAM_PROSPECT_BOT_TOKEN) {
+      throw new Error("TELEGRAM_PROSPECT_BOT_TOKEN is not set - create a second @BotFather bot");
+    }
+    const body = await api(
+      `https://api.telegram.org/bot${env.TELEGRAM_PROSPECT_BOT_TOKEN}/getMe`
+    );
+    if (!body.ok) throw new Error(body.description);
+
+    const declared = (env.TELEGRAM_PROSPECT_BOT_USERNAME || "").replace(/^@/, "");
+    if (declared && declared.toLowerCase() !== body.result.username.toLowerCase()) {
+      throw new Error(
+        `TELEGRAM_PROSPECT_BOT_USERNAME is "${declared}" but the token belongs to ` +
+          `@${body.result.username}. The listing-site deep link would open the wrong bot.`
+      );
+    }
+    return `@${body.result.username}`;
+  });
+
+  // The check that matters most. Telegram allows one webhook per bot, so if
+  // both tokens are the same bot, activating WF1 re-registers the manager bot's
+  // webhook onto WF1 and every approval button dies silently.
+  await test("Telegram bots are distinct", async () => {
+    const manager = await api(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getMe`);
+    const prospect = await api(
+      `https://api.telegram.org/bot${env.TELEGRAM_PROSPECT_BOT_TOKEN}/getMe`
+    );
+    if (!manager.ok || !prospect.ok) throw new Error("could not read both bots");
+    if (manager.result.id === prospect.result.id) {
+      throw new Error(
+        `both tokens are the same bot (@${manager.result.username}). ` +
+          "One webhook per bot: WF1 would silently steal WF3's manager webhook. " +
+          "Create a second bot with @BotFather."
+      );
+    }
+    return `@${manager.result.username} (manager) / @${prospect.result.username} (prospect)`;
   });
 
   await test("Plaid Sandbox", async () => {

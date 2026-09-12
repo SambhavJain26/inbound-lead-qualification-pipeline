@@ -59,6 +59,9 @@ Useful commands:
 - `node scripts/build-wf<n>-*.js` — regenerate a workflow export after changing a shared library.
 - `node scripts/import-workflows.js [name ...]` — substitute local ids, then import/activate.
 - `node scripts/seed-demo.js` — reset the state store to the clean demo state.
+- `node scripts/build-listing-site.js` — regenerate the listing site from the `units` rows.
+- `node scripts/serve-listing-site.js [--detach|--stop]` — serve it on `localhost:8080`.
+- `node scripts/simulate-prospect-message.js conversation R-xxxx` — drive the renter side of the Telegram conversation headlessly.
 - `node scripts/start-tunnel.js` — re-establish the tunnel, repoint n8n, recreate the container.
 - `.\scripts\verify-stage-1.ps1` — verify Docker, Compose config, and local n8n reachability.
 
@@ -67,6 +70,8 @@ Do not assume package managers, Docker images, API keys, Gmail OAuth credentials
 ## Architecture Rules
 
 - n8n orchestrates. **Postgres** (local Docker) is the system of record for everything. **Telegram** is the manager's action surface.
+- The **listing site** is the front door: static HTML generated from the `units` rows by `scripts/build-listing-site.js`, served by a zero-dependency Node server on `:8080`. The listing a prospect reads and the facts the assistant may quote come from one record and cannot drift apart. It is not tunnelled — the quick tunnel maps one origin and that origin must stay n8n.
+- **Telegram is both surfaces, on two bots.** The prospect conversation (WF1) runs on the prospect bot; the manager's decisions (WF3) on the manager bot. See the Telegram gotchas below before touching either.
 - **Airtable is a display mirror, never the state store.** Lead-pipeline rows are mirrored out to Airtable so the demo has a visible board; Postgres stays the truth. Airtable Free caps API calls at 1,000/month per workspace, so the pipeline must keep running unaffected if the mirror fails or is capped: never read state back from Airtable, and never block a workflow on an Airtable write (fire-and-forget, errors logged not thrown).
 - Mirror writes happen at **phase boundaries only** — lead created, pre-qualified, tour booked, applied, decided. Roughly five calls per lead lifecycle. Do not mirror on every field change, and skip mirroring during development iterations.
 - `scripts/sync-airtable.js` rebuilds the Airtable board from Postgres in one command, so a stale or capped board is recoverable before a take.
@@ -94,6 +99,7 @@ Tenant screening is legally loaded — FCRA, the Fair Housing Act, HUD's AI guid
 **The division of labour**
 
 - **AI never decides.** The model's jobs are bounded to four: answer questions from a grounded property knowledge base, extract fields from documents with a citation for every value, classify intent, and draft messages for human approval. It must never output a decision, score, rank, risk label, or recommendation, and no output schema may contain a field that could carry one.
+- **The gate drives the conversation, not the model.** In the Telegram conversation the model answers what was asked and extracts what was stated; `prequalGate()` decides the outcome and a fixed `COLLECT_ORDER` decides what is still outstanding. The next question is a **fixed string** from `QUESTION_PROMPTS`, and the prompt tells the model explicitly not to ask it. Identity is resolved in SQL from the `/start R-xxxx` deep-link payload, then by `chat_id` — never by the model.
 - **The criteria engine is deterministic.** Pass/conditional/fail logic is plain JavaScript reading manager-configured thresholds from a config table. It never calls a model. It emits `meets_criteria`, `conditional`, or `does_not_meet` plus a per-criterion evidence trail naming the document, field, and value behind each result. Consistent published criteria applied identically to every applicant is the *compliant* pattern — the AI black box is the dangerous one.
 - **A human makes every rental decision.** The engine classifies; the manager decides and the record shows who decided what, when.
 
@@ -129,7 +135,10 @@ Known gotchas, carried forward from builds 01–04:
 
 **Telegram**
 - The Telegram node takes `replyMarkup` as a top-level enum and reads buttons from a fixed collection. A JSON string in `additionalFields.reply_markup` is ignored and the card posts with no buttons. Keep one Telegram node per card layout and drive `callback_data` with an expression.
-- One webhook per bot, so only one Telegram Trigger may be active. Every button and command enters through the single router workflow.
+- **One webhook per bot.** This build runs **two bots** — a manager bot (WF3 router, every manager alert) and a prospect bot (WF1's leasing assistant). They must be different `@BotFather` bots: two Telegram Triggers on one token means the second registration silently evicts the first, and every approval button stops working with no error anywhere. `verify-credentials.js` calls `getMe` on both and fails if the ids match.
+- **Two Telegram credentials share the type `telegramApi`, so `import-workflows.js` resolves them by NAME, not type.** The names live in `scripts/lib/credential-names.js` and are load-bearing across `setup-credentials.js`, `wf-common.js` and `import-workflows.js`. A type lookup is last-wins and points both placeholders at one bot — the failure above. There is deliberately no fallback to the type map.
+- Telegram messages cap at **4096 characters**. Composed text (model output + appended fixed wording + a URL) must be truncated before sending.
+- A message to the **prospect** must fail visibly, not swallow errors: the node after it writes a `message_log` row saying the message went out. `wf-common.js:telegramNode` takes `failOnError` for this; manager alerts keep `continueRegularOutput`.
 - `callback_data` is capped at 64 bytes. A short action prefix plus a record id stays around 22 bytes.
 - The keyboard is baked into the message at send time. Redeploying never updates an old card; re-trigger to get fresh buttons.
 
@@ -173,6 +182,9 @@ Known gotchas, carried forward from builds 01–04:
 - **An uploaded file is keyed after the submitted field name (`field-N`), not the field label.** Re-key it to a stable name in the first Code node; a downstream Extract From File node cannot rely on the label.
 - **Postgres nodes drop binary data.** Anything that needs an uploaded file must reach the extract node before any database node runs.
 - Respond-to-Webhook status-code expressions are unreliable. Use separate literal-status Respond nodes when status matters.
+- **Returning HTML:** use `respondWith: "text"` plus an explicit `Content-Type: text/html; charset=utf-8` header. `respondWith: "json"` makes the browser download the page instead of rendering it, and `text` alone defaults to `text/plain`. Build the HTML in a Code node and point `responseBody` at a single variable, so quoting and newlines never reach the expression parser.
+- `webhookNode` must only emit `responseData` in `lastNode` mode. A leftover response parameter in `responseNode` mode is the same failure class as the Form Trigger note above.
+- **The listing site's contact form must be a native `<form method="post">`, never `fetch()`.** A native post is a top-level navigation: no CORS preflight, and the browser renders the HTML that comes back, which is the entire point of the handoff page. It also posts to `http://localhost:5678`, not the tunnel — which is why the site does not need rebuilding when the tunnel hostname changes.
 - cloudflared quick tunnels get a new hostname every run, and n8n reads `WEBHOOK_URL` only at container start. Re-run the tunnel script after any tunnel or Docker restart, then re-import the trigger workflow.
 - Docker Compose `restart` may not apply changed environment variables. Recreate the container when changing webhook/tunnel settings.
 

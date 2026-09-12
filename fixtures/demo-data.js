@@ -51,6 +51,15 @@ const units = [
     utilities_included: "Water, sewer, and trash included. Resident pays electric and gas.",
     laundry: "Shared laundry room on the ground floor, card operated.",
     lease_term_months: 12,
+    // Listing-site copy. NO dollar figures here - see db/schema.sql: the Tier A
+    // guardrail only allows numbers that appear in buildUnitKnowledge(unit).
+    title: "Bright 2-bedroom on Maple Street",
+    description:
+      "A second-floor two-bedroom with a private balcony off the living room, " +
+      "central air, and luxury vinyl plank throughout. Shared laundry on the " +
+      "ground floor and an assigned basement storage locker. Self-guided tours " +
+      "daily with a one-time door code.",
+    photos: ["MAPLE-2B-1", "MAPLE-2B-2", "MAPLE-2B-3"],
     faq_facts: {
       air_conditioning: "Central air.",
       heating: "Forced-air gas heat.",
@@ -79,6 +88,13 @@ const units = [
     utilities_included: "Water, sewer, and trash included. Resident pays electric and gas.",
     laundry: "In-unit washer and dryer.",
     lease_term_months: 12,
+    title: "Top-floor 3-bedroom corner unit",
+    description:
+      "A top-floor corner three-bedroom with two balconies, two bathrooms, and " +
+      "an in-unit washer and dryer. Two assigned parking spaces included. " +
+      "Central air, luxury vinyl plank throughout, and a basement storage " +
+      "locker. Self-guided tours daily with a one-time door code.",
+    photos: ["MAPLE-5A-1", "MAPLE-5A-2", "MAPLE-5A-3"],
     faq_facts: {
       air_conditioning: "Central air.",
       heating: "Forced-air gas heat.",

@@ -81,6 +81,10 @@ async function main() {
   console.log("    They do not affect a new run; each approval creates a fresh envelope.");
   console.log("  - Mail already in either inbox. Clear it by hand if it will be on camera.");
   console.log("  - Cal.com bookings. Cancel old ones if the calendar is visible in the take.");
+  console.log("  - Telegram chat history, on BOTH bots. There is no API to clear a chat, so");
+  console.log("    delete the conversations by hand before a take - the prospect chat is on");
+  console.log("    camera and an old conversation above the new one is confusing.");
+  console.log("    The database side IS reset, so the assistant starts from zero regardless.");
 }
 
 main().catch((error) => {

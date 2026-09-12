@@ -65,15 +65,17 @@ const parseCallbackCode = [
 ].join("\n");
 
 const nodes = [
+  // The MANAGER bot. WF1's prospect conversation runs on a second bot, because
+  // Telegram allows one webhook per bot. The node id is pinned to its original
+  // value: n8n derives the webhook secret from `${workflowId}_${nodeId}`, and
+  // there is no reason to churn it.
   {
+    ...wf.telegramTriggerNode("Manager Actions (Telegram)", [-620, 0], {
+      bot: "manager",
+      updates: ["callback_query", "message"],
+      webhookId: "leasing-telegram-router",
+    }),
     id: "telegram-trigger",
-    name: "Manager Actions (Telegram)",
-    type: "n8n-nodes-base.telegramTrigger",
-    typeVersion: 1.2,
-    position: [-620, 0],
-    parameters: { updates: ["callback_query", "message"], additionalFields: {} },
-    credentials: { telegramApi: { id: wf.PLACEHOLDER.TELEGRAM, name: "Leasing Telegram" } },
-    webhookId: "leasing-telegram-router",
   },
 
   wf.codeNode("Parse Manager Action", parseCallbackCode, [-400, 0]),

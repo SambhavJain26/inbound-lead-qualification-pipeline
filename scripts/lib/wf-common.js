@@ -9,6 +9,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const CREDENTIAL_NAMES = require("./credential-names");
 
 const PLACEHOLDER = {
   POSTGRES: "__POSTGRES_CREDENTIAL_ID__",
@@ -16,6 +17,7 @@ const PLACEHOLDER = {
   SMTP: "__SMTP_CREDENTIAL_ID__",
   IMAP: "__IMAP_CREDENTIAL_ID__",
   TELEGRAM: "__TELEGRAM_CREDENTIAL_ID__",
+  TELEGRAM_PROSPECT: "__TELEGRAM_PROSPECT_CREDENTIAL_ID__",
   AIRTABLE: "__AIRTABLE_CREDENTIAL_ID__",
   PLAID: "__PLAID_CREDENTIAL_ID__",
   DOCUSIGN: "__DOCUSIGN_CREDENTIAL_ID__",
@@ -26,7 +28,10 @@ const CREDENTIAL = {
   openai: { openAiApi: { id: PLACEHOLDER.OPENAI, name: "Leasing OpenAI" } },
   smtp: { smtp: { id: PLACEHOLDER.SMTP, name: "Leasing SMTP (outbound mail)" } },
   imap: { imap: { id: PLACEHOLDER.IMAP, name: "Leasing IMAP (inbound mail)" } },
-  telegram: { telegramApi: { id: PLACEHOLDER.TELEGRAM, name: "Leasing Telegram" } },
+  telegram: { telegramApi: { id: PLACEHOLDER.TELEGRAM, name: CREDENTIAL_NAMES.TELEGRAM_MANAGER } },
+  telegramProspect: {
+    telegramApi: { id: PLACEHOLDER.TELEGRAM_PROSPECT, name: CREDENTIAL_NAMES.TELEGRAM_PROSPECT },
+  },
   airtable: { airtableTokenApi: { id: PLACEHOLDER.AIRTABLE, name: "Leasing Airtable (display mirror)" } },
   plaid: { httpCustomAuth: { id: PLACEHOLDER.PLAID, name: "Leasing Plaid Sandbox" } },
 };
@@ -127,14 +132,59 @@ function emailSendNode(name, { fromEmail, toEmail, subject, text }, position) {
   }, position, { credentials: CREDENTIAL.smtp });
 }
 
-function telegramNode(name, { chatId, text }, position) {
+/**
+ * Which bot a Telegram node talks through.
+ *
+ * "manager" is the WF3 router bot and every manager-facing alert. "prospect" is
+ * the leasing assistant the renter chats with. They MUST be different bots:
+ * Telegram allows one webhook per bot, so two triggers on one token means the
+ * second registration silently evicts the first.
+ *
+ * Defaults to manager so every pre-existing call site is unchanged.
+ */
+function telegramCredential(bot) {
+  if (bot === undefined || bot === "manager") return CREDENTIAL.telegram;
+  if (bot === "prospect") return CREDENTIAL.telegramProspect;
+  throw new Error('telegram bot must be "manager" or "prospect", got ' + JSON.stringify(bot));
+}
+
+/**
+ * `failOnError` decides what a failed send means.
+ *
+ * Manager alerts swallow errors: a Telegram blip must not take down a pipeline
+ * run, and the state is in Postgres either way. But a message to the PROSPECT
+ * is the product, and the node after it writes a message_log row saying the
+ * message went out - so a swallowed failure there would record a message the
+ * renter never received. Those fail visibly, like the emailSend nodes on the
+ * equivalent email path already do.
+ */
+function telegramNode(name, { chatId, text, bot, failOnError }, position) {
   const built = node(name, "n8n-nodes-base.telegram", 1.2, {
     chatId,
     text,
     additionalFields: { appendAttribution: false },
-  }, position, { credentials: CREDENTIAL.telegram });
-  built.onError = "continueRegularOutput";
+  }, position, { credentials: telegramCredential(bot) });
+  if (!failOnError) built.onError = "continueRegularOutput";
   return built;
+}
+
+/**
+ * Telegram Trigger. Only ONE may be active per bot token.
+ *
+ * n8n derives the webhook secret itself as `${workflowId}_${nodeId}` with
+ * anything outside [A-Za-z0-9_-] stripped, and Telegram sends it back as
+ * X-Telegram-Bot-Api-Secret-Token. Any script posting a synthetic update has to
+ * compute the same string for THIS workflow and THIS node or it gets a bare 403.
+ *
+ * Activating one of these registers a webhook on the bot, which disables
+ * getUpdates - so get-telegram-chat-id.js stops working for that bot until the
+ * workflow is deactivated.
+ */
+function telegramTriggerNode(name, position, { bot, updates, webhookId } = {}) {
+  return node(name, "n8n-nodes-base.telegramTrigger", 1.2, {
+    updates: updates || ["message"],
+    additionalFields: {},
+  }, position, { credentials: telegramCredential(bot), webhookId: webhookId || slug(name) });
 }
 
 /**
@@ -147,7 +197,7 @@ function telegramNode(name, { chatId, text }, position) {
  *
  * callback_data is capped at 64 bytes; a short prefix plus a ref token is ~12.
  */
-function telegramCardNode(name, { chatId, text, buttonRows }, position) {
+function telegramCardNode(name, { chatId, text, buttonRows, bot }, position) {
   const built = node(name, "n8n-nodes-base.telegram", 1.2, {
     chatId,
     text,
@@ -163,7 +213,7 @@ function telegramCardNode(name, { chatId, text, buttonRows }, position) {
       })),
     },
     additionalFields: { appendAttribution: false },
-  }, position, { credentials: CREDENTIAL.telegram });
+  }, position, { credentials: telegramCredential(bot) });
   built.onError = "continueRegularOutput";
   return built;
 }
@@ -194,24 +244,93 @@ function plaidNode(name, endpoint, bodyExpression, position) {
  * such as httpMethod stop the POST one from registering at all - the form page
  * still renders, so it looks fine until a submission silently 404s.
  */
-function formTriggerNode(name, { formPath, title, description, fields }, position) {
+function formTriggerNode(name, { formPath, title, description, fields, customCss, buttonLabel }, position) {
+  const options = {};
+  // Without this n8n stamps its own attribution on the form the prospect sees.
+  options.appendAttribution = false;
+  if (customCss) options.customCss = customCss;
+  if (buttonLabel) options.buttonLabel = buttonLabel;
+
   return node(name, "n8n-nodes-base.formTrigger", 2.2, {
     path: formPath,
     formTitle: title,
     formDescription: description,
     formFields: { values: fields },
-    options: {},
+    options,
   }, position, { webhookId: formPath });
 }
 
+/**
+ * Form Trigger CSS, derived from the listing site's own palette.
+ *
+ * The prospect taps through from a Telegram message to this form having just
+ * been on the listing site, so stock n8n chrome is a visible seam. Kept as a
+ * small hand-written override rather than the whole site stylesheet: the form
+ * markup is n8n's, so most of site-assets/styles.css would not apply anyway.
+ */
+const FORM_CSS = [
+  ":root {",
+  "  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;",
+  "  --color-background: #f7f6f3;",
+  "  --color-card-bg: #ffffff;",
+  "  --color-card-border: #e3e6ea;",
+  "  --color-card-shadow: rgba(28, 36, 48, 0.06);",
+  "  --color-header-text: #1c2430;",
+  "  --color-description-text: #5a6675;",
+  "  --color-label: #5a6675;",
+  "  --color-input-border: #e3e6ea;",
+  "  --color-input-text: #1c2430;",
+  "  --color-focus-border: #1f6f5c;",
+  "  --color-submit-btn-bg: #1f6f5c;",
+  "  --color-submit-btn-text: #ffffff;",
+  "  --color-link: #1f6f5c;",
+  "}",
+  ".card { border-radius: 10px; }",
+  "h1 { letter-spacing: -0.02em; }",
+].join("\n");
+
 function webhookNode(name, urlPath, position, options = {}) {
-  return node(name, "n8n-nodes-base.webhook", 2.1, {
+  const parameters = {
     httpMethod: options.method || "POST",
     path: urlPath,
     responseMode: options.responseMode || "lastNode",
-    responseData: "allEntries",
-    options: {},
-  }, position, { webhookId: urlPath });
+    options: options.webhookOptions || {},
+  };
+  // responseData only means anything in lastNode mode. In responseNode mode a
+  // Respond To Webhook node owns the response, and a leftover response
+  // parameter is the same failure class as the Form Trigger note above: the
+  // node registers in a way you did not intend and nothing says so.
+  if (parameters.responseMode === "lastNode") {
+    parameters.responseData = options.responseData || "allEntries";
+  }
+  return node(name, "n8n-nodes-base.webhook", 2.1, parameters, position, { webhookId: urlPath });
+}
+
+/**
+ * Returns an HTML page from a webhook, for a form post the browser navigates to.
+ *
+ * `respondWith: "text"` not "json" - json sets application/json and the browser
+ * downloads the page instead of rendering it. "text" alone defaults to
+ * text/plain, so the Content-Type header is still required.
+ *
+ * The status code is a LITERAL on purpose. Respond-to-webhook status-code
+ * expressions are unreliable, so branch to one Respond node per status rather
+ * than computing one.
+ *
+ * Pass bodyExpression as a single-variable expression pointing at HTML built in
+ * a Code node, so quoting and newlines never reach the expression parser.
+ */
+function respondHtmlNode(name, { bodyExpression, statusCode }, position) {
+  return node(name, "n8n-nodes-base.respondToWebhook", 1.1, {
+    respondWith: "text",
+    responseBody: bodyExpression,
+    options: {
+      responseCode: statusCode || 200,
+      responseHeaders: {
+        entries: [{ name: "Content-Type", value: "text/html; charset=utf-8" }],
+      },
+    },
+  }, position);
 }
 
 function ifNode(name, conditions, position) {
@@ -320,9 +439,13 @@ module.exports = {
   emailSendNode,
   telegramNode,
   telegramCardNode,
+  telegramTriggerNode,
+  telegramCredential,
+  respondHtmlNode,
   plaidNode,
   webhookNode,
   formTriggerNode,
+  FORM_CSS,
   ifNode,
   booleanCondition,
   airtableMirrorNode,

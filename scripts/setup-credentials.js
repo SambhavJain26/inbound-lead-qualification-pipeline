@@ -19,6 +19,7 @@ const os = require("os");
 const path = require("path");
 const { execFileSync } = require("child_process");
 const { REPO_ROOT, loadEnv } = require("./lib/env");
+const CREDENTIAL_NAMES = require("./lib/credential-names");
 
 const CONTAINER = "leasing-n8n";
 const env = loadEnv();
@@ -83,13 +84,26 @@ const DEFINITIONS = [
     requires: ["OPENAI_API_KEY"],
     build: () => ({ apiKey: env.OPENAI_API_KEY }),
   },
+  // Two Telegram bots, deliberately. Telegram allows ONE webhook per bot, and
+  // both the prospect assistant (WF1) and the manager router (WF3) need a
+  // trigger - so they cannot share a token. The display names below are
+  // load-bearing: import-workflows.js resolves these two by NAME, because a
+  // type lookup cannot tell them apart. See scripts/lib/credential-names.js.
   {
     name: "telegram",
     id: "leasing-telegram",
-    displayName: "Leasing Telegram",
+    displayName: CREDENTIAL_NAMES.TELEGRAM_MANAGER,
     type: "telegramApi",
     requires: ["TELEGRAM_BOT_TOKEN"],
     build: () => ({ accessToken: env.TELEGRAM_BOT_TOKEN }),
+  },
+  {
+    name: "telegram-prospect",
+    id: "leasing-telegram-prospect",
+    displayName: CREDENTIAL_NAMES.TELEGRAM_PROSPECT,
+    type: "telegramApi",
+    requires: ["TELEGRAM_PROSPECT_BOT_TOKEN"],
+    build: () => ({ accessToken: env.TELEGRAM_PROSPECT_BOT_TOKEN }),
   },
   {
     name: "airtable",

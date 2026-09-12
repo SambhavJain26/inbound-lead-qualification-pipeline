@@ -13,26 +13,15 @@
  *   node scripts/simulate-telegram-tap.js approve A-1234 --twice
  */
 
-const fs = require("fs");
-const path = require("path");
-const { REPO_ROOT, loadEnv } = require("./lib/env");
+const { loadEnv } = require("./lib/env");
+const { telegramTrigger } = require("./lib/telegram-secret");
 
 const env = loadEnv(["TUNNEL_URL", "TELEGRAM_MANAGER_CHAT_ID"]);
 
-/**
- * n8n rejects a Telegram webhook call without the secret it registered with
- * Telegram, which it derives as `${workflowId}_${nodeId}` with anything outside
- * [A-Za-z0-9_-] stripped. Derived from the workflow JSON rather than hardcoded
- * so renaming the node cannot silently break this.
- */
-function secretToken() {
-  const workflow = JSON.parse(
-    fs.readFileSync(path.join(REPO_ROOT, "n8n-workflows", "wf3-telegram-router.json"), "utf8")
-  );
-  const trigger = workflow.nodes.find((n) => n.type === "n8n-nodes-base.telegramTrigger");
-  if (!trigger) throw new Error("no telegram trigger in wf3");
-  return `${workflow.id}_${trigger.id}`.replace(/[^a-zA-Z0-9_-]+/g, "");
-}
+// The MANAGER bot's trigger. WF1 has its own, on the prospect bot, with its own
+// secret - see scripts/simulate-prospect-message.js.
+const TRIGGER = telegramTrigger("wf3-telegram-router", "Manager Actions (Telegram)");
+
 const args = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 const twice = process.argv.includes("--twice");
 
@@ -45,7 +34,7 @@ if (!PREFIX[action] || !refToken) {
   process.exit(1);
 }
 
-const url = new URL("/webhook/leasing-telegram-router/webhook", env.TUNNEL_URL).href;
+const url = new URL(`/webhook/${TRIGGER.webhookId}/webhook`, env.TUNNEL_URL).href;
 
 function payload() {
   return {
@@ -68,7 +57,7 @@ async function tap(label) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Telegram-Bot-Api-Secret-Token": secretToken(),
+      "X-Telegram-Bot-Api-Secret-Token": TRIGGER.secret,
     },
     body: JSON.stringify(payload()),
   });

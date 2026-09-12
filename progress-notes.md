@@ -1032,3 +1032,117 @@ Do not add any of these without recording a plan revision here first.
 
 `CLAUDE.md` carries every n8n gotcha found during this build. Read it before touching a
 workflow — most of them cost an hour each to find and every one fails silently.
+
+---
+
+## 2026-09-12 — Revision: The Front Of Funnel Moves To A Listing Site + Telegram
+
+Scope revision, agreed before any code was written. Stages 1-6 are unchanged and still pass;
+this replaces how a lead arrives and how the prospect conversation happens.
+
+### Why
+
+Two problems with the email front of funnel, both about the demo rather than the code:
+
+1. **The lead had nowhere to come from on camera.** "A lead email arrives" needed a script to
+   stand in for a listing site. There was no listing to point at, so the story started mid-air.
+2. **Email is a poor conversation surface.** One inbound, one outbound, and the IMAP trigger
+   polls, so every turn cost up to a minute of dead air. The back-and-forth — three questions
+   across four messages — is where a leasing assistant earns its keep, and email cannot show it.
+
+### What changes
+
+A renter browses a dummy listing site, submits the contact form on a unit, and is handed to the
+leasing assistant **on Telegram**, where the rest of the conversation happens: questions
+answered, pre-qualification gathered across turns, tour booked, application link delivered.
+
+Everything downstream is unchanged in substance: Cal.com, the Form Trigger application, Plaid,
+the mocked bureau, the criteria engine, the manager's decision card, DocuSign.
+
+### Four decisions taken up front
+
+| Decision | Choice |
+|---|---|
+| Listing photos | Generated SVG placeholders now; real photos drop into `site-assets/` by filename with no code change |
+| The Zillow/IMAP email path | **Kept** as a proven second entry point. It works, it costs nothing to keep, and syndication leads really do arrive as email |
+| The rental application form | **Kept** as the n8n Form Trigger, with `customCss` so it matches the site the prospect just left |
+| Telegram bots | **Two.** One webhook per bot, and both WF1 and WF3 need a trigger |
+
+### The compliance pivot, and it is an improvement
+
+The old email path had the model compose the whole pre-qualification ask. The new one does not:
+
+- `prequalGate()` decides the outcome; a fixed `COLLECT_ORDER` decides what is still outstanding.
+- The next question is a **fixed string** from a static `QUESTION_PROMPTS` map in a Code node.
+- The prompt tells the model explicitly: *never ask the next pre-qualification question yourself.*
+- Identity is resolved in SQL — the `/start R-xxxx` deep-link payload first, then `chat_id`.
+
+So the model answers what was asked and extracts what was stated, and nothing else. The gate
+drives the conversation. That is a stronger version of the same claim the build already makes.
+
+`prequalGate()` itself is untouched, deliberately. It only ever reports `move_in_date` and
+`stated_monthly_income` as missing, because only those two gate anything — pets, vehicles and
+occupants are collected for the file and never used to triage. Widening the gate to cover them
+would have made every entry in `prequal_reasons` look like a criterion that mattered. The ask
+order lives in WF1 instead.
+
+### The mock boundary moves one line
+
+The Zillow listing-syndication feed was a labelled mock. It is now **our own listing site**, so
+that box turns green: it is a real site, really generating leads, with a real form post. The
+production swap underneath it is the syndication API, not the site.
+
+### Highest-consequence change: two bots
+
+`import-workflows.js` mapped credential **type -> id**. Two `telegramApi` credentials collide
+there, last wins, and both placeholders end up on one bot — at which point activating WF1
+silently re-registers the manager bot's webhook onto WF1 and every approval button stops working
+with no error anywhere.
+
+Fixed by resolving Telegram credentials by **name**, with no fallback to the type map, plus:
+
+- `scripts/lib/credential-names.js` — the names in one place, since three files must agree
+- `verify-credentials.js` now calls `getMe` on both tokens and **fails if the bot ids match**
+
+### Built so far
+
+- `db/schema.sql` — `leads.telegram_chat_id` (+ a deliberately non-unique index),
+  `telegram_username`, `last_prospect_message_at`, `source` gains `listing_site`,
+  `message_log.channel` gains `web_form`, `units` gains `title`/`description`/`photos`.
+  `conversation_state` is now written on every turn instead of sitting unused.
+- `scripts/build-listing-site.js` + `scripts/serve-listing-site.js` + `site-assets/` — the site,
+  generated from Postgres, served zero-dependency on `:8080`.
+- WF1 rebuilt: 69 nodes across five clearly separated bands — listing inquiry, Telegram
+  conversation, Cal.com, tour completed, and the retained email path.
+- `scripts/lib/telegram-secret.js` — derives the trigger secret per workflow AND per node, now
+  that there are two triggers with two different secrets.
+- `scripts/simulate-prospect-message.js`, `scripts/verify-stage-7.js`.
+- Form Trigger branding; `respondHtmlNode` and a `telegramTriggerNode` factory in `wf-common.js`.
+
+Stage 2 gate re-run and passing against the new schema. All 38 unit tests passing.
+
+### Deviations from the written plan
+
+- **Placeholder photos are generated by the site builder**, not a separate
+  `generate-placeholder-photos.js`. One command instead of two, and the builder already knows
+  which keys need an image.
+- **The site is tunnel-independent.** The plan assumed the contact form would post to the tunnel
+  and the site would need rebuilding after every tunnel restart. It posts to `localhost:5678`
+  instead, as a native form POST, so it does not. One less ordering trap.
+- **WF1 is 69 nodes, not the ~48 estimated.** Acceptable: it is generated, the bands are
+  separated on the canvas, and the editor stays closed on camera. Revisit only if it stops being
+  legible.
+- **Prospect-facing Telegram sends now fail visibly** (`failOnError`), while manager alerts keep
+  swallowing errors. A swallowed failure on a prospect send would be logged by the next node as
+  a message that went out — a `message_log` row that is simply untrue.
+
+### Open, and blocking the live test
+
+1. **Create the second Telegram bot** in `@BotFather` and set `TELEGRAM_PROSPECT_BOT_TOKEN` and
+   `TELEGRAM_PROSPECT_BOT_USERNAME`. `import-workflows.js` refuses to import WF1 without them,
+   which is the guard working.
+2. Message the prospect bot once and capture its chat id for `verify-stage-7.js --chat`.
+3. Real photos into `site-assets/`.
+4. Not yet done, deliberately: `the-full-flow.md` and `docs/recording-checklist.md` still
+   describe the email journey. They get rewritten **after** the live run, so the quotes and
+   timings in them are real — that file's own premise is that every timing came from a real run.

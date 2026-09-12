@@ -313,6 +313,9 @@ const nodes = [
     description:
       "412 Maple Street, Springfield. Applying does not commit you to anything - " +
       "it puts you forward for consideration.",
+    // Matches the listing site the prospect just tapped through from.
+    customCss: wf.FORM_CSS,
+    buttonLabel: "Submit application",
     fields: [
           { fieldLabel: "ref_token", fieldType: "text", requiredField: false },
           { fieldLabel: "unit_code", fieldType: "text", requiredField: true },

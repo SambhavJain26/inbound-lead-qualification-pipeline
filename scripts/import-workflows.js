@@ -16,6 +16,10 @@ const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
 const { REPO_ROOT, loadEnv } = require("./lib/env");
+const {
+  TELEGRAM_MANAGER: TELEGRAM_MANAGER_CREDENTIAL,
+  TELEGRAM_PROSPECT: TELEGRAM_PROSPECT_CREDENTIAL,
+} = require("./lib/credential-names");
 
 const env = loadEnv();
 const CONTAINER = "leasing-n8n";
@@ -29,35 +33,56 @@ function docker(args, options = {}) {
   return execFileSync("docker", args, { encoding: "utf8", cwd: REPO_ROOT, ...options });
 }
 
-/** Reads credential ids from n8n without ever decrypting credential data. */
+/**
+ * Reads credential ids from n8n without ever decrypting credential data.
+ *
+ * Returns BOTH a type map and a name map. The type map cannot disambiguate the
+ * two Telegram credentials - this project runs two bots, because Telegram
+ * allows one webhook per bot and both the prospect assistant (WF1) and the
+ * manager router (WF3) need a trigger. A last-wins type lookup would point both
+ * placeholders at the same bot, and activating WF1 would then silently
+ * re-register the manager bot's webhook onto WF1, killing every approval button
+ * with no error anywhere. So telegram resolves by NAME.
+ */
 function resolveCredentialIds() {
   const script = [
     "n8n export:credentials --all --output=/home/node/.creds.json >/dev/null 2>&1",
-    "node -e \"require('/home/node/.creds.json').forEach(c=>console.log(c.type+'='+c.id))\"",
+    "node -e \"require('/home/node/.creds.json').forEach(c=>console.log(c.type+'|'+c.id+'|'+c.name))\"",
     "rm -f /home/node/.creds.json",
   ].join("; ");
 
   const out = docker(["compose", "exec", "-T", "n8n", "sh", "-lc", script], { stdio: "pipe" });
   const byType = {};
+  const byName = {};
   for (const line of out.split(/\r?\n/)) {
-    const [type, id] = line.trim().split("=");
-    if (type && id) byType[type] = id;
+    const [type, id, ...rest] = line.trim().split("|");
+    const name = rest.join("|");
+    if (!type || !id) continue;
+    // First wins, not last: a silent overwrite is the failure mode described above.
+    if (!byType[type]) byType[type] = id;
+    if (name) byName[name] = id;
   }
-  return byType;
+  return { byType, byName };
 }
 
-function buildReplacements(credentialIds) {
+function buildReplacements({ byType, byName }) {
   const tunnel = (env.TUNNEL_URL || "").replace(/\/?$/, "/");
 
   return {
-    __POSTGRES_CREDENTIAL_ID__: credentialIds.postgres,
-    __OPENAI_CREDENTIAL_ID__: credentialIds.openAiApi,
-    __SMTP_CREDENTIAL_ID__: credentialIds.smtp,
-    __IMAP_CREDENTIAL_ID__: credentialIds.imap,
-    __TELEGRAM_CREDENTIAL_ID__: credentialIds.telegramApi,
-    __AIRTABLE_CREDENTIAL_ID__: credentialIds.airtableTokenApi,
-    __PLAID_CREDENTIAL_ID__: credentialIds.httpCustomAuth,
-    __DOCUSIGN_CREDENTIAL_ID__: credentialIds.jwtAuth,
+    __POSTGRES_CREDENTIAL_ID__: byType.postgres,
+    __OPENAI_CREDENTIAL_ID__: byType.openAiApi,
+    __SMTP_CREDENTIAL_ID__: byType.smtp,
+    __IMAP_CREDENTIAL_ID__: byType.imap,
+    __AIRTABLE_CREDENTIAL_ID__: byType.airtableTokenApi,
+    __PLAID_CREDENTIAL_ID__: byType.httpCustomAuth,
+    __DOCUSIGN_CREDENTIAL_ID__: byType.jwtAuth,
+
+    // Resolved by NAME, never by type. These names are load-bearing and must
+    // match scripts/setup-credentials.js and scripts/lib/wf-common.js exactly.
+    // There is deliberately no fallback to byType.telegramApi: an ambiguous
+    // lookup is the thing being removed.
+    __TELEGRAM_CREDENTIAL_ID__: byName[TELEGRAM_MANAGER_CREDENTIAL],
+    __TELEGRAM_PROSPECT_CREDENTIAL_ID__: byName[TELEGRAM_PROSPECT_CREDENTIAL],
 
     __SYSTEM_EMAIL__: env.GMAIL_ADDRESS,
     __PROSPECT_EMAIL__: env.PROSPECT_GMAIL_ADDRESS,
@@ -65,6 +90,10 @@ function buildReplacements(credentialIds) {
     __AIRTABLE_BASE_ID__: env.AIRTABLE_BASE_ID,
 
     __TELEGRAM_BOT_TOKEN__: env.TELEGRAM_BOT_TOKEN,
+    __TELEGRAM_PROSPECT_BOT_TOKEN__: env.TELEGRAM_PROSPECT_BOT_TOKEN,
+    // Used to build the t.me deep link on the inquiry confirmation page.
+    // Stored without the leading @.
+    __TELEGRAM_PROSPECT_BOT_USERNAME__: (env.TELEGRAM_PROSPECT_BOT_USERNAME || "").replace(/^@/, ""),
     __TUNNEL_URL__: tunnel,
 
     __DOCUSIGN_INTEGRATION_KEY__: env.DOCUSIGN_INTEGRATION_KEY,
@@ -149,10 +178,13 @@ function main() {
     return;
   }
 
-  const credentialIds = dryRun ? {} : resolveCredentialIds();
-  const replacements = buildReplacements(
-    dryRun ? new Proxy({}, { get: (_, k) => `dry-${String(k)}` }) : credentialIds
-  );
+  // The dry-run proxy stands in for both lookup maps, so --dry-run still
+  // exercises substitution without a running n8n.
+  const dryProxy = new Proxy({}, { get: (_, k) => `dry-${String(k)}` });
+  const credentials = dryRun
+    ? { byType: dryProxy, byName: dryProxy }
+    : resolveCredentialIds();
+  const replacements = buildReplacements(credentials);
 
   const failures = [];
   for (const name of targets) {

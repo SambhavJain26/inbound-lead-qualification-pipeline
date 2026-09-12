@@ -539,3 +539,66 @@ schema promised.
 - `scripts/import-workflows.js` — placeholder substitution and CLI import.
 - `scripts/lib/smtp.js`, `scripts/lib/imap.js`, `scripts/check-inbox.js` — dependency-free
   mail tooling; `check-inbox.js --body` proved the empty-email bug faster than n8n's own logs.
+
+---
+
+## 2026-09-12 — Prequal Branch Fixed
+
+Root cause found and fixed. The reply path now runs end to end.
+
+### The bug
+
+`Update Lead After Prequal` failed with `invalid input syntax for type integer: ""`.
+
+Postgres infers an untyped parameter's type from its surrounding context. Inside
+`COALESCE(NULLIF($5,'')::int, vehicles)` the target column is `integer`, so the empty-string
+literal was parsed as an integer and failed **before** `NULLIF` ever ran. Casting the
+parameter first — `NULLIF($5::text,'')::int` — pins it to text and the guard works as
+intended.
+
+Worth noting this was the second half of the same problem: the `?? ''` coercion added earlier
+exists because the node drops `undefined` array entries, and that coercion is what introduced
+the empty strings this cast now handles. Both halves are needed.
+
+### How it was found without the n8n UI
+
+Decoding `execution_data` by hand was going nowhere. What worked was parsing the blob as JSON
+and filtering its string entries:
+
+- listing which known node names appear → showed the run reached `Update Lead After Prequal`
+  and that `Run Prequal Gate` had **succeeded**, ruling out the AI unwrap
+- filtering strings matching error-shaped patterns → surfaced the exact Postgres message
+
+Ruling out the schema first was also cheap and worth repeating: calling
+`https://api.openai.com/v1/responses` directly with the same JSON Schema returned a correct
+payload in one request, which eliminated the model as a suspect before any n8n debugging.
+
+### Verified result
+
+Prospect reply: *"October 5th works for me. I make about $5,000 a month gross. One small dog,
+18 lbs. One car. Just me living there."*
+
+```
+ref_token             | R-9332
+status                | prequalified
+move_in_date          | 2026-10-05        <- relative date resolved
+stated_monthly_income | 5000.00
+pets                  | One small dog, 18 lbs.
+vehicles              | 1
+occupants             | 1
+prequal_result        | clear
+```
+
+Evidence trail stored per criterion, with the income line reading
+`$5000/mo stated against $1650 rent = 3.03x (unverified)` — the "(unverified)" label is
+carried through from the library, which matters because pre-qualification is scheduling
+triage on self-reported answers, not a rental decision.
+
+Tour booking email delivered to the prospect with the Cal.com link and the ref token in the
+query string, so the booking webhook can match it back to the lead.
+
+### Remaining in Stage 3
+
+- Register the Cal.com booking webhook against the current tunnel URL
+- Test booking → lock code (MOCK) → confirmation email
+- Test tour-completed → application link

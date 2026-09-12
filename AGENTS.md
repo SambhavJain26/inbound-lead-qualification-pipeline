@@ -138,6 +138,9 @@ Known gotchas, carried forward from builds 01–04:
 
 **Postgres**
 - Use the built-in Postgres node with a named credential. The container is reachable from n8n at host `postgres`, not `localhost`.
+- Pass query parameters as an **array expression** (`={{ [a, b, c] }}`), never a comma-separated string: addresses contain commas and would split into extra parameters.
+- The node **drops `undefined` entries** when flattening that array (`if (item === undefined) continue`), silently shortening the list. Postgres then reports `there is no parameter $N`. Coerce every nullable value with `?? ''` and unwrap it in SQL.
+- Unwrap with **`NULLIF($n::text,'')`**, not `NULLIF($n,'')`. Postgres infers an untyped parameter's type from its surrounding context, so inside `COALESCE(NULLIF($n,'')::int, <int column>)` the empty string is parsed as an integer and fails with `invalid input syntax for type integer: ""` before `NULLIF` ever runs. The explicit `::text` pins the parameter first.
 - Keep schema changes in versioned files under `db/`; never mutate the schema by hand in a running container.
 - Airtable is a **display mirror only**, never the system of record: its free tier enforces 1,000 API calls per month per workspace. Mirror at phase boundaries, fire-and-forget, and rebuild the board from Postgres with `scripts/sync-airtable.js`.
 
@@ -145,7 +148,9 @@ Known gotchas, carried forward from builds 01–04:
 - When generating Code nodes from a builder script, avoid backticks and escape sequences inside template literals; they are consumed before reaching the node. Parse every generated Code node before importing.
 - Code nodes may not have reliable `$env` / `process.env`. Prefer config-table values or import-time substitution.
 - Strict IF nodes require booleans. Normalize truthy strings in a Code node before routing.
-- AI structured output may arrive wrapped. Downstream code should handle both wrapped and direct JSON shapes.
+- AI structured output may arrive wrapped. Downstream code should handle both wrapped and direct JSON shapes; `unwrapAiPayload(data, anchorKey)` in `scripts/lib/leasing-lib.js` probes for a known key rather than assuming a shape, and both AI-consuming Code nodes share it.
+- **OpenAI node: `options.textFormat.textOptions` must be an OBJECT, not an array.** The field's own default shows an array, but the node reads `textFormat.textOptions.type` directly. Pass an array and the format is never sent - the model returns prose instead of JSON, with no error anywhere.
+- An empty or unexpected model payload must **throw**, not flow onward. A guardrail that finds no problems in an empty string will happily send a blank email.
 
 **Webhooks, forms, tunnels**
 - Imported Webhook/Form Trigger nodes may register under generated paths. Verify actual URLs after import.
@@ -156,6 +161,7 @@ Known gotchas, carried forward from builds 01–04:
 - Docker Compose `restart` may not apply changed environment variables. Recreate the container when changing webhook/tunnel settings.
 
 **Email (SMTP/IMAP)**
+- The `emailSend` node appends an n8n attribution footer unless `options.appendAttribution` is false. Acceptable on internal alerts, wrong on prospect-facing mail.
 - Gmail App Passwords require 2-Step Verification on the account. Plain account passwords have not worked for IMAP/SMTP since May 2022.
 - Match replies on a `Re:` subject carrying the reference token and skip message ids already logged. Unread state alone is not a reliable signal.
 - **The system mailbox and the demo prospect address must be different accounts.** Gmail delivers self-addressed mail to `INBOX` as well as `[Gmail]/Sent`, so if they are the same the IMAP trigger sees our own outbound mail and can re-process it as inbound — a send loop. With two addresses, outbound never reaches `INBOX` and no guard is needed. The prospect account has its own app password so `scripts/send-as-prospect.js` can send the fixture lead email and prospect replies, making a demo run one command. n8n never uses that credential - only the system mailbox is wired into n8n.

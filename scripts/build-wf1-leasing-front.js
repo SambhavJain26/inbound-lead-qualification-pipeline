@@ -304,7 +304,7 @@ const nodes = [
   wf.postgresNode(
     "Create Lead Record",
     "INSERT INTO leads (ref_token, unit_id, source, prospect_name, prospect_email, prospect_phone, status)\n" +
-      "VALUES ($1, (SELECT id FROM units WHERE unit_code = $2), 'zillow_email', $3, $4, NULLIF($5,''), 'engaged')\n" +
+      "VALUES ($1, (SELECT id FROM units WHERE unit_code = $2), 'zillow_email', $3, $4, NULLIF($5::text,''), 'engaged')\n" +
       "ON CONFLICT (ref_token) DO UPDATE SET status = leads.status\n" +
       "RETURNING *;",
     [340, 160],
@@ -447,11 +447,11 @@ const nodes = [
   wf.postgresNode(
     "Update Lead After Prequal",
     "UPDATE leads SET\n" +
-      "  move_in_date = COALESCE(NULLIF($2,'')::date, move_in_date),\n" +
-      "  stated_monthly_income = COALESCE(NULLIF($3,'')::numeric, stated_monthly_income),\n" +
-      "  pets = COALESCE(NULLIF($4,''), pets),\n" +
-      "  vehicles = COALESCE(NULLIF($5,'')::int, vehicles),\n" +
-      "  occupants = COALESCE(NULLIF($6,'')::int, occupants),\n" +
+      "  move_in_date = COALESCE(NULLIF($2::text,'')::date, move_in_date),\n" +
+      "  stated_monthly_income = COALESCE(NULLIF($3::text,'')::numeric, stated_monthly_income),\n" +
+      "  pets = COALESCE(NULLIF($4::text,''), pets),\n" +
+      "  vehicles = COALESCE(NULLIF($5::text,'')::int, vehicles),\n" +
+      "  occupants = COALESCE(NULLIF($6::text,'')::int, occupants),\n" +
       "  prequal_result = $7,\n" +
       "  prequal_reasons = $8::jsonb,\n" +
       "  status = CASE WHEN $7 = 'clear' THEN 'prequalified' ELSE 'engaged' END\n" +
@@ -541,8 +541,8 @@ const nodes = [
   wf.postgresNode(
     "Record Tour Booking",
     "UPDATE leads SET\n" +
-      "  calcom_booking_uid = NULLIF($2,''),\n" +
-      "  tour_starts_at = NULLIF($3,'')::timestamptz,\n" +
+      "  calcom_booking_uid = NULLIF($2::text,''),\n" +
+      "  tour_starts_at = NULLIF($3::text,'')::timestamptz,\n" +
       "  lock_code = $4,\n" +
       "  lock_code_source = 'mock',\n" +
       "  status = 'tour_booked'\n" +

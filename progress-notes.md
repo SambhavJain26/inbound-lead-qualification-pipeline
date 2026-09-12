@@ -805,3 +805,39 @@ still cannot produce two envelopes.
   packet) is built and registered but unverified: it needs the lease actually signed, which
   is a human action in DocuSign. Sign the envelope sitting in the prospect mailbox to close
   the loop.
+
+---
+
+## 2026-09-12 — Full Pipeline Closed
+
+The lease was signed in DocuSign and the final path completed on its own:
+
+```
+status          | lease_signed
+lease_status    | signed
+lease_signed_at | 2026-09-12 08:27:30
+
+MAPLE-2B -> leased
+MAPLE-5A -> available
+```
+
+Welcome packet delivered 23 seconds after DocuSign's own completion notice:
+
+```
+08:27:07  Completed: Your lease for 412 Maple Street, Apt 2B   (DocuSign)
+08:27:30  Welcome to 412 Maple Street, Apt 2B [A-9135]         (the system)
+```
+
+Every stage of the funnel now runs end to end on real services:
+
+listing-site lead email -> grounded AI reply -> pre-qualification -> tour booked with a
+one-time entry code -> application with documents -> paystub extraction -> **real Plaid
+Sandbox income verification** -> mocked bureau in ShareAble shape -> deterministic criteria
+engine -> human decision on Telegram -> DocuSign envelope -> signed -> unit marked leased ->
+welcome packet.
+
+Both demo outcomes are proven: Maya reaches a signed lease, Devon stops for a human with a
+56% income mismatch and no adverse-action notice generated.
+
+Stages 1 to 5 are complete. Only Stage 6 remains: demo reset, the Excalidraw architecture
+diagram, the recording checklist, and the `my_builds/05-*` write-ups.

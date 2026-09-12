@@ -1,0 +1,378 @@
+{
+  "items": [
+    {
+      "accounts": [
+        {
+          "account_id": "b1kx75376gUMlGxp6nKJipAarMvjzkSRVXEBv",
+          "pay_frequency": "SEMI_MONTHLY",
+          "rate_of_pay": {
+            "pay_amount": 100000,
+            "pay_rate": "ANNUAL"
+          }
+        }
+      ],
+      "institution_id": "",
+      "institution_name": "Platypus Bank Credit Check",
+      "item_id": "4K7rlXvlaGfJr5Maq4RKiGrlbGPyM8ig9b1yW",
+      "payroll_income": [
+        {
+          "account_id": "b1kx75376gUMlGxp6nKJipAarMvjzkSRVXEBv",
+          "form1099s": [],
+          "i20s": [],
+          "pay_stubs": [
+            {
+              "deductions": {
+                "breakdown": [
+                  {
+                    "current_amount": 1000,
+                    "description": "taxes",
+                    "iso_currency_code": "USD",
+                    "unofficial_currency_code": null,
+                    "ytd_amount": 1234
+                  }
+                ],
+                "total": {
+                  "current_amount": 1000,
+                  "iso_currency_code": "USD",
+                  "unofficial_currency_code": null,
+                  "ytd_amount": 1234
+                }
+              },
+              "document_id": "GQRbkqA7xxJmR",
+              "document_metadata": {
+                "document_type": "PAYSTUB",
+                "download_url": "https://sandbox.plaid.com/income/verification/document/download/12f33d5a-c18e-423b-8346-25d4da40d989",
+                "name": "8f7a7ef4-9cfa-4ff4-97f0-0f0b8174747a.pdf",
+                "status": "PROCESSING_COMPLETE"
+              },
+              "earnings": {
+                "breakdown": [
+                  {
+                    "canonical_description": "REGULAR_PAY",
+                    "current_amount": 1006,
+                    "description": "salary earned",
+                    "hours": 40,
+                    "iso_currency_code": "USD",
+                    "rate": 25.15,
+                    "unofficial_currency_code": null,
+                    "ytd_amount": 1006
+                  },
+                  {
+                    "canonical_description": "BONUS",
+                    "current_amount": 1000,
+                    "description": "bonus earned",
+                    "hours": null,
+                    "iso_currency_code": "USD",
+                    "rate": null,
+                    "unofficial_currency_code": null,
+                    "ytd_amount": 1000
+                  },
+                  {
+                    "canonical_description": "OVERTIME",
+                    "current_amount": 320,
+                    "description": "overtime pay earned",
+                    "hours": 10,
+                    "iso_currency_code": "USD",
+                    "rate": 32,
+                    "unofficial_currency_code": null,
+                    "ytd_amount": 320
+                  }
+                ],
+                "total": {
+                  "current_amount": 2306,
+                  "hours": 50,
+                  "iso_currency_code": "USD",
+                  "unofficial_currency_code": null,
+                  "ytd_amount": 2306
+                }
+              },
+              "employee": {
+                "address": {
+                  "city": "Oakland",
+                  "country": "US",
+                  "postal_code": "94103",
+                  "region": "CA",
+                  "street": "1234 Grand Ave"
+                },
+                "marital_status": "SINGLE",
+                "name": "Josie Georgia Harrison",
+                "taxpayer_id": {
+                  "id_mask": "9020",
+                  "id_type": "SSN"
+                }
+              },
+              "employer": {
+                "address": {
+                  "city": "San Francisco",
+                  "country": "US",
+                  "postal_code": "94103",
+                  "region": "CA",
+                  "street": "1098 Main Street"
+                },
+                "name": "Platypus LLC"
+              },
+              "net_pay": {
+                "current_amount": 1000,
+                "description": "net pay",
+                "iso_currency_code": "USD",
+                "unofficial_currency_code": null,
+                "ytd_amount": 1234
+              },
+              "pay_period_details": {
+                "distribution_breakdown": [
+                  {
+                    "account_name": "Checking",
+                    "bank_name": "Bank of America",
+                    "current_amount": 1000,
+                    "iso_currency_code": "USD",
+                    "mask": "1223",
+                    "type": "checking",
+                    "unofficial_currency_code": null
+                  }
+                ],
+                "end_date": "2026-09-11",
+                "gross_earnings": 2306,
+                "iso_currency_code": "USD",
+                "pay_amount": 1000,
+                "pay_date": "2026-09-12",
+                "pay_frequency": "BIWEEKLY",
+                "start_date": "2026-08-28",
+                "unofficial_currency_code": null
+              }
+            },
+            {
+              "deductions": {
+                "breakdown": [
+                  {
+                    "current_amount": 23.44,
+                    "description": "Social Security Tax",
+                    "iso_currency_code": "USD",
+                    "unofficial_currency_code": null,
+                    "ytd_amount": 63.21
+                  },
+                  {
+                    "current_amount": 352.34,
+                    "description": "401K",
+                    "iso_currency_code": "USD",
+                    "unofficial_currency_code": null,
+                    "ytd_amount": 453.32
+                  },
+                  {
+                    "current_amount": 12.45,
+                    "description": "Medicare Tax",
+                    "iso_currency_code": "USD",
+                    "unofficial_currency_code": null,
+                    "ytd_amount": 43.29
+                  },
+                  {
+                    "current_amount": 13.74,
+                    "description": "Dental Insurance",
+                    "iso_currency_code": "USD",
+                    "unofficial_currency_code": null,
+                    "ytd_amount": 22.51
+                  },
+                  {
+                    "current_amount": 612.91,
+                    "description": "Federal Tax",
+                    "iso_currency_code": "USD",
+                    "unofficial_currency_code": null,
+                    "ytd_amount": 870.66
+                  },
+                  {
+                    "current_amount": 409.25,
+                    "description": "State Tax",
+                    "iso_currency_code": "USD",
+                    "unofficial_currency_code": null,
+                    "ytd_amount": 562.39
+                  }
+                ],
+                "total": {
+                  "current_amount": 1424.13,
+                  "iso_currency_code": "USD",
+                  "unofficial_currency_code": null,
+                  "ytd_amount": 2015.38
+                }
+              },
+              "document_id": "6eJ6m4lo8ykDg",
+              "document_metadata": {
+                "document_type": "NONE",
+                "download_url": null,
+                "name": "",
+                "status": "PROCESSING_COMPLETE"
+              },
+              "earnings": {
+                "breakdown": [
+                  {
+                    "canonical_description": "REGULAR_PAY",
+                    "current_amount": 1006,
+                    "description": "salary earned",
+                    "hours": 40,
+                    "iso_currency_code": "USD",
+                    "rate": 25.15,
+                    "unofficial_currency_code": null,
+                    "ytd_amount": 1006
+                  },
+                  {
+                    "canonical_description": "BONUS",
+                    "current_amount": 1000,
+                    "description": "bonus earned",
+                    "hours": null,
+                    "iso_currency_code": "USD",
+                    "rate": null,
+                    "unofficial_currency_code": null,
+                    "ytd_amount": 1000
+                  },
+                  {
+                    "canonical_description": "OVERTIME",
+                    "current_amount": 320,
+                    "description": "overtime pay earned",
+                    "hours": 10,
+                    "iso_currency_code": "USD",
+                    "rate": 32,
+                    "unofficial_currency_code": null,
+                    "ytd_amount": 320
+                  }
+                ],
+                "total": {
+                  "current_amount": 2306,
+                  "hours": 50,
+                  "iso_currency_code": "USD",
+                  "unofficial_currency_code": null,
+                  "ytd_amount": 2306
+                }
+              },
+              "employee": {
+                "address": {
+                  "city": "Oakland",
+                  "country": "US",
+                  "postal_code": "94103",
+                  "region": "CA",
+                  "street": "1234 Grand Ave"
+                },
+                "marital_status": "SINGLE",
+                "name": "Josie Georgia Harrison",
+                "taxpayer_id": {
+                  "id_mask": "9020",
+                  "id_type": "SSN"
+                }
+              },
+              "employer": {
+                "address": {
+                  "city": "San Francisco",
+                  "country": "US",
+                  "postal_code": "94103",
+                  "region": "CA",
+                  "street": "1098 Main Street"
+                },
+                "name": "Platypus LLC"
+              },
+              "net_pay": {
+                "current_amount": 1000,
+                "description": "net pay",
+                "iso_currency_code": "USD",
+                "unofficial_currency_code": null,
+                "ytd_amount": 1234
+              },
+              "pay_period_details": {
+                "distribution_breakdown": [
+                  {
+                    "account_name": "Checking",
+                    "bank_name": "Bank of America",
+                    "current_amount": 1000,
+                    "iso_currency_code": "USD",
+                    "mask": "1223",
+                    "type": "checking",
+                    "unofficial_currency_code": null
+                  }
+                ],
+                "end_date": "2026-08-12",
+                "gross_earnings": 2306,
+                "iso_currency_code": "USD",
+                "pay_amount": 1000,
+                "pay_date": "2026-08-13",
+                "pay_frequency": "BIWEEKLY",
+                "start_date": "2026-07-29",
+                "unofficial_currency_code": null
+              }
+            }
+          ],
+          "w2s": [
+            {
+              "allocated_tips": "1000",
+              "box_12": [
+                {
+                  "amount": "200",
+                  "code": "A"
+                }
+              ],
+              "box_9": "box9",
+              "dependent_care_benefits": "1000",
+              "document_id": "ZqLaqQ757zDPx",
+              "document_metadata": {
+                "document_type": "US_TAX_W2",
+                "download_url": "https://sandbox.plaid.com/income/verification/document/download/0ab52267-4288-48bc-b604-231d98377496",
+                "name": "4182d89a-969b-4240-af9e-eee40c6887f5.pdf",
+                "status": "PROCESSING_COMPLETE"
+              },
+              "employee": {
+                "address": {
+                  "city": "Oakland",
+                  "country": "US",
+                  "postal_code": "94103",
+                  "region": "CA",
+                  "street": "1234 Grand Ave"
+                },
+                "marital_status": null,
+                "name": "Josie Georgia Harrison",
+                "taxpayer_id": {
+                  "id_mask": null,
+                  "id_type": null
+                }
+              },
+              "employer": {
+                "address": {
+                  "city": "San Francisco",
+                  "country": "US",
+                  "postal_code": "94103",
+                  "region": "CA",
+                  "street": "1098 Main Street"
+                },
+                "name": "Platypus LLC"
+              },
+              "employer_id_number": "12-1234567",
+              "federal_income_tax_withheld": "1000",
+              "medicare_tax_withheld": "1000",
+              "medicare_wages_and_tips": "1000",
+              "nonqualified_plans": "1000",
+              "other": "other",
+              "retirement_plan": "CHECKED",
+              "social_security_tax_withheld": "1000",
+              "social_security_tips": "1000",
+              "social_security_wages": "1000",
+              "state_and_local_wages": [
+                {
+                  "employer_state_id_number": "11111111111AAA",
+                  "local_income_tax": "200",
+                  "local_wages_tips": "200",
+                  "locality_name": "local",
+                  "state": "CA",
+                  "state_income_tax": "200",
+                  "state_wages_tips": "200"
+                }
+              ],
+              "statutory_employee": "CHECKED",
+              "tax_year": "2025",
+              "third_party_sick_pay": "CHECKED",
+              "wages_tips_other_comp": "1000"
+            }
+          ]
+        }
+      ],
+      "status": {
+        "processing_status": "PROCESSING_COMPLETE"
+      },
+      "updated_at": "2026-09-12T05:35:56Z"
+    }
+  ],
+  "request_id": "d4287a2b0716941"
+}

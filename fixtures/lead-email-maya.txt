@@ -1,0 +1,14 @@
+From: Zillow Rental Manager <no-reply@mail.zillow.com>
+Reply-To: maya.restrepo.demo@convo.zillow.com
+Subject: New rental inquiry: 412 Maple Street, Apt 2B
+
+You have a new rental inquiry.
+
+Property: 412 Maple Street, Apt 2B, Springfield
+Renter: Maya Restrepo
+
+Message: "Hi! I saw the 2 bedroom on Maple Street and I am really interested.
+Is parking included, and do you allow a small dog? I am hoping to move in
+early October. Thanks!"
+
+Reply to this email to respond to Maya. Your personal email address stays private.

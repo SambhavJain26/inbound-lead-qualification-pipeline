@@ -1330,3 +1330,90 @@ Held back deliberately until the new path had actually run, so the quotes are re
 2. `docs/architecture.excalidraw` still shows the email front of funnel - regenerate before
    recording.
 3. Record the demo.
+
+---
+
+## 2026-09-13 — Assistant Hardened, And Telegram Taken Off The Listing Page
+
+Two corrections on instruction, plus one accuracy fix in the prospect-facing documentation.
+
+### 1. The listing site no longer mentions Telegram
+
+A real rental listing does not advertise the operator's internal tooling, and naming a chat app
+on the page made the site read as a demo *of that app*. The button is now "Send message" and
+the note under it says an answer comes straight back. Zero occurrences of "Telegram" on any
+listing page. The handoff is introduced on the confirmation page instead, where it has to be -
+with a single small "Opens in Telegram" line so tapping the button is not a surprise.
+
+### 2. The assistant now survives whatever a tenant sends it
+
+The conversation logic was correct but brittle: several ordinary inputs ended with the prospect
+getting **nothing at all**, which is the worst failure a chat product has.
+
+**The fair-housing refusal was the sharpest case.** Asked "is this a good area for families?",
+the model correctly refuses - and its refusal naturally repeats the word, which trips the
+guardrail's own familial-status pattern. The message was blocked and the prospect was left in
+silence. The most awkward question a tenant can ask was the one that made the bot go dead.
+
+Fixed in two places:
+
+- The prompt now tells the model to refuse **without naming the subject of the question**, and
+  says why: repeating it trips the outbound check and the prospect hears nothing. Verified
+  live - the refusal now sends: *"That is not something I can advise on, but I can share
+  property details: two bedrooms, one bathroom, 880 square feet..."*
+- **Nothing can now end in silence.** A blocked message, a malformed model payload and an
+  unsupported message type all send a fixed fallback ("let me get a colleague to pick this up")
+  and alert the manager. The fallback carries no figure, no commitment and no protected-class
+  content, so it is safe by construction and needs no guardrail pass of its own.
+
+Also added:
+
+- **Non-text messages answered without a model call.** Stickers, photos, voice notes,
+  locations, contacts and polls arrive with no `text`; an empty message would produce nonsense
+  or nothing. Detected in the first Code node and answered deterministically. Verified live
+  with a sticker and a voice note.
+- **A malformed model payload keeps its throw** - a schema violation must fail visibly - but
+  the Code node now uses `onError: "continueErrorOutput"`, so the error branch tells the
+  prospect a human is coming and tells the manager what broke. Visible failure and a reply are
+  not in tension; the old design just conflated them.
+- **Inbound text capped at 1500 characters**, because a long message is almost always a paste.
+- Prompt guidance for greetings, one-word replies, typos, nonsense, frustration, and questions
+  about facts that were never supplied. Never claim to be an AI; never return an empty reply.
+
+Verified live, all on a real chat: a fair-housing question, a sticker, a voice note, pure
+nonsense (`asdkjh qwe lol`), and a question about facilities that do not exist. Every one got a
+sensible reply and the conversation carried on. Sample:
+
+```
+"asdkjh qwe lol"       -> I'm not sure what you mean, but I'm happy to help with the
+                          apartment. Could you rephrase your question?
+"gym and rooftop pool?" -> I don't have information on a gym or rooftop pool for this
+                          property. I'll check with the team and have someone follow up...
+```
+
+Stage 7 gate still PASS, 41 unit tests still pass. WF1 is now 74 nodes.
+
+### 3. The Plaid claim in the flow document was overstated
+
+`the-full-flow.md` said *"She connects her bank, and the system reads her actual payroll
+deposits."* Neither half is true of the demo, and it is exactly the sort of claim that gets
+caught in a prospect meeting.
+
+What actually runs is three server-to-server Sandbox calls with **no user involvement at all**:
+`/user/create`, `/sandbox/public_token/create`, `/credit/payroll_income/get`. That middle call
+is a Sandbox-only shortcut that fabricates a connected account; in production it is **Plaid
+Link**, the screen where the renter picks their bank and logs in. There is no Link anywhere in
+this build. And Sandbox returns the same canned figure for every applicant, which is precisely
+why Maya and Devon are separated by rent rather than income.
+
+The document now says plainly: the integration is real, the data is not. Real API, real
+credentials, real response shape, real parsing and comparison - against test data, with no
+bank-login step. Switching it on is adding the Link screen and changing one URL.
+
+### Known gap, carried forward
+
+`message_log` does not record the tour confirmation, the application link, or the two new
+fallback replies. They are delivered - execution records confirm it - but the log understates
+what the renter actually received. This predates Stage 7 (the tour and application messages
+were never logged either) and is worth closing before the board is used as evidence of "every
+message in and out".

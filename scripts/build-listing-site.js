@@ -198,7 +198,7 @@ function contactForm(unit) {
   return [
     '<section class="contact" id="contact">',
     "  <h2>Contact about this unit</h2>",
-    "  <p>Ask anything about the home. You will get an answer straight away, day or night.</p>",
+    "  <p>Ask anything about the home. Someone will come back to you straight away.</p>",
     `  <form method="post" action="${esc(FORM_ACTION)}">`,
     `    <input type="hidden" name="unit_code" value="${esc(unit.unit_code)}">`,
     // The nonce dedupes a resubmitted form. Generated per page build, which is
@@ -209,8 +209,12 @@ function contactForm(unit) {
     '    <label>Email<input type="email" name="prospect_email" required autocomplete="email"></label>',
     '    <label>Phone <span class="optional">(optional)</span><input type="tel" name="prospect_phone" autocomplete="tel"></label>',
     '    <label>Your question<textarea name="inquiry_text" rows="4" required placeholder="Is parking included? Do you allow a small dog?"></textarea></label>',
-    '    <button type="submit">Send and continue on Telegram</button>',
-    '    <p class="form-note">We answer on Telegram so you can ask follow-up questions in the same place.</p>',
+    // The listing site says nothing about where the conversation continues.
+    // A real rental listing does not advertise the operator's internal tooling,
+    // and naming a chat app here makes the site look like a demo of that app.
+    // The handoff is introduced on the confirmation page, after they send.
+    '    <button type="submit">Send message</button>',
+    '    <p class="form-note">You will get an answer straight back, day or night.</p>',
     "  </form>",
     "</section>",
   ].join("\n");

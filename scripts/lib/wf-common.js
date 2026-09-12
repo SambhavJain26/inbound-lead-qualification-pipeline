@@ -56,12 +56,19 @@ function inlineLib(name) {
 
 /* ------------------------------------------------------------------ nodes */
 
+/**
+ * `errorOutput` gives the node a SECOND output carrying the failure, instead of
+ * ending the run. Use it where a throw is correct but silence is not: the error
+ * branch can still tell someone what happened. `continueOnFail` is the blunter
+ * version - it merges failures back into the normal output.
+ */
 function codeNode(name, jsCode, position, options = {}) {
   const built = node(name, "n8n-nodes-base.code", 2, {
     mode: options.mode || "runOnceForAllItems",
     jsCode,
   }, position);
   if (options.continueOnFail) built.onError = "continueRegularOutput";
+  if (options.errorOutput) built.onError = "continueErrorOutput";
   return built;
 }
 

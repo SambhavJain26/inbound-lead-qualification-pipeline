@@ -200,6 +200,26 @@ const TURN_INSTRUCTIONS = [
   "DO NOT ASK THE NEXT PRE-QUALIFICATION QUESTION. The system appends it to your reply from a",
   "fixed script. If you ask one too, the prospect gets the same question twice.",
   "",
+  "HOW TO REFUSE - THIS PART IS EASY TO GET WRONG:",
+  "When you refuse a protected-class question, DO NOT REPEAT THE SUBJECT OF THE QUESTION back.",
+  "Do not name the group, the characteristic, or the word they used. Say only that it is not",
+  "something you can help with, then offer the property facts instead. Repeating the word trips",
+  "the outbound safety check, the message is blocked, and the prospect is left with silence.",
+  "Good: 'That is not something I can advise on, but I can tell you about the apartment itself -",
+  "it is a two-bedroom with a private balcony.' Bad: anything that names what was asked about.",
+  "",
+  "ANYTHING ELSE THE PROSPECT SENDS:",
+  "People send greetings, jokes, one-word replies, typos, questions about things you were not",
+  "given, and messages that make no sense at all. Always answer something useful and human.",
+  "  - If they greet you or make small talk, greet them back in one line and carry on.",
+  "  - If they ask about something not in the facts, say you will check with the team and have",
+  "    someone follow up. Never guess.",
+  "  - If you cannot tell what they mean, say so plainly and ask them to put it another way.",
+  "  - If they are frustrated or rude, stay warm and brief. Do not argue.",
+  "  - Never say you are an AI, a bot, or a language model. You are the leasing assistant.",
+  "REPLY_TEXT MUST NEVER BE EMPTY. There is always something to say, even if it is only that",
+  "you did not follow and would like them to try again.",
+  "",
   "Tone: warm, brief, human. This is a chat, not an email - keep reply_text under about 500",
   "characters, no greeting block, no sign-off, no subject line. Answer what they asked and stop.",
 ]).join("\n");
@@ -329,8 +349,9 @@ const confirmationPageCode = [
   "    '<h1>Thanks, ' + esc(inquiry.prospect_name) + '</h1>',",
   "    '<p>We have your message about ' + esc(unit.address) + '.</p>',",
   "    '<p>Your reference is <span class=\"ref\">' + esc(token) + '</span>.</p>',",
-  "    '<p>Open the leasing assistant on Telegram and your question will be answered straight away. You can ask anything else about the home in the same chat.</p>',",
-  "    '<p><a class=\"cta\" href=\"' + link + '\">Open the leasing assistant</a></p>',",
+  "    '<p>Our leasing assistant has your question and can answer it right now, along with anything else you want to know about the home.</p>',",
+  "    '<p><a class=\"cta\" href=\"' + link + '\">Chat with the leasing assistant</a></p>',",
+  "    '<p class=\"small\">Opens in Telegram.</p>',",
   "    '<p class=\"small\">Demonstration system. Synthetic data only.</p>',",
   "    '<p class=\"small\"><a href=\"http://localhost:8080/\">Back to listings</a></p>',",
   "    '</div></body></html>',",
@@ -367,7 +388,28 @@ const normalizeTelegramCode = [
   "  const message = update.message || update;",
   "  const chat = message.chat || {};",
   "  const from = message.from || {};",
-  "  const text = (message.text || message.caption || '').trim();",
+  "  let text = (message.text || message.caption || '').trim();",
+  "",
+  "  // People send stickers, photos, voice notes and locations. None of those",
+  "  // reach the model usefully, and an empty message would either produce a",
+  "  // nonsense reply or an empty one. Detect them and answer deterministically.",
+  "  const KINDS = {",
+  "    photo: 'a photo', sticker: 'a sticker', voice: 'a voice note',",
+  "    audio: 'an audio clip', document: 'a file', video: 'a video',",
+  "    video_note: 'a video note', animation: 'a GIF', location: 'a location',",
+  "    contact: 'a contact', poll: 'a poll', dice: 'that',",
+  "  };",
+  "  let unsupportedKind = null;",
+  "  if (!text) {",
+  "    for (const key of Object.keys(KINDS)) {",
+  "      if (message[key] !== undefined) { unsupportedKind = KINDS[key]; break; }",
+  "    }",
+  "    if (!unsupportedKind) unsupportedKind = 'that';",
+  "  }",
+  "",
+  "  // A very long message is almost always a paste. Keep the prompt bounded.",
+  "  const MAX_INBOUND = 1500;",
+  "  if (text.length > MAX_INBOUND) text = text.slice(0, MAX_INBOUND);",
   "",
   "  // /start carries the lead reference from the listing site's deep link.",
   "  // extractRefToken expects brackets, so the payload is wrapped rather than",
@@ -392,6 +434,8 @@ const normalizeTelegramCode = [
   "      // insert downstream is what makes a replay a no-op.",
   "      dedupe_key: 'tg-' + chatId + '-' + messageId,",
   "      text: text,",
+  "      is_text: Boolean(text),",
+  "      unsupported_kind: unsupportedKind,",
   "      is_start: isStart,",
   "      start_token: startToken,",
   "      username: from.username || null,",
@@ -1048,6 +1092,27 @@ const nodes = [
     [100, -700]
   ),
 
+  wf.ifNode(
+    "Is Text Message?",
+    [wf.booleanCondition("={{ $json.is_text }}", true)],
+    [210, -700]
+  ),
+
+  // A sticker, a photo or a voice note is answered without a model call at all.
+  // Deterministic, instant, and it keeps nonsense out of the extraction step.
+  wf.telegramNode(
+    "Reply: Text Only Please",
+    {
+      bot: "prospect",
+      failOnError: true,
+      chatId: "={{ $json.chat_id }}",
+      text:
+        "=I can only read text messages, so I could not open {{ $json.unsupported_kind }}. " +
+        "If you type your question I will answer it straight away.",
+    },
+    [210, -520]
+  ),
+
   // Deterministic identity. /start R-xxxx binds the chat to that lead; every
   // later message resolves by chat_id. NULLIF($n::text,'') with the explicit
   // ::text cast - without it Postgres infers bigint from context and the empty
@@ -1175,7 +1240,12 @@ const nodes = [
     [1860, -820]
   ),
 
-  wf.codeNode("Merge Slots And Run Prequal Gate", turnGateCode, [2080, -820]),
+  // Throws on a malformed model payload - a schema violation must fail visibly,
+  // not flow onward with an empty reply. The error output is what keeps that
+  // from also meaning silence for the prospect.
+  wf.codeNode("Merge Slots And Run Prequal Gate", turnGateCode, [2080, -820], {
+    errorOutput: true,
+  }),
 
   wf.codeNode("Check Guardrails (Telegram)", telegramGuardrailCode, [2300, -820]),
 
@@ -1306,8 +1376,29 @@ const nodes = [
     [3840, -820]
   ),
 
-  // Guardrail failed: nothing goes to the renter, and the manager is told on
-  // the MANAGER bot.
+  // NEVER LEAVE THE PROSPECT IN SILENCE.
+  //
+  // A blocked message and a failed model call both used to end the run with
+  // nothing sent, which is the worst outcome a conversational product has: the
+  // renter is mid-conversation and the assistant simply stops. Every failure
+  // path now sends this instead. The wording is fixed and carries no figure, no
+  // commitment and no protected-class content, so it is safe by construction
+  // and does not need the guardrail run over it.
+  wf.telegramNode(
+    "Reply: Handing To A Colleague",
+    {
+      bot: "prospect",
+      failOnError: true,
+      chatId: "={{ $('Normalize Telegram Message').item.json.chat_id }}",
+      text:
+        "=Let me get a colleague to pick this one up with you - someone will be in touch " +
+        "shortly. Sorry for the hold-up.",
+    },
+    [2960, -560]
+  ),
+
+  // Guardrail failed: nothing the model wrote goes to the renter, and the
+  // manager is told on the MANAGER bot.
   wf.telegramNode(
     "Alert Manager: Reply Blocked",
     {
@@ -1321,6 +1412,20 @@ const nodes = [
         "Nothing was sent. This one needs a human.",
     },
     [2960, -680]
+  ),
+
+  wf.telegramNode(
+    "Alert Manager: Turn Failed",
+    {
+      chatId: "=__TELEGRAM_CHAT_ID__",
+      text:
+        "=A conversation turn failed and could not be answered.\n\n" +
+        "Chat: {{ $('Normalize Telegram Message').item.json.chat_id }}\n" +
+        "They said: {{ $('Normalize Telegram Message').item.json.text }}\n\n" +
+        "Error: {{ $json.error?.message || $json.message || 'unknown' }}\n\n" +
+        "The prospect was told a colleague would pick it up. Nothing else was sent.",
+    },
+    [2740, -400]
   ),
 
   /* ---- entry 3: Cal.com booking ---------------------------------------- */
@@ -1728,7 +1833,8 @@ const connections = wf.connect({
   "Claim Message (Dedupe)": [["Mark Replay Or New"]],
   "Mark Replay Or New": [["Is New Message?"]],
   // false branch is a dead end on purpose: a re-delivered update does nothing.
-  "Is New Message?": [["Bind Lead Identity"], []],
+  "Is New Message?": [["Is Text Message?"], []],
+  "Is Text Message?": [["Bind Lead Identity"], ["Reply: Text Only Please"]],
   "Bind Lead Identity": [["Check Identity Binding"]],
   "Check Identity Binding": [["Lead Identified?"]],
   "Lead Identified?": [["Load Active Criteria"], ["Send: Start From A Listing"]],
@@ -1737,12 +1843,20 @@ const connections = wf.connect({
   "Build Conversation Context": [["Show Typing"]],
   "Show Typing": [["Answer, Extract And Classify"]],
   "Answer, Extract And Classify": [["Merge Slots And Run Prequal Gate"]],
-  "Merge Slots And Run Prequal Gate": [["Check Guardrails (Telegram)"]],
+  // Second output is the error branch: tell the prospect a human is coming, and
+  // tell the manager what broke.
+  "Merge Slots And Run Prequal Gate": [
+    ["Check Guardrails (Telegram)"],
+    ["Reply: Handing To A Colleague", "Alert Manager: Turn Failed"],
+  ],
   "Check Guardrails (Telegram)": [["Update Lead From Conversation"]],
   // State is written before the send. If the send fails the turn is still
   // recorded, which is recoverable; sending and failing to record is not.
   "Update Lead From Conversation": [["Reply Passed Guardrails?"]],
-  "Reply Passed Guardrails?": [["Send Prospect Reply (Telegram)"], ["Alert Manager: Reply Blocked"]],
+  "Reply Passed Guardrails?": [
+    ["Send Prospect Reply (Telegram)"],
+    ["Reply: Handing To A Colleague", "Alert Manager: Reply Blocked"],
+  ],
   "Send Prospect Reply (Telegram)": [["Log Outbound Telegram Reply"]],
   "Log Outbound Telegram Reply": [["Needs Manager Notice?"]],
   "Needs Manager Notice?": [

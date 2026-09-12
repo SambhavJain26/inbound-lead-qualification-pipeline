@@ -178,12 +178,21 @@ This is where the work happens.
 **It reads her pay stub.** Employer, pay period, gross amount — and records the exact line it
 read each figure from, so a person can check it against the document.
 
-**It verifies her income for real.** She connects her bank, and the system reads her *actual
-payroll deposits*.
+**It checks her income against her bank, not against her paperwork.** The system asks Plaid —
+the service thousands of banking apps use — what her payroll deposits actually say, and
+compares that to the pay stub.
 
 This is the part that matters most. A pay stub is a picture. It can be edited in a photo
 editor in about thirty seconds, and there are websites that generate convincing ones for free.
 A deposit history can't be.
+
+**Being precise about what runs in the demo:** the Plaid call is real — real API, real
+credentials, real response — but it runs against Plaid's *Sandbox*, which returns fixed test
+figures rather than anyone's genuine banking data. Two things are therefore missing compared
+with a production deployment: the renter never sees the bank-login screen (Plaid Link, which
+Sandbox lets you skip), and the number that comes back is the same for every applicant. What
+is being demonstrated is the plumbing and the comparison logic, not a real bank lookup.
+Switching it on is adding the Link screen and changing one URL.
 
 **It runs a background check.** Credit and eviction history.
 
@@ -380,7 +389,7 @@ its guidance on AI in tenant screening in 2024.
 | **OpenAI** | Scenes 2, 3, 7 | Answers from the property's own facts, pulls answers out of plain-English messages, and reads figures off the uploaded pay stub. It never decides anything |
 | **Cal.com** | Scene 4 | The booking page the renter picks a tour slot on, and the calendar behind it |
 | **The application form** | Scene 6 | The online form, including the document upload |
-| **Plaid** | Scene 7 | Verifies income against the renter's actual bank deposits. The single most important check in the system |
+| **Plaid** | Scene 7 | Checks income against bank deposits rather than against the paperwork. The single most important check in the system. Running against Plaid's Sandbox here, so the figure is test data and there is no bank-login step |
 | **DocuSign** | Scene 9 | Sends the lease, collects the signature, and tells the system when it is done |
 | **Email** | Scenes 9 | Carries the documents — the lease and the welcome packet. Also a second way leads can arrive, for listing sites that send them by email |
 | **Airtable** | Scenes 2, 3, 4, 5, 9 | The board. Shows every lead and where it has got to, so anyone can see the pipeline at a glance |
@@ -409,9 +418,9 @@ the system already handles leads arriving by email as well.
 Worth being straight about, because it's part of the pitch.
 
 **Genuinely running:** the listing site, the conversation, the document reading, the
-**bank-based income verification** (a real connection to the service thousands of banking apps
-use, running on test data), the criteria engine, tour booking, electronic signature, and every
-message.
+**bank-based income check** (a real connection to the service thousands of banking apps use,
+running against its Sandbox, so the figures are test data and the renter never sees the
+bank-login screen), the criteria engine, tour booking, electronic signature, and every message.
 
 **Simulated, and labelled everywhere it appears:** the credit and eviction check, the identity
 document check, and the smart-lock code.

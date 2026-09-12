@@ -278,7 +278,81 @@
           "id": "__POSTGRES_CREDENTIAL_ID__",
           "name": "Leasing Postgres"
         }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "application-found-for-envelope",
+      "name": "Application Found For Envelope?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        60,
+        220
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Did the UPDATE actually match an application?\n//\n// alwaysOutputData means a miss arrives here as an empty item rather than\n// stopping the branch, and strict IF nodes need a real boolean - not\n// truthiness on a missing field.\nconst rows = $input.all().filter((item) => item.json && item.json.ref_token);\nif (!rows.length) {\n  const parsed = $('Parse Connect Event').first().json;\n  return [{ json: { application_found: false, envelope_id: parsed.envelope_id || null } }];\n}\nreturn [{ json: Object.assign({}, rows[0].json, { application_found: true }) }];"
       }
+    },
+    {
+      "id": "signature-matches-an-application",
+      "name": "Signature Matches An Application?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        160,
+        220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "json-application-found",
+              "leftValue": "={{ $json.application_found }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "alert-manager-unknown-envelope",
+      "name": "Alert Manager: Unknown Envelope",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        340
+      ],
+      "parameters": {
+        "chatId": "=__TELEGRAM_CHAT_ID__",
+        "text": "=A signed envelope came back that does not match any application.\n\nEnvelope: {{ $json.envelope_id }}\n\nNothing was recorded and no welcome packet was sent. This usually means the demo state was reset after the lease went out.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram (manager bot)"
+        }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "id": "mark-unit-leased",
@@ -471,7 +545,36 @@
       "main": [
         [
           {
+            "node": "Application Found For Envelope?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Application Found For Envelope?": {
+      "main": [
+        [
+          {
+            "node": "Signature Matches An Application?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Signature Matches An Application?": {
+      "main": [
+        [
+          {
             "node": "Mark Unit Leased",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Manager: Unknown Envelope",
             "type": "main",
             "index": 0
           }

@@ -14,12 +14,17 @@ node scripts/start-tunnel.js
 node scripts/import-workflows.js
 docker compose restart n8n
 node scripts/register-calcom-webhook.js
+node scripts/build-listing-site.js
+node scripts/serve-listing-site.js --detach
 node scripts/reset-demo.js --with-airtable
 ```
 
 The tunnel hostname changes on every run, which is why the import and the Cal.com
 registration come after it. Skipping `register-calcom-webhook.js` means tour bookings go
 nowhere and **Cal.com will not tell you** — it fails silently.
+
+The listing site does **not** depend on the tunnel: its contact form posts to local n8n. Only
+rebuild it if you changed a unit.
 
 **Verify before you hit record**
 
@@ -28,11 +33,17 @@ node scripts/verify-stage-1.js --telegram
 node scripts/verify-credentials.js
 ```
 
+`verify-credentials.js` must show **Telegram bots are distinct**. If both tokens are the same
+bot, activating WF1 quietly steals the manager bot's webhook and every approve button stops
+working — with no error anywhere.
+
 **Tidy the screen**
 
-- Prospect inbox: ideally an empty throwaway Gmail. Anything older on screen is a
-  distraction, and a real inbox on camera is a privacy problem.
-- Telegram: clear the chat with the bot so the demo's cards are the only ones visible.
+- Prospect inbox: ideally an empty throwaway Gmail. It only carries the lease and the welcome
+  packet now, but it is on camera in scene 7.
+- Telegram: clear **both** chats — the leasing assistant and the manager bot — so the demo's
+  messages are the only ones visible. There is no API for this; delete them by hand.
+- Browser: have the listing site open at `http://localhost:8080` on a clean tab.
 - Cal.com: rename the event type to **Unit Tour** if you have not already — the prospect
   sees that title on the booking page.
 - Close the n8n editor unless you plan to show it. A wall of nodes impresses engineers and
@@ -42,61 +53,77 @@ node scripts/verify-credentials.js
 
 | Window | Shows |
 |---|---|
-| Prospect inbox | What the renter receives |
-| Telegram | The manager's decision card |
+| Listing site | Where the renter starts |
+| Telegram — leasing assistant | The renter's side of the conversation |
+| Telegram — manager bot | The decision card |
 | Airtable board | The lead moving through the pipeline |
 | Terminal | Only if you want to show the commands |
+
+The two Telegram chats are the heart of the demo, and keeping them visibly separate is the
+point: the renter and the manager never share a conversation. If you are recording on one
+screen, a phone for the renter's chat and the desktop app for the manager's reads best.
 
 ---
 
 ## The run
 
-### 1. The lead arrives — 30 seconds
+### 1. The renter finds the listing — 30 seconds
 
-```bash
-node scripts/send-as-prospect.js lead
-```
+Open `http://localhost:8080`, scroll the two listings, open the two-bedroom.
 
-> "A renter finds the listing on Zillow at half ten at night and asks about parking and
-> whether they can bring a dog. This is the email the property manager gets."
+> "This is the front door. Everything on this page — the rent, the deposit, the pet policy,
+> the parking — comes out of one property record. Hold that thought, because the assistant is
+> about to quote the same record."
 
-Wait for the reply to land in the prospect inbox. About a minute — the IMAP trigger polls.
+Fill in the contact form as the renter, at half ten at night:
 
-### 2. The instant reply — the first real beat
+> *"Is parking included, and do you allow a small dog? Hoping to move early October."*
 
-Open the reply.
+Hit **Send and continue on Telegram**.
 
-> "That came back without anyone being awake. Every number in it — the fifty dollar second
-> parking space, the fifty pound weight limit, the thirty-five dollar pet fee — is from this
-> property's own record. The system physically cannot make one up; if a figure isn't in the
-> facts, the message is blocked before it sends."
+### 2. The handoff — the first real beat
 
-> "And notice what it asks at the end, and how it asks it: *to check which units fit, rather
-> than make a decision*. That wording is deliberate."
+The confirmation page comes back with a reference and a button. Tap **Open the leasing
+assistant**, then Start.
 
-### 3. Pre-qualification
+> "The answer is already there. Nobody was awake."
 
-```bash
-node scripts/send-as-prospect.js reply "Re: 412 Maple Street, Apt 2B, Springfield [R-xxxx]" "October 5th works for me. I make about \$5,000 a month gross. One small dog, 18 lbs. One car. Just me living there."
-```
+Show the reply.
 
-Replace `R-xxxx` with the token in the reply's subject line.
+> "Every number in it — the fifty dollar second space, the fifty pound weight limit, the
+> October 1st date — is from this property's own record. The system physically cannot make one
+> up; if a figure isn't in the facts, the message is blocked before it sends and a person gets
+> told."
 
-> "They answer in plain English. The system pulls out the move-in date, the income, the pet,
-> the car, and the occupancy, and checks it against the manager's own criteria."
+> "And notice what it *didn't* ask. She said 'early October' on the listing page, so it already
+> has the move-in date. It never asks the same question twice."
 
-Show the Airtable board — the lead has moved to pre-qualified.
+> "The question it does ask is fixed wording: *to check which units fit, not a decision*. The
+> AI didn't write that sentence, and it didn't choose to ask it."
 
-> "Nobody has been approved or turned down here. This is unverified, self-reported
-> information, and it's only deciding whether a tour is worth booking."
+### 3. Pre-qualification, in the chat
+
+Type as the renter, in the same chat:
+
+> *"About $5,000 a month gross, just me with one car."*
+
+> "Three facts in one sentence, the way people actually type. It files the income, the
+> occupancy and the car, checks them against the manager's own criteria, and records its
+> working — three point oh three times the rent, marked unverified."
+
+Show the Airtable board moving to *Prequalified*.
+
+> "Nobody has been approved or turned down. This is unverified, self-reported information and
+> it's only deciding whether a tour is worth booking. If she hadn't been a fit she'd have been
+> offered alternatives, not a refusal."
 
 ### 4. Tour booked
 
-Open the tour link from the email and book a slot.
+The tour link arrives in the same message. Open it and book a slot.
 
-> "Self-guided tour. They get a one-time entry code just before the slot. In a real
-> deployment that comes from the smart lock; here it's simulated, and I'll show you exactly
-> where that swap happens at the end."
+> "Self-guided tour. They get a one-time entry code just before the slot. In a real deployment
+> that comes from the smart lock; here it's simulated, and I'll show you exactly where that
+> swap happens at the end."
 
 Then:
 
@@ -104,7 +131,7 @@ Then:
 curl -X POST "$TUNNEL/webhook/tour-completed" -H "Content-Type: application/json" -d '{"ref_token":"R-xxxx"}'
 ```
 
-> "Tour's done, and the application link goes out on its own."
+> "Tour's done, and the application link goes out on its own — same chat."
 
 ### 5. The application
 
@@ -117,7 +144,11 @@ node scripts/submit-application.js maya
 
 ### 6. The clean approval — Telegram
 
-Wait about forty seconds, then show the Telegram card.
+Wait about forty seconds, then switch to the **manager** bot — a different chat, a different
+bot from the one the renter has been talking to.
+
+> "This is the first time a property manager has been involved at all. And note it's a
+> separate chat — the renter and the manager never share a conversation."
 
 > "Here's the whole file. Three income numbers: what she typed, what her pay stub says, and
 > what her bank actually shows. They agree."
@@ -174,6 +205,10 @@ Open `docs/architecture.excalidraw` (exported to PNG).
 
 | Symptom | Cause | Fix |
 |---|---|---|
+| Contact form does nothing | n8n is down, or WF1 is not active | `docker compose ps`, then re-import and restart |
+| Listing site will not load | Static server not running | `node scripts/serve-listing-site.js --detach` |
+| No reply in the Telegram chat | Tunnel died, so the bot webhook points nowhere | `node scripts/start-tunnel.js`, re-import, restart n8n |
+| Approve button does nothing | Both bot tokens are the same bot, so WF1 stole the manager webhook | `node scripts/verify-credentials.js` — check "bots are distinct" |
 | No reply to the lead email | IMAP polls; or the tunnel died | Wait a minute, then `node scripts/start-tunnel.js` and re-import |
 | Tour booking does nothing | Cal.com webhook points at a dead tunnel | `node scripts/register-calcom-webhook.js` |
 | Form 404s | Webhook registration lags a restart | Wait 20 seconds, submit again |
@@ -188,6 +223,13 @@ The pipeline never depends on Airtable. If the board is wrong, the demo is still
 
 - **"It never decides."** Say it early and let them test it. There is no approve button that
   fires automatically and no denial anywhere in the system.
+- **"It doesn't even decide what to ask."** The rules engine works out what is still
+  outstanding and the question is fixed wording written in advance. The AI answers what was
+  asked and pulls facts out of the reply. That is the whole of its job, and it is a stronger
+  claim than most people expect from a chatbot.
+- **"The listing site is the part you'd replace."** In a real deployment the renter arrives
+  from Zillow or the company's own site. What happens after they hit send is identical — the
+  system already handles leads arriving by email too.
 - **"That's a real Plaid call."** Sandbox, but the same API thousands of fintech apps use.
   Most demos in this space mock income verification entirely.
 - **"Nothing new for your team to learn."** No dashboard, no migration, no per-seat licence.

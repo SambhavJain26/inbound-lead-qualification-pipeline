@@ -108,6 +108,20 @@ const parseConnectCode = [
   "return out;",
 ].join("\n");
 
+const envelopeGuardCode = [
+  "// Did the UPDATE actually match an application?",
+  "//",
+  "// alwaysOutputData means a miss arrives here as an empty item rather than",
+  "// stopping the branch, and strict IF nodes need a real boolean - not",
+  "// truthiness on a missing field.",
+  "const rows = $input.all().filter((item) => item.json && item.json.ref_token);",
+  "if (!rows.length) {",
+  "  const parsed = $('Parse Connect Event').first().json;",
+  "  return [{ json: { application_found: false, envelope_id: parsed.envelope_id || null } }];",
+  "}",
+  "return [{ json: Object.assign({}, rows[0].json, { application_found: true }) }];",
+].join("\n");
+
 /* ------------------------------------------------------------------ nodes */
 
 const nodes = [
@@ -280,7 +294,35 @@ const nodes = [
       "RETURNING *, (SELECT unit_code FROM units WHERE id = applications.unit_id) AS unit_code,\n" +
       "          (SELECT address FROM units WHERE id = applications.unit_id) AS address;",
     [-60, 220],
-    { queryOptions: { queryReplacement: "={{ [$json.envelope_id] }}" } }
+    {
+      queryOptions: { queryReplacement: "={{ [$json.envelope_id] }}" },
+      alwaysOutputData: true,
+    }
+  ),
+
+  wf.codeNode("Application Found For Envelope?", envelopeGuardCode, [60, 220]),
+
+  wf.ifNode(
+    "Signature Matches An Application?",
+    [wf.booleanCondition("={{ $json.application_found }}", true)],
+    [160, 220]
+  ),
+
+  // A completion callback for an envelope with no application behind it stops
+  // and tells a human. Without this the run continues on an empty item and
+  // dies at the mail node with "No recipients defined", which says nothing
+  // about the actual problem.
+  wf.telegramNode(
+    "Alert Manager: Unknown Envelope",
+    {
+      chatId: "=__TELEGRAM_CHAT_ID__",
+      text:
+        "=A signed envelope came back that does not match any application.\n\n" +
+        "Envelope: {{ $json.envelope_id }}\n\n" +
+        "Nothing was recorded and no welcome packet was sent. This usually means " +
+        "the demo state was reset after the lease went out.",
+    },
+    [260, 340]
   ),
 
   wf.postgresNode(
@@ -334,7 +376,9 @@ const connections = wf.connect({
   "Signature Returned (DocuSign)": [["Parse Connect Event"]],
   "Parse Connect Event": [["Envelope Completed?"]],
   "Envelope Completed?": [["Mark Lease Signed"], []],
-  "Mark Lease Signed": [["Mark Unit Leased"]],
+  "Mark Lease Signed": [["Application Found For Envelope?"]],
+  "Application Found For Envelope?": [["Signature Matches An Application?"]],
+  "Signature Matches An Application?": [["Mark Unit Leased"], ["Alert Manager: Unknown Envelope"]],
   "Mark Unit Leased": [["Send Welcome Packet"]],
   "Send Welcome Packet": [["Notify Manager: Lease Signed"]],
 });

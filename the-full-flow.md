@@ -2,10 +2,10 @@
 
 Last updated: 2026-09-12
 
-What actually happens, from a stranger clicking a listing to a new resident holding a signed
+What actually happens, from a stranger browsing a listing to a new resident holding a signed
 lease. No technical detail — just the sequence, who does what, and how long it takes.
 
-Every timing below is from real runs of the working system.
+Every message quoted below is real output from a working run.
 
 ---
 
@@ -24,49 +24,56 @@ start to set the rules, and once per applicant to make the call. That's it.
 
 ## Scene 1 — Thursday, 10:34pm
 
-> **Involved:** the listing site (Zillow) · **Gmail**
+> **Involved:** the listing site · the property record
 
-A renter is scrolling listings on her phone. She finds the two-bedroom on Maple Street, likes
-it, and taps *Contact*.
+A renter is scrolling rentals on her phone. She finds the two-bedroom on Maple Street, opens
+it, and reads the page: the rent, the deposit, what's included, the pet policy, the parking.
 
-> *"Hi! I saw the 2 bedroom on Maple Street and I'm really interested. Is parking included,
-> and do you allow a small dog? I'm hoping to move in early October."*
+Everything on that page comes out of one record — the same record the assistant is about to be
+allowed to quote from. They cannot drift apart.
+
+She has two questions the listing doesn't quite answer, so she uses the contact form:
+
+> *"Is parking included, and do you allow a small dog? Hoping to move early October."*
 
 The office closed five hours ago. Normally this sits unread until tomorrow, and by then she's
 messaged four other places.
 
-**The system picks it up.**
+She taps **Send and continue on Telegram**.
 
 ---
 
 ## Scene 2 — 10:35pm, about a minute later
 
-> **Involved:** **Gmail** (receives, then sends) · **OpenAI** (writes the reply) · the property record (holds the facts it is allowed to use) · **Airtable** (the lead appears on the board as *Engaged*)
+> **Involved:** the listing site · **Telegram** (the leasing assistant) · **OpenAI** (writes the reply) · the property record · **Airtable** (the lead appears on the board as *New*)
 
-She gets a reply:
+The page that comes back has a reference number and a button: *Open the leasing assistant*.
 
-> Hi Maya,
+She taps it. Telegram opens on a chat with the leasing assistant, she hits Start — and the
+answer to the question she just typed is **already waiting for her**:
+
+> One assigned surface parking space is included; a second space is $50/month if available.
+> Small dogs are welcome under the 50-lb limit, with breed restrictions applying. The unit is
+> available October 1, which fits an early-October move.
 >
-> Thanks for your interest in the two-bedroom at 412 Maple Street, Apt 2B. One assigned
-> surface parking space is included, and a second space may be available for $50/month. Small
-> dogs are welcome if they are under 50 lbs; breed restrictions apply. The monthly pet fee is
-> $35, with a maximum of two pets. The unit is available starting October 1, 2026, which may
-> fit an early-October move-in.
->
-> To check which units fit, rather than make a decision, could you share your intended move-in
-> date, approximate gross monthly income, pets, number of vehicles, and how many adults will
-> be living there?
+> Roughly what is your gross monthly income? This is just to check which units fit, not a
+> decision.
 
-Three things worth noticing.
+Four things worth noticing.
 
-**Every number is real.** The $50 second space, the 50 lb limit, the $35 pet fee, the October
-1st date — all pulled from that specific unit's record. The system is physically prevented
-from stating a figure that isn't there: a message containing an unknown number is stopped
-before it sends and handed to a person instead.
+**Every number is real.** The $50 second space, the 50 lb limit, the October 1st date — all
+pulled from that specific unit's record. The system is physically prevented from stating a
+figure that isn't there: a message containing an unknown number is stopped before it sends and
+handed to a person instead.
 
-**It answered her actual questions**, in order, and then asked its own.
+**It answered both her questions**, and connected the answer to what she actually said — she
+mentioned early October, so it told her the unit is available October 1st.
 
-**"Rather than make a decision."** That phrasing is deliberate, and it matters later.
+**It didn't ask about the move-in date.** She'd already said "early October" on the listing
+page, so the system recorded it and moved on to the next thing it needs. It never asks twice.
+
+**"To check which units fit, not a decision."** That phrasing is deliberate, it is fixed text,
+and it matters later.
 
 Nobody was awake. Nobody will know this happened until morning.
 
@@ -74,18 +81,17 @@ Nobody was awake. Nobody will know this happened until morning.
 
 ## Scene 3 — 10:41pm
 
-> **Involved:** **Gmail** · **OpenAI** (pulls the answers out of her sentence) · the rules engine (checks them) · **Airtable** (*Prequalified*)
+> **Involved:** **Telegram** · **OpenAI** (pulls the answers out of her sentence) · the rules engine (checks them) · **Airtable** (*Prequalified*)
 
-She replies in plain English:
+She replies in the same chat, in plain English, the way people actually type:
 
-> *"October 5th works for me. I make about $5,000 a month gross. One small dog, 18 lbs. One
-> car. Just me living there."*
+> *"About $5,000 a month gross, just me with one car."*
 
-The system reads it and files:
+Three separate facts in one sentence. The system files all three:
 
-- Move-in: **October 5th** (it worked out the actual date from "October 5th")
 - Income: **$5,000/month**
-- One 18lb dog, one car, one adult
+- One adult
+- One car
 
 Then it checks those against the manager's own rules and records its working:
 
@@ -98,17 +104,27 @@ a tour is worth anyone's time.
 **Nobody has been approved or turned down.** If she hadn't been a fit, she wouldn't have been
 rejected either — she'd have been offered other options and passed to a human.
 
+This is also where a chat earns its keep over email. She answered three questions in one
+sentence, at her own pace, in an app she already had open. No subject line, no waiting for a
+mail poll, no "reply to this address".
+
 ---
 
 ## Scene 4 — 10:42pm
 
-> **Involved:** **Cal.com** (the booking page and calendar) · smart lock — **simulated** (the entry code) · **Gmail** (confirmation) · **Airtable** (*Tour Booked*)
+> **Involved:** the rules engine (decides she's ready) · **Cal.com** (the booking page) · **Telegram**
 
-She gets a booking link, picks Saturday at 11am, and gets a confirmation.
+Because nothing is outstanding and nothing failed, the same message carries the next step:
 
-Shortly before her slot, an entry code arrives:
+> Thanks, I've noted gross monthly income of about $5,000, one adult occupant, and one car.
+> The unit includes one assigned surface parking space.
+>
+> Everything looks like a fit so far. Here is the link to pick a tour time that suits you:
+> https://cal.com/…?metadata[ref_token]=R-1574
 
-> Entry code: 457194
+She picks Saturday at 11am. Shortly before her slot, an entry code arrives in the same chat:
+
+> Entry code: 616464
 >
 > The code works during your booked slot only. Let yourself in, take your time, and pull the
 > door closed when you leave.
@@ -119,14 +135,17 @@ Self-guided. No agent drives across town.
 
 ## Scene 5 — Saturday, just after the tour
 
-> **Involved:** **Gmail** (the follow-up and application link) · **Airtable** (*Toured*)
+> **Involved:** **Telegram** (the follow-up and application link) · **Airtable** (*Toured*)
 
-The tour window closes and she gets a follow-up:
+The tour window closes and she gets a follow-up in the same chat:
 
-> Hope the tour went well. If you'd like to apply, here's the application.
+> Hope the tour of 412 Maple Street, Apt 2B went well. If you would like to apply, here is the
+> application:
 >
-> There's no obligation — applying just puts you forward for consideration. If it wasn't the
-> right fit, reply and tell us what didn't work and we'll look for something closer.
+> …/form/rental-application?ref_token=R-1574
+>
+> There is no obligation — applying just puts you forward for consideration. If it was not the
+> right fit, tell me what did not work and we will look for something closer.
 
 No pressure, and a genuine invitation to say no. If she walks away, she walks away — and the
 manager learns why, which is worth something too.
@@ -184,7 +203,10 @@ twenty states and a hundred-plus cities treat as illegal discrimination.
 
 The property manager's phone buzzes. **This is the first time they've been involved.**
 
-> **Application A-9135 — Maya Restrepo**
+It arrives in a different chat, from a different bot — the renter and the manager never share
+a conversation.
+
+> **Application A-8745 — Maya Restrepo**
 > MAPLE-2B at $1,650/mo
 >
 > Income verified, documents agree
@@ -215,7 +237,7 @@ The manager reads it and taps **Approve**. Elapsed: about fifteen seconds.
 
 ## Scene 9 — The lease
 
-> **Involved:** **DocuSign** (the lease and the signature) · **Gmail** (welcome message) · the database (unit marked leased) · **Airtable** (*Leased*)
+> **Involved:** **DocuSign** (the lease and the signature) · email (the lease and the welcome message) · the database (unit marked leased) · **Airtable** (*Leased*)
 
 The lease fills itself in from verified data — her name, the address, the rent, the deposit,
 the term, her move-in date — and goes out for signature.
@@ -228,14 +250,9 @@ The moment it comes back signed:
 - The unit flips from *available* to *leased*
 - She gets a welcome message about insurance, utilities, and her permanent entry code
 
-In testing, the welcome email went out **23 seconds** after the signature completed.
-
-```
-08:27:07   Lease completed        (signature service)
-08:27:30   Welcome to 412 Maple   (the system)
-```
-
-Nobody touched anything in between.
+The lease and the welcome packet go by **email**, not chat. That's deliberate: a chat is the
+right place for a conversation, and email is the right place for a document somebody needs to
+keep and be able to find again in a year.
 
 ---
 
@@ -295,7 +312,7 @@ For the whole journey — first contact at 10:34pm Thursday to a signed lease:
 | | |
 |---|---|
 | Questions answered | 0 |
-| Emails written | 0 |
+| Messages written | 0 |
 | Tours scheduled | 0 |
 | Documents reviewed | 0 |
 | Pay stubs squinted at | 0 |
@@ -312,7 +329,8 @@ Plus a one-time setup: writing down the criteria they already use.
 |---|---|---|
 | After-hours inquiry | Sits until morning | Answered in a minute |
 | Answering the same questions | Every single time | Never |
-| Pre-qualifying | A phone call | Already done |
+| Asking the same question twice | Constantly | Never — it remembers what you told it |
+| Pre-qualifying | A phone call | Already done, in chat |
 | Booking tours | Back-and-forth | Self-service |
 | Checking income | Reading a PDF and hoping | Verified against the bank |
 | Fake pay stub | Usually works | Caught in seconds |
@@ -329,6 +347,12 @@ Plus a one-time setup: writing down the criteria they already use.
 It reads, checks, verifies, organises, and hands over. It never scores anyone, never ranks
 anyone, never guesses at anything it wasn't told, and never sends a rejection.
 
+There's a second version of that worth saying out loud, because it's the part people assume
+can't be true of a chatbot: **the AI doesn't even decide what to ask next.** The rules engine
+works out what's still outstanding, and the question it asks is fixed wording written in
+advance. The AI answers what was asked and pulls the facts out of the reply. That's all it
+does.
+
 The property manager sets the rules. The system applies them the same way to everybody and
 shows its working. A person makes every call.
 
@@ -342,17 +366,18 @@ its guidance on AI in tenant screening in 2024.
 
 | Part | Where it shows up | What it does |
 |---|---|---|
-| **Gmail** | Scenes 1, 2, 3, 4, 5, 9 | Carries every message to and from the renter. The listing-site lead arrives here, and every reply, confirmation, application link and welcome message goes out from here |
-| **OpenAI** | Scenes 2, 3, 7 | Writes the reply from the property's own facts, pulls the answers out of a plain-English email, and reads figures off the uploaded pay stub |
+| **The listing site** | Scenes 1, 2 | Where the renter finds the home and sends the first message. Every page is generated from the property record, so the listing and the assistant quote the same facts |
+| **Telegram** | Scenes 2–5, 8 | Two separate chats. The renter talks to the leasing assistant; the manager gets the decision card. They never share a conversation |
+| **OpenAI** | Scenes 2, 3, 7 | Answers from the property's own facts, pulls answers out of plain-English messages, and reads figures off the uploaded pay stub. It never decides anything |
 | **Cal.com** | Scene 4 | The booking page the renter picks a tour slot on, and the calendar behind it |
-| **The application form** | Scene 6 | The online form the renter fills in, including the document upload |
+| **The application form** | Scene 6 | The online form, including the document upload |
 | **Plaid** | Scene 7 | Verifies income against the renter's actual bank deposits. The single most important check in the system |
-| **Telegram** | Scene 8 | Where the property manager sees the complete file and taps a decision. The only place a human is involved |
 | **DocuSign** | Scene 9 | Sends the lease, collects the signature, and tells the system when it is done |
+| **Email** | Scenes 9 | Carries the documents — the lease and the welcome packet. Also a second way leads can arrive, for listing sites that send them by email |
 | **Airtable** | Scenes 2, 3, 4, 5, 9 | The board. Shows every lead and where it has got to, so anyone can see the pipeline at a glance |
 | **The database** | Throughout | The actual record of everything. Airtable is a display of it, not the thing itself |
 
-Two of these are worth separating out, because they do different jobs that people often lump
+Three of these are worth separating out, because they do different jobs that people often lump
 together.
 
 **Airtable is a window, not the engine.** It shows the pipeline so a person can glance at it.
@@ -363,18 +388,24 @@ be out of date until it caught up.
 one card is the entire human interface, which is the point: there is no new software for the
 team to learn, no dashboard to log into, and no training. They already have Telegram open.
 
+**The listing site is the front door, and it is the part most easily swapped.** In a real
+deployment the renter arrives from Zillow, Apartments.com, or the company's own website
+instead. What matters is what happens after they hit send, and that is identical either way —
+the system already handles leads arriving by email as well.
+
 ---
 
 ## What's real in the demo
 
 Worth being straight about, because it's part of the pitch.
 
-**Genuinely running:** the reply engine, the document reading, the **bank-based income
-verification** (a real connection to the service thousands of banking apps use, running on
-test data), the criteria engine, tour booking, electronic signature, and every email.
+**Genuinely running:** the listing site, the conversation, the document reading, the
+**bank-based income verification** (a real connection to the service thousands of banking apps
+use, running on test data), the criteria engine, tour booking, electronic signature, and every
+message.
 
 **Simulated, and labelled everywhere it appears:** the credit and eviction check, the identity
-document check, the smart-lock code, and the listing-site connection.
+document check, and the smart-lock code.
 
 The credit check in particular isn't a shortcut — getting that data requires a signed contract
 with a credit bureau, a registered business, and usually an inspection of your office. It's a

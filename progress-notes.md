@@ -1495,3 +1495,68 @@ All six are now in CLAUDE.md and AGENTS.md.
 ### State
 
 5 workflows, 79 + 18 + 13 + 18 + 22 nodes. 32 + 19 unit tests pass. Stage 7 gate passes.
+
+---
+
+## 2026-09-13 — message_log Now Holds Every Prospect-Facing Message
+
+`message_log` says it holds "every message in or out", and it did not. The tour confirmation,
+the entry code, the application link, the two fallback replies and the welcome packet were all
+delivered - execution records proved it - and none were recorded. The log understated what the
+renter actually received, which matters the moment the board is shown as evidence.
+
+### How it was closed
+
+**Telegram's sendMessage response carries the text, the chat and the message id it just
+delivered.** So one shared logger per workflow, fed by every prospect-facing send, records all
+of them - no duplicated SQL, and no new send can quietly go unlogged because someone forgot to
+hang a logging node next to it. The lead is resolved from the chat id in SQL, the same
+deterministic way the conversation itself resolves identity.
+
+```sql
+INSERT INTO message_log (...)
+SELECT l.ref_token, 'outbound', 'telegram', 'A', 'leasing-assistant', $1, $2, $3
+  FROM leads l WHERE l.telegram_chat_id = NULLIF($1::text,'')::bigint
+ ORDER BY l.id DESC LIMIT 1
+ON CONFLICT (message_id) DO NOTHING;
+```
+
+**The emailSend response carries no body**, so the three email loggers read the text from the
+Code node that composed it instead of from the send.
+
+Every logging node is `continueOnFail`: a logging failure must never take down a send that has
+already succeeded. And the log branch is wired FIRST where a send fans out, because n8n runs
+branches in order - otherwise `message_log` reads in a different order from the one the renter
+experienced.
+
+### Verified
+
+A full run now records all nine messages in delivery order, inbound and outbound:
+
+```
+1 inbound  web_form  Interested, hoping to move early October.
+2 inbound  telegram  /start R-6641
+3 outbound telegram  The apartment is available from October 1, 2026...
+4 inbound  telegram  $5,000 a month gross, just me, one car, one small dog.
+5 outbound telegram  Thanks - I've noted gross monthly income of $5,000...
+6 inbound  telegram  Can I come by next Tuesday at 2pm?
+7 outbound telegram  I'm checking whether a self-guided tour is available...
+8 outbound telegram  Booking you in for Tuesday, September 15 at 1:30 PM.
+9 outbound telegram  Your self-guided tour ... is confirmed ... entry code
+```
+
+Worth noting in that run: the renter asked for 2pm, 2pm was not free, and the assistant booked
+the nearest real slot at 1:30pm **and said so** in both messages. Nothing was approximated
+silently.
+
+### Deliberately still not logged
+
+Manager-facing alerts - the decision card, prequal notices, blocked-reply alerts, lease
+notifications. Those are internal notifications, not correspondence with the applicant: they
+carry no tier and no guardrail result, and the table's purpose is the applicant-facing record.
+If that ever needs to change, it is a schema question (tier is `CHECK IN ('A','B')`), not a
+missing-node question.
+
+### State
+
+5 workflows, 83 + 18 + 13 + 19 + 23 nodes. 32 + 19 unit tests pass. Stage 7 gate passes.

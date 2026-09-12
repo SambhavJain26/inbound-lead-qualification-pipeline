@@ -179,7 +179,8 @@
         "chatId": "=__TELEGRAM_CHAT_ID__",
         "text": "=Lease sent for {{ $('Build Lease Document').first().json.ref_token }} - {{ $('Build Lease Document').first().json.full_name }}.\n\n{{ $('Build Lease Document').first().json.unit_code }}, signature requested from {{ $('Build Lease Document').first().json.email }}.",
         "additionalFields": {
-          "appendAttribution": false
+          "appendAttribution": false,
+          "parse_mode": "HTML"
         }
       },
       "credentials": {
@@ -341,7 +342,8 @@
         "chatId": "=__TELEGRAM_CHAT_ID__",
         "text": "=Signed. {{ $('Mark Lease Signed').first().json.ref_token }} - {{ $('Mark Lease Signed').first().json.full_name }}.\n\n{{ $('Mark Lease Signed').first().json.unit_code }} is now marked leased and the welcome packet has gone out.",
         "additionalFields": {
-          "appendAttribution": false
+          "appendAttribution": false,
+          "parse_mode": "HTML"
         }
       },
       "credentials": {

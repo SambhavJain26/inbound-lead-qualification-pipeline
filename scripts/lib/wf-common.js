@@ -162,7 +162,13 @@ function telegramNode(name, { chatId, text, bot, failOnError }, position) {
   const built = node(name, "n8n-nodes-base.telegram", 1.2, {
     chatId,
     text,
-    additionalFields: { appendAttribution: false },
+    // parse_mode is ALWAYS sent by this node, so text is parsed for entities
+    // whether you ask for it or not. Left at its legacy Markdown default, a
+    // single underscore - the one in a "?ref_token=" link, say - opens an
+    // italic run that never closes and Telegram rejects the entire message
+    // with a bare "Bad request - please check your parameters". Pin it to HTML
+    // and escape & < > with escapeTelegramHtml() wherever the text is built.
+    additionalFields: { appendAttribution: false, parse_mode: "HTML" },
   }, position, { credentials: telegramCredential(bot) });
   if (!failOnError) built.onError = "continueRegularOutput";
   return built;
@@ -212,7 +218,7 @@ function telegramCardNode(name, { chatId, text, buttonRows, bot }, position) {
         },
       })),
     },
-    additionalFields: { appendAttribution: false },
+    additionalFields: { appendAttribution: false, parse_mode: "HTML" },
   }, position, { credentials: telegramCredential(bot) });
   built.onError = "continueRegularOutput";
   return built;
@@ -358,9 +364,18 @@ function booleanCondition(leftValue, expected = true) {
  * Airtable mirror write. Fire-and-forget by design: Postgres is the system of
  * record, so a capped or failing mirror must never stop the pipeline.
  */
-function airtableMirrorNode(name, { tableName, bodyExpression }, position) {
+/**
+ * Fire-and-forget mirror write to the Airtable display board.
+ *
+ * Pass `upsertOn` (a field name) to use Airtable's native upsert: PATCH with
+ * `performUpsert.fieldsToMergeOn`. Without it every write CREATES a row, so a
+ * lead mirrored at more than one phase boundary appears several times on the
+ * board. The native upsert is one call and needs no read-back, which matters -
+ * Postgres is the system of record and Airtable state is never read back.
+ */
+function airtableMirrorNode(name, { tableName, bodyExpression, upsertOn }, position) {
   const built = node(name, "n8n-nodes-base.httpRequest", 4.2, {
-    method: "POST",
+    method: upsertOn ? "PATCH" : "POST",
     url: `=https://api.airtable.com/v0/__AIRTABLE_BASE_ID__/${tableName}`,
     authentication: "predefinedCredentialType",
     nodeCredentialType: "airtableTokenApi",

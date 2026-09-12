@@ -114,6 +114,65 @@ function buildUnitKnowledge(unit) {
   return knowledge;
 }
 
+/**
+ * Unit facts PLUS the figures the prospect themselves stated, for use as the
+ * guardrail's allowlist during a conversation.
+ *
+ * The unsupported-figure rule exists to stop the model inventing a rent, a fee
+ * or a deposit. It is not meant to stop it repeating a number the prospect just
+ * supplied - and in a chat, confirming what someone told you ("$5,000 a month,
+ * got it") is the natural thing to say. With only unit facts in the allowlist
+ * every such reply is blocked, the prospect gets silence, and the conversation
+ * stalls on the most ordinary turn there is.
+ *
+ * Only the recorded slot values are added, never arbitrary numbers scraped from
+ * the message, so the check still catches anything the model made up.
+ */
+function buildConversationKnowledge(unit, statedAnswers) {
+  var knowledge = buildUnitKnowledge(unit);
+  if (!knowledge) return null;
+  var answers = statedAnswers || {};
+
+  if (answers.stated_monthly_income !== null && answers.stated_monthly_income !== undefined) {
+    knowledge.prospect_stated_monthly_income = Number(answers.stated_monthly_income);
+  }
+  if (answers.vehicles !== null && answers.vehicles !== undefined) {
+    knowledge.prospect_stated_vehicles = Number(answers.vehicles);
+  }
+  if (answers.occupants !== null && answers.occupants !== undefined) {
+    knowledge.prospect_stated_occupants = Number(answers.occupants);
+  }
+  if (answers.pets !== null && answers.pets !== undefined && answers.pets !== "") {
+    knowledge.prospect_stated_pets = String(answers.pets);
+  }
+  if (answers.move_in_date !== null && answers.move_in_date !== undefined) {
+    knowledge.prospect_stated_move_in = String(answers.move_in_date);
+  }
+  return knowledge;
+}
+
+/**
+ * Escapes text for Telegram's HTML parse mode.
+ *
+ * The Telegram node always sends a parse_mode, so message text is parsed for
+ * entities whether you want it or not. Under the legacy Markdown default a
+ * single underscore opens an italic run that never closes, and Telegram rejects
+ * the whole message with "can't parse entities" and a byte offset - which is
+ * exactly what an application link carrying ?ref_token= does. The node then
+ * fails with a bare "Bad request - please check your parameters".
+ *
+ * So: send HTML parse mode and escape the three characters it cares about.
+ * Underscores, asterisks and brackets are then all literal, and a URL with a
+ * query string is safe.
+ */
+function escapeTelegramHtml(text) {
+  if (text === null || text === undefined) return "";
+  return String(text)
+    .split("&").join("&amp;")
+    .split("<").join("&lt;")
+    .split(">").join("&gt;");
+}
+
 /* -------------------------------------------------------------- guardrails */
 
 /**
@@ -343,6 +402,8 @@ if (typeof module !== "undefined") {
     subjectWithToken,
     parseLeadEmail,
     buildUnitKnowledge,
+    buildConversationKnowledge,
+    escapeTelegramHtml,
     guardrailCheck,
     prequalGate,
     generateLockCode,

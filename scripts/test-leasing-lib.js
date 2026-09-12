@@ -210,6 +210,37 @@ check("lock code is six digits and labelled as a mock", () => {
   equal(lock.source, "mock");
 });
 
+/* --------------------------------- conversation knowledge (guardrail scope) */
+
+check("conversation knowledge lets the assistant echo a stated income", () => {
+  // In a chat, confirming a figure the prospect just gave you is the natural
+  // reply. With only unit facts in the allowlist it is blocked as an invented
+  // number and the conversation stalls in silence.
+  const knowledge = lib.buildConversationKnowledge(units[0], {
+    stated_monthly_income: 5000,
+    move_in_date: "2026-10-05",
+    pets: "small dog",
+    vehicles: 1,
+    occupants: 1,
+  });
+  const verdict = lib.guardrailCheck("Thanks - $5,000 a month, noted.", knowledge);
+  assert(verdict.passed, "echoing a stated income should pass: " + JSON.stringify(verdict.findings));
+});
+
+check("conversation knowledge still blocks an invented figure", () => {
+  const knowledge = lib.buildConversationKnowledge(units[0], { stated_monthly_income: 5000 });
+  const verdict = lib.guardrailCheck("The rent on this one is $9,999 a month.", knowledge);
+  assert(!verdict.passed, "an invented rent must still be blocked");
+});
+
+check("conversation knowledge with no answers equals unit knowledge", () => {
+  const bare = lib.buildConversationKnowledge(units[0], {});
+  const plain = lib.buildUnitKnowledge(units[0]);
+  equal(Object.keys(bare).length, Object.keys(plain).length);
+  const verdict = lib.guardrailCheck("We can do $5,000 a month.", bare);
+  assert(!verdict.passed, "without a stated income that figure is still ungrounded");
+});
+
 /* ---------------------------------------------------------------- report */
 
 console.log("");

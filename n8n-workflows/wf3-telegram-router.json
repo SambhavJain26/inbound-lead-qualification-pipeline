@@ -133,7 +133,8 @@
         "chatId": "=__TELEGRAM_CHAT_ID__",
         "text": "={{ $json.ref_token }} was already {{ $json.decision }} by {{ $json.decided_by }} on {{ $json.decided_at }}.\n\nNo second action was taken.",
         "additionalFields": {
-          "appendAttribution": false
+          "appendAttribution": false,
+          "parse_mode": "HTML"
         }
       },
       "credentials": {
@@ -235,7 +236,8 @@
         "chatId": "=__TELEGRAM_CHAT_ID__",
         "text": "={{ $('Parse Manager Action').first().json.decision_label }} - {{ $('Parse Manager Action').first().json.ref_token }} by {{ $('Parse Manager Action').first().json.actor }}.\n\n{{ $('Parse Manager Action').first().json.triggers_lease ? 'Preparing the lease for signature now.' : 'No lease prepared. Nothing has been sent to the applicant.' }}",
         "additionalFields": {
-          "appendAttribution": false
+          "appendAttribution": false,
+          "parse_mode": "HTML"
         }
       },
       "credentials": {

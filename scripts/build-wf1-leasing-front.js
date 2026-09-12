@@ -596,7 +596,27 @@ const turnGateCode = [
   "  wants_human: wantsHuman,",
   "};",
   "",
-  "const phaseChanged = (outcome.result === 'clear') !== (lead.prequal_result === 'clear');",
+  "// Mirror at PHASE BOUNDARIES ONLY. Airtable Free allows 1000 API calls a",
+  "// month per workspace, and a chat is many turns - mirroring every turn would",
+  "// burn the quota and stack duplicate-looking writes on the board. This mirrors",
+  "// the same status transition the UPDATE below applies, so the two cannot",
+  "// disagree about what phase the lead is in.",
+  "let nextStatus = lead.status;",
+  "if (outcome.result === 'clear' && (lead.status === 'new' || lead.status === 'engaged')) {",
+  "  nextStatus = 'prequalified';",
+  "} else if (lead.status === 'new') {",
+  "  nextStatus = 'engaged';",
+  "}",
+  "const phaseChanged = nextStatus !== lead.status;",
+  "",
+  "const STATUS_LABELS = {",
+  "  new: 'New',",
+  "  engaged: 'Engaged',",
+  "  prequalified: 'Prequalified',",
+  "  tour_booked: 'Tour Booked',",
+  "  toured: 'Toured',",
+  "  applied: 'Applied',",
+  "};",
   "",
   "return [{",
   "  json: {",
@@ -621,6 +641,8 @@ const turnGateCode = [
   "    conversation_state: nextState,",
   "    needs_manager: stage === 'not_clear' || wantsHuman,",
   "    phase_changed: phaseChanged,",
+  "    next_status: nextStatus,",
+  "    next_status_label: STATUS_LABELS[nextStatus] || 'Engaged',",
   "  },",
   "}];",
 ].join("\n");
@@ -633,10 +655,22 @@ const telegramGuardrailCode = [
   "// leave is what gets checked, never an earlier draft.",
   "const turn = $input.first().json;",
   "const context = $('Build Conversation Context').first().json;",
-  "const verdict = guardrailCheck(turn.reply_text, context.unit_knowledge);",
+  "",
+  "// The allowlist is unit facts PLUS what the prospect themselves stated.",
+  "// Confirming a figure someone just gave you is not an invented figure, and",
+  "// without this every 'got it, $5,000 a month' reply is blocked and the",
+  "// conversation stalls in silence on the most ordinary turn there is.",
+  "const knowledge = buildConversationKnowledge(context.unit, turn.answers);",
+  "const verdict = guardrailCheck(turn.reply_text, knowledge);",
+  "",
+  "// The guardrail and the message_log see the real text. Only the copy that",
+  "// goes to Telegram is escaped, because that one is parsed for HTML entities.",
   "return [{ json: Object.assign({}, turn, {",
   "  guardrail_passed: verdict.passed,",
   "  guardrail_result: verdict,",
+  "  reply_html: escapeTelegramHtml(turn.reply_text),",
+  "  findings_text: escapeTelegramHtml(JSON.stringify(verdict.findings)),",
+  "  reasons_text: escapeTelegramHtml(JSON.stringify(turn.prequal_reasons)),",
   "}) }];",
 ].join("\n");
 
@@ -714,6 +748,7 @@ const guardrailCode = [
   "      refused_questions: payload.refused_questions || [],",
   "      guardrail_passed: verdict.passed,",
   "      guardrail_result: verdict,",
+  "      findings_text: escapeTelegramHtml(JSON.stringify(verdict.findings)),",
   "      subject_line: subjectWithToken('Re: ' + unit.address, lead.ref_token),",
   "    },",
   "  });",
@@ -764,6 +799,7 @@ const prequalCode = [
   "      prequal_result: outcome.result,",
   "      prequal_reasons: outcome.reasons,",
   "      prequal_missing: outcome.missing,",
+  "      reasons_text: escapeTelegramHtml(JSON.stringify(outcome.reasons)),",
   "      is_clear: outcome.result === 'clear',",
   "      subject_line: subjectWithToken('Re: ' + unit.address, lead.ref_token),",
   "    },",
@@ -806,16 +842,50 @@ const lockCodeCode = [
  * branches to pick a channel: a lead that came in through the listing site is
  * answered on Telegram, one that came in by email is answered by email.
  */
-const deliveryChannelCode = [
-  "const out = [];",
-  "for (const item of $input.all()) {",
-  "  const lead = item.json;",
-  "  out.push({ json: Object.assign({}, lead, {",
-  "    on_telegram: Boolean(lead.telegram_chat_id),",
-  "  }) });",
-  "}",
-  "return out;",
-].join("\n");
+function deliveryChannelCode(kind) {
+  var body =
+    kind === "tour"
+      ? [
+          "  const text = 'Your self-guided tour of ' + lead.address + ' is confirmed.' +",
+          "    '\\n\\nEntry code: ' + lead.lock_code +",
+          "    '\\n\\nThe code works during your booked slot only. Let yourself in, take your ' +",
+          "    'time, and pull the door closed when you leave.';",
+        ]
+      : [
+          "  const text = 'Hope the tour of ' + lead.address + ' went well. If you would like ' +",
+          "    'to apply, here is the application:\\n\\n' +",
+          "    '__APPLICATION_FORM_URL__?ref_token=' + lead.ref_token +",
+          "    '\\n\\nThere is no obligation - applying just puts you forward for consideration. ' +",
+          "    'If it was not the right fit, tell me what did not work and we will look for ' +",
+          "    'something closer.';",
+        ];
+
+  return [
+    LIB,
+    "",
+    "// Picks the channel and composes the message.",
+    "//",
+    "// Composed here rather than in the Telegram node's own parameter so the text",
+    "// can be escaped for HTML parse mode. The application link carries",
+    "// ?ref_token=, and an unescaped underscore opens a Markdown entity that never",
+    "// closes - Telegram rejects the whole message and the node reports only",
+    "// 'Bad request - please check your parameters'.",
+    "const out = [];",
+    "for (const item of $input.all()) {",
+    "  const lead = item.json;",
+  ]
+    .concat(body)
+    .concat([
+      "  out.push({ json: Object.assign({}, lead, {",
+      "    on_telegram: Boolean(lead.telegram_chat_id),",
+      "    message_text: text,",
+      "    message_html: escapeTelegramHtml(text),",
+      "  }) });",
+      "}",
+      "return out;",
+    ])
+    .join("\n");
+}
 
 /* ------------------------------------------------------------------ nodes */
 
@@ -911,14 +981,19 @@ const nodes = [
     "Mirror New Lead To Airtable",
     {
       tableName: "Leads",
+      upsertOn: "Ref Token",
       bodyExpression:
-        "={{ JSON.stringify({ fields: {\n" +
-        "  'Ref Token': $('Create Lead From Inquiry').item.json.ref_token,\n" +
-        "  'Prospect': $('Normalize Inquiry Form').item.json.prospect_name,\n" +
-        "  'Email': $('Normalize Inquiry Form').item.json.prospect_email,\n" +
-        "  'Unit': $('Normalize Inquiry Form').item.json.unit_code,\n" +
-        "  'Status': 'New'\n" +
-        "} }) }}",
+        "={{ JSON.stringify({\n" +
+        "  performUpsert: { fieldsToMergeOn: ['Ref Token'] },\n" +
+        "  typecast: true,\n" +
+        "  records: [{ fields: {\n" +
+        "    'Ref Token': $('Create Lead From Inquiry').item.json.ref_token,\n" +
+        "    'Prospect': $('Normalize Inquiry Form').item.json.prospect_name,\n" +
+        "    'Email': $('Normalize Inquiry Form').item.json.prospect_email,\n" +
+        "    'Unit': $('Normalize Inquiry Form').item.json.unit_code,\n" +
+        "    'Status': 'New'\n" +
+        "  } }]\n" +
+        "}) }}",
     },
     [980, -1280]
   ),
@@ -1157,7 +1232,7 @@ const nodes = [
       // Prospect-facing: a failed send must not be logged as delivered.
       failOnError: true,
       chatId: "={{ $('Check Guardrails (Telegram)').item.json.telegram_chat_id }}",
-      text: "={{ $('Check Guardrails (Telegram)').item.json.reply_text }}",
+      text: "={{ $('Check Guardrails (Telegram)').item.json.reply_html }}",
     },
     [2960, -920]
   ),
@@ -1198,27 +1273,37 @@ const nodes = [
         "({{ $('Check Guardrails (Telegram)').item.json.prospect_name }}).\n\n" +
         "Unit: {{ $('Check Guardrails (Telegram)').item.json.unit_code }}\n" +
         "Result: {{ $('Check Guardrails (Telegram)').item.json.prequal_result }}\n" +
-        "Reasons: {{ JSON.stringify($('Check Guardrails (Telegram)').item.json.prequal_reasons) }}\n\n" +
+        "Reasons: {{ $('Check Guardrails (Telegram)').item.json.reasons_text }}\n\n" +
         "This is scheduling triage on unverified answers, not a rental decision. " +
         "They were offered alternatives, not a refusal.",
     },
     [3620, -1020]
   ),
 
+  wf.ifNode(
+    "Phase Changed?",
+    [wf.booleanCondition("={{ $('Check Guardrails (Telegram)').item.json.phase_changed }}", true)],
+    [3620, -820]
+  ),
+
   wf.airtableMirrorNode(
     "Mirror Lead To Airtable (Phase)",
     {
       tableName: "Leads",
+      upsertOn: "Ref Token",
       bodyExpression:
-        "={{ JSON.stringify({ fields: {\n" +
-        "  'Ref Token': $('Check Guardrails (Telegram)').item.json.ref_token,\n" +
-        "  'Prospect': $('Check Guardrails (Telegram)').item.json.prospect_name,\n" +
-        "  'Unit': $('Check Guardrails (Telegram)').item.json.unit_code,\n" +
-        "  'Status': $('Check Guardrails (Telegram)').item.json.prequal_result === 'clear'\n" +
-        "    ? 'Prequalified' : 'Engaged'\n" +
-        "} }) }}",
+        "={{ JSON.stringify({\n" +
+        "  performUpsert: { fieldsToMergeOn: ['Ref Token'] },\n" +
+        "  typecast: true,\n" +
+        "  records: [{ fields: {\n" +
+        "    'Ref Token': $('Check Guardrails (Telegram)').item.json.ref_token,\n" +
+        "    'Prospect': $('Check Guardrails (Telegram)').item.json.prospect_name,\n" +
+        "    'Unit': $('Check Guardrails (Telegram)').item.json.unit_code,\n" +
+        "    'Status': $('Check Guardrails (Telegram)').item.json.next_status_label\n" +
+        "  } }]\n" +
+        "}) }}",
     },
-    [3620, -820]
+    [3840, -820]
   ),
 
   // Guardrail failed: nothing goes to the renter, and the manager is told on
@@ -1232,7 +1317,7 @@ const nodes = [
         "Lead: {{ $('Check Guardrails (Telegram)').item.json.ref_token }} " +
         "({{ $('Check Guardrails (Telegram)').item.json.prospect_name }})\n" +
         "Unit: {{ $('Check Guardrails (Telegram)').item.json.unit_code }}\n\n" +
-        "Findings: {{ JSON.stringify($('Check Guardrails (Telegram)').item.json.guardrail_result.findings) }}\n\n" +
+        "Findings: {{ $('Check Guardrails (Telegram)').item.json.findings_text }}\n\n" +
         "Nothing was sent. This one needs a human.",
     },
     [2960, -680]
@@ -1264,7 +1349,7 @@ const nodes = [
     }
   ),
 
-  wf.codeNode("Tour: Pick Delivery Channel", deliveryChannelCode, [-120, 120]),
+  wf.codeNode("Tour: Pick Delivery Channel", deliveryChannelCode("tour"), [-120, 120]),
 
   wf.ifNode(
     "Tour: On Telegram?",
@@ -1279,11 +1364,7 @@ const nodes = [
       // Prospect-facing: a failed send must not be logged as delivered.
       failOnError: true,
       chatId: "={{ $json.telegram_chat_id }}",
-      text:
-        "=Your self-guided tour of {{ $json.address }} is confirmed.\n\n" +
-        "Entry code: {{ $json.lock_code }}\n\n" +
-        "The code works during your booked slot only. Let yourself in, take your time, " +
-        "and pull the door closed when you leave.",
+      text: "={{ $json.message_html }}",
     },
     [340, 20]
   ),
@@ -1320,7 +1401,7 @@ const nodes = [
     }
   ),
 
-  wf.codeNode("Application: Pick Delivery Channel", deliveryChannelCode, [-340, 420]),
+  wf.codeNode("Application: Pick Delivery Channel", deliveryChannelCode("application"), [-340, 420]),
 
   wf.ifNode(
     "Application: On Telegram?",
@@ -1335,13 +1416,7 @@ const nodes = [
       // Prospect-facing: a failed send must not be logged as delivered.
       failOnError: true,
       chatId: "={{ $json.telegram_chat_id }}",
-      text:
-        "=Hope the tour of {{ $json.address }} went well. If you would like to apply, " +
-        "here is the application:\n\n" +
-        "__APPLICATION_FORM_URL__?ref_token={{ $json.ref_token }}\n\n" +
-        "There is no obligation - applying just puts you forward for consideration. " +
-        "If it was not the right fit, tell me what did not work and we will look for " +
-        "something closer.",
+      text: "={{ $json.message_html }}",
     },
     [100, 320]
   ),
@@ -1479,14 +1554,19 @@ const nodes = [
     "Mirror Email Lead To Airtable",
     {
       tableName: "Leads",
+      upsertOn: "Ref Token",
       bodyExpression:
-        "={{ JSON.stringify({ fields: {\n" +
-        "  'Ref Token': $('Check Tier A Guardrails').item.json.ref_token,\n" +
-        "  'Prospect': $('Check Tier A Guardrails').item.json.prospect_name,\n" +
-        "  'Email': $('Check Tier A Guardrails').item.json.prospect_email,\n" +
-        "  'Unit': $('Check Tier A Guardrails').item.json.unit_code,\n" +
-        "  'Status': 'Engaged'\n" +
-        "} }) }}",
+        "={{ JSON.stringify({\n" +
+        "  performUpsert: { fieldsToMergeOn: ['Ref Token'] },\n" +
+        "  typecast: true,\n" +
+        "  records: [{ fields: {\n" +
+        "    'Ref Token': $('Check Tier A Guardrails').item.json.ref_token,\n" +
+        "    'Prospect': $('Check Tier A Guardrails').item.json.prospect_name,\n" +
+        "    'Email': $('Check Tier A Guardrails').item.json.prospect_email,\n" +
+        "    'Unit': $('Check Tier A Guardrails').item.json.unit_code,\n" +
+        "    'Status': 'Engaged'\n" +
+        "  } }]\n" +
+        "}) }}",
     },
     [1420, 820],
   ),
@@ -1499,7 +1579,7 @@ const nodes = [
         "=Guardrail blocked an automated email reply.\n\n" +
         "Lead: {{ $json.ref_token }} ({{ $json.prospect_name }})\n" +
         "Unit: {{ $json.unit_code }}\n\n" +
-        "Findings: {{ JSON.stringify($json.guardrail_result.findings) }}\n\n" +
+        "Findings: {{ $json.findings_text }}\n\n" +
         "Nothing was sent. This one needs a human.",
     },
     [980, 1020]
@@ -1618,7 +1698,7 @@ const nodes = [
         "({{ $('Run Prequal Gate').item.json.prospect_name }}).\n\n" +
         "Unit: {{ $('Run Prequal Gate').item.json.unit_code }}\n" +
         "Result: {{ $('Run Prequal Gate').item.json.prequal_result }}\n" +
-        "Reasons: {{ JSON.stringify($('Run Prequal Gate').item.json.prequal_reasons) }}\n\n" +
+        "Reasons: {{ $('Run Prequal Gate').item.json.reasons_text }}\n\n" +
         "This is scheduling triage on unverified answers, not a rental decision. " +
         "They were offered alternatives, not a refusal.",
     },
@@ -1666,9 +1746,12 @@ const connections = wf.connect({
   "Send Prospect Reply (Telegram)": [["Log Outbound Telegram Reply"]],
   "Log Outbound Telegram Reply": [["Needs Manager Notice?"]],
   "Needs Manager Notice?": [
-    ["Notify Manager: Prequal Needs Review", "Mirror Lead To Airtable (Phase)"],
-    ["Mirror Lead To Airtable (Phase)"],
+    ["Notify Manager: Prequal Needs Review", "Phase Changed?"],
+    ["Phase Changed?"],
   ],
+  // Mirror at phase boundaries only. The false branch is a dead end: a turn that
+  // did not move the lead to a new phase has nothing to show on the board.
+  "Phase Changed?": [["Mirror Lead To Airtable (Phase)"], []],
 
   /* Cal.com booking */
   "Receive Tour Booking (Cal.com)": [["Issue Lock Code (MOCK)"]],

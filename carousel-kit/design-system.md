@@ -37,6 +37,35 @@ not the reference document's historical PowerShell render command below.
 
 ## Reference system
 
+### Implemented teaching layouts — first proof, 2026-09-17
+
+The shared .slide--teach shell implements the blueprint's 96/120 cover,
+78/96 lesson title, 48/72 body, 54/72 field and 36/48 metadata scales. Its
+.body--lesson band runs from 216px to 1110px; .body--worksheet reserves the
+closing byline with a 1014px band end. Baseline snapping can shift these bands
+by up to 12px; the renderer measures the actual transformed band.
+
+.lesson-blocks groups a reference statement and an instruction without a fake
+interface. .lesson-emphasis makes a key evidence distinction more scanable.
+.lesson-rule separates different beats. .lesson-rows gives responsibilities ruled
+rows; .lesson-rows--compact removes top padding without dropping the 24px rhythm.
+Sibling paragraph spacing does not apply to these list rows. .lesson-fields
+sets the seven written worksheet fields in a three-column, row-major grid.
+All new layouts include inverted type and rule colors in the shared stylesheet.
+
+The teaching shell uses darker metadata for contrast and blue eyebrow rules on
+cream; gold rules remain on the dark page and byline. Its circle loop has more
+vertical clearance than the legacy opinion layout, and the gold swipe is raised
+to read as a highlight at the new sizes. No per-page type sizes or shrink-to-fit.
+Zodiak is available and loaded, but no giant payoff word is forced into this
+instructional first deck: preserving its three-role explanation takes priority.
+
+The final-PDF verifier checks semantic text-block regions in DOM order, including
+individual worksheet fields and the scope footer. This avoids interleaving wrapped
+column labels and right-side page numbers while still checking every exact word.
+Managed preview filenames are regenerated cleanly when page counts change;
+historical proofs remain recoverable from Git and the comparison backup.
+
 The fixed template behind every LinkedIn document carousel built with this kit.
 `carousel-template.css` is the single source of truth; per-post HTML supplies
 content and picks layout classes only, and must never introduce its own sizes,

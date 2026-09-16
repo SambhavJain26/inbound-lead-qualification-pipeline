@@ -66,5 +66,5 @@ for (const id of postIds.filter(id => !(id in expected))) {
 }
 if (2400 * 24 / 12 !== 4800 || 2400 * 26 / 12 !== 5200 || 5000 - 4100 !== 900)
   throw new Error('Illustrative arithmetic');
-console.log(JSON.stringify({ status: 'PASS: copy structure and preserved posts only; new visual QA pending',
+console.log(JSON.stringify({ status: 'PASS: copy structure and preserved posts only; visual QA is separate',
   totalPages: report.reduce((n,d)=>n+d.pages,0), nonCarouselPostsPreserved: 9, lengthWarnings, report }, null, 2));

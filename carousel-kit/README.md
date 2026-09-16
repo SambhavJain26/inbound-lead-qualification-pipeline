@@ -1,16 +1,22 @@
 # Leasing carousel production status
 
-## Current rewrite; previous PDF is superseded
+## Current first proof; design approval pending
 
 All six carousel sections in ../docs/build-5-content-strategy/linkedin-post-scripts.md
 were rewritten after the user's second design review. Current counts are
 10/9/9/11/10/11 pages: 60 total. Teaching pages have balanced explanatory text,
 practical examples and reusable worksheets, not the rejected sparse statements.
 
-The existing b5-01-inquiry-to-lease.html, seven-page PDF and PNG previews are
-historical rejected proofs. They do not match the current ten-page copy and must
-not be published. They are retained for comparison, not silently deleted. The
-renderer checks canonical wording and count and will reject the old source.
+The current b5-01-inquiry-to-lease.html and output/pdf/b5-01-inquiry-to-lease.pdf
+now match the ten-page first-deck script. The PDF is 124,532 bytes. All ten final
+PDF pages, the contact sheet and representative 360px-wide previews were inspected.
+Copy, layout, font embedding and the single shared grain image checks pass.
+This is a design proof, not user approval or authorization to publish.
+
+The old seven-page output is superseded. Source and PDF history remain in Git;
+the rejected sparse proof was also backed up in ignored tmp/carousel-comparison/
+leasing-sparse before regeneration. Old page previews were replaced by ten padded
+slide-01.png through slide-10.png files, not left mixed with the new export.
 
 Current design specification:
 ../docs/build-5-content-strategy/carousel-design-blueprint.md.
@@ -18,10 +24,14 @@ Current design specification:
 Latest self-assessment and limitations:
 ../docs/build-5-content-strategy/carousel-design-assessment.md.
 
-Next production step is one new proof implementing the teaching-page layouts and
-blue/gold annotation balance. Inspect every final PDF page before presenting it.
-Don't batch the other five PDFs until that direction is accepted. This rewrite
-produced no new PDF, no account uploads and no operational-service changes.
+The shared stylesheet now implements the teaching-page scale, grouped lessons,
+compact ruled roles and a three-column field worksheet, with inverted colors.
+No page contains inline size/color/spacing overrides. The new proof uses two blue
+boxes, four visible blue underlines, three blue circles, two gold highlights and
+one gold underline on its dark page. These are observations, not quotas.
+
+Next step is user review. Don't batch the other five PDFs until the direction is
+accepted. No account uploads, publishing or operational-service changes happened.
 
 ## Existing helpers
 
@@ -29,7 +39,7 @@ produced no new PDF, no account uploads and no operational-service changes.
 - render-carousel.cjs: renders only a named deck; checks fonts, copy and layout.
 - verify-carousel.py: verifies the final PDF, not only HTML.
 - assess-carousel.cjs: read-only vendor comparison and preserved first-proof render.
-- carousel-template.css: maintenance kit style with the checks--plain modifier.
+- carousel-template.css: marked-document kit plus named shared teaching layouts.
 - design-system.md: reference vocabulary plus the latest local overrides.
 
 Check the current copy independently of the superseded HTML:

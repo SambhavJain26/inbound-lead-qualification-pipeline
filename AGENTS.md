@@ -280,3 +280,14 @@ allowed, overriding the old cover-only reference rule. Follow the current design
 blueprint for teaching-page hierarchy and run check-carousel-copy.cjs for writing
 checks. Mark superseded assets explicitly; do not claim new visual QA before a
 matching source is rendered and inspected. One proof still precedes batch export.
+
+## Teaching Carousel Export Checks
+
+Shared teaching layouts live in carousel-template.css, including inverted colors;
+never add per-page font sizes or automatic shrink-to-fit. Keep list-row spacing
+separate from paragraph sibling margins. PDF text validation must check semantic
+blocks in reading order, especially multi-column fields and wrapped scope footers,
+because whole-page x/y sorting can interleave labels or page numbers. Managed
+slide-N.png previews must be regenerated without stale names when page counts
+change: Poppler pads after nine pages. Preserve historical proofs before replacing
+them and inspect full-size final-PDF pages plus representative mobile previews.

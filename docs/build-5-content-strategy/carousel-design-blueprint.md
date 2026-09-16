@@ -3,7 +3,9 @@
 Updated 2026-09-17 after the second design review. This is the current production
 brief for six carousels, not a claim that new PDFs have been rendered or approved.
 The current exact public copy is in [linkedin-post-scripts.md](linkedin-post-scripts.md).
-Earlier seven-page PDF/PNG proofs are rejected and superseded.
+Earlier seven-page PDF/PNG proofs are rejected and superseded. The first ten-page
+proof is now rendered and inspected; its design approval is pending. The other
+five decks remain briefs, not completed PDFs. See the latest self-assessment.
 
 ## 1. What these documents must do for the reader
 
@@ -323,10 +325,12 @@ Those tests do not establish that the user likes the design.
 
 ## 10. Next production step
 
-Render only the new ten-page B5-01 proof first. Use its identity/reference page,
+The new ten-page B5-01 proof is rendered. It uses its identity/reference page,
 booked-versus-attended comparison, review boundary and final worksheet to test the
-new hierarchy and annotation mix. Inspect every page and present it for feedback.
-Only then apply the accepted implementation to the remaining five PDFs.
+new hierarchy and annotation mix. Every final-PDF page was inspected; representative
+360px-wide previews were checked too. Await user feedback before applying the
+accepted implementation to the remaining five PDFs.
 
-No new PDF, external publication, recording or runtime change happened in this
-copy-and-design-brief pass. The video and seven text-post scripts remain unchanged.
+The earlier copy-and-design-brief pass produced no PDF. This follow-up generated
+only the first proof, with no external publication, recording or runtime change.
+The video and seven text-post scripts remain unchanged.

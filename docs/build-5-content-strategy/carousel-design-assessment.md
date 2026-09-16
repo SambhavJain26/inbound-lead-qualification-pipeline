@@ -1,9 +1,9 @@
 # First carousel: vendor COI comparison and redesign assessment
 
-Current status: the user rejected the sparse revision assessed below. The latest
-rewrite and design brief supersede that proof; the earlier measurements remain
-historical observations, not targets or approval. See the latest review at the
-end and [carousel-design-blueprint.md](carousel-design-blueprint.md).
+Current status: the ten-page first proof is rendered and inspected; user design
+approval is pending. It supersedes both rejected seven-page proofs assessed below.
+Earlier measurements remain historical observations, not targets or approval.
+See the latest review at the end and the current design blueprint.
 
 Reviewed 2026-09-17. This is a self-assessment, not user design approval.
 Only the first seven-slide leasing carousel was redesigned. The other five remain
@@ -178,3 +178,92 @@ No new visual quality, fit or color-balance result is claimed. The old PDF/PNG a
 and HTML are superseded and don't match the new ten-page first deck. Retained assets
 are comparison evidence only. One new B5-01 proof must test the hierarchy, field/list
 treatments and visible blue/gold distribution before batching the remaining five.
+
+## Third review — ten-page teaching proof rendered
+
+The user requested the first carousel only. The current source and PDF now match
+all ten written pages: cover, eight handoff checks and a reusable seven-field
+record. No public copy changed to make the layout easier. Captions, the seven
+text posts and both video scripts retain their earlier wording.
+
+### Comparison with the references and rejected proofs
+
+Re-ran the read-only vendor 01/04/07/13 comparison and inspected their contact
+sheets against the original, sparse revision and new final-PDF contact sheet.
+The current main reading area contains 296 words: 29.6/page, range 26–32. The
+first rejected proof averaged 28.1 and the sparse proof 10.0. The improvement is
+the more usable audit and supporting hierarchy, not a claim that word counts
+measure usefulness or predict LinkedIn performance.
+
+The current mean content-band span is 76.5%, versus 84.2% in the original and
+56.0% in the sparse proof. Its range is 64.5–90.6%; the worksheet is fullest.
+This includes gaps and uses the new reserved bands. It is not ink coverage,
+whitespace percentage or a design score. The vendor mean spans remain
+79.6/64.9/61.4/71.9%; their type hierarchy and content differ, so equalizing those
+numbers would not establish a good design.
+
+Four shared outer compositions now carry the deck: cover, grouped teaching
+lesson, compact responsibility rows and worksheet. Inside the grouped lessons,
+selected evidence statements use a stronger middle type step; others stay quiet.
+This is a consistent reference-document shell, not ten unrelated graphic themes.
+
+### What changed in the rendered design
+
+- Cover: a substantive blue box on handoffs and a raised gold highlight on Eight
+  checks. Useful setup remains unmarked, not discarded to create empty space.
+- Record/facts/tour: one blue reference underline, a source circle and a booked
+  circle support the specific audit checks, with supporting evidence separated.
+- Application: only Missing evidence is highlighted. It retains the practical
+  follow-up and explicitly separates a submitted form from approval.
+- Human boundary: the only navy page uses three ruled responsibilities and one
+  gold underline. Removing inherited list margins and compacting top padding
+  restores breathing room without shrinking the explanation or deleting words.
+- Signing/waiting/possession: selected circle/underline marks identify the state
+  or responsibility to inspect. They are not a blue-and-gold pair on every page.
+- Worksheet: all seven written fields appear in a row-major three-column layout,
+  with one selected Owner field and a concrete inspection action underneath.
+
+Visible totals are two blue boxes, four blue underlines, three blue circles, two
+gold highlights and one gold underline on the dark page. Gold is still present,
+but no longer the default mark on every teaching page. These counts describe the
+result, not a quota to impose on the other five decks. No icon set, fake app frame,
+stock image, new mock result or additional public build number was introduced.
+
+### Verification and fixes
+
+Inspected every full-size PNG rendered from the final PDF, the contact sheet and
+360px-wide cover/decision/worksheet previews. Body is 48px at production size
+(16px at 360px), metadata 36px (12px); no automatic shrink or per-page font sizes.
+No clipped text, wrapped pen phrase, lost scope text or footer/byline overlap was
+found. Enlarged circle clearance stops the lower stroke crossing the glyph bodies.
+Raised gold backgrounds read as marker swipes rather than thin underlines.
+
+Text contrast ratios: navy/cream 17.61:1; navy/gold 11.93:1; cream/blue box 8.15:1;
+blue/cream 4.91:1; dark metadata/cream 10.00:1. Meaning remains explicit in words,
+not dependent on color. These checks are not a full PDF-accessibility certification.
+
+The whole-page extractor initially mixed a two-line footer with its page number.
+The verifier now checks actual semantic block regions in reading order, including
+each worksheet cell and the scope footer; every title/body/footer word matches.
+The renderer also clears only its managed page previews before rebuilding, because
+Poppler uses padded names after nine pages. It must not leave old seven-page PNGs
+mixed with the ten-page export. Historical outputs remain in Git and an ignored
+comparison backup.
+
+Final file: output/pdf/b5-01-inquiry-to-lease.pdf, ten pages, 124,532 bytes. Checks
+pass for copy, page dimensions, loaded families, embedded font subsets, mark fit,
+content-band and footer clearance, and one shared grain image. Switzer carries
+the document; Zodiak is loaded but no giant payoff word is forced into the teaching
+pages. The authored wording and its practical instructions take priority.
+
+### Remaining trade-offs and gate
+
+The deck is more instructional and text-rich than the vendor averages. Seven
+teaching pages intentionally share the grouped-lesson skeleton, so it remains a
+coherent audit rather than a highly illustrated story. The worksheet remains the
+densest page, and its three-column labels need the full page view, not a tiny
+contact-sheet thumbnail. Scope footers wrap on two pages instead of shrinking.
+
+Technical checks and my visual inspection do not establish user design acceptance,
+engagement or client results. The next step is feedback on this proof. The other
+five PDFs remain ungenerated; nothing was uploaded, scheduled or published.

@@ -140,7 +140,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Use the synthetic demo as the pattern's evidence, not as a client-results claim. No real consumer reports, protected-class inference, AI decisions, rankings or outcome recommendations. The worksheet is an operational aid, not legal advice or a universal screening policy.
 
-Only copy and design directions are current in this pass. The earlier first-carousel PDF and previews are superseded; they must not be published or treated as matching this rewrite. Render one new design proof before batching the other five.
+The matching ten-page first-carousel PDF proof was rendered and inspected on 2026-09-17. Exact wording, layout and final-PDF checks pass; user design approval is pending. Earlier seven-page previews are superseded. Do not batch the other five or publish this proof before the appropriate approval.
 
 ## B5-02 — Full current-build demo
 

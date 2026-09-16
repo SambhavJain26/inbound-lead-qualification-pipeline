@@ -657,3 +657,127 @@ html, body {
 */
 .fig + .lead,
 .fig + .claim { margin-top: 48px; }
+
+/* Teaching documents: shared hierarchy for useful 20–35-word pages.
+   Legacy statement layouts remain available for the archived proofs. */
+:root {
+  --size-lesson-cover: 96px;
+  --size-lesson-title: 78px;
+  --size-lesson-body: 48px;
+  --size-lesson-field: 54px;
+  --size-lesson-meta: 36px;
+}
+
+.slide--teach .eyebrow {
+  font-size: var(--size-lesson-meta);
+  line-height: 48px;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+.slide--teach .eyebrow::before { background: var(--pen); }
+.slide--teach .footer {
+  font-size: var(--size-lesson-meta);
+  line-height: 48px;
+  letter-spacing: 0;
+  color: var(--ink-soft);
+  gap: 24px;
+}
+.slide--teach .footer span { max-width: 792px; }
+.slide--teach .footer b { font-size: var(--size-lesson-meta); line-height: 48px; }
+.slide--teach .byline {
+  bottom: 216px;
+  font-size: var(--size-lesson-meta);
+  line-height: 48px;
+  letter-spacing: 0.08em;
+}
+
+.body--lesson { top: 216px; bottom: 240px; }
+.body--worksheet { bottom: 336px; }
+.body--lesson > * { flex-shrink: 0; }
+.lesson-title,
+.lesson-cover {
+  font-weight: 800;
+  font-size: var(--size-lesson-title);
+  line-height: 96px;
+  letter-spacing: -0.032em;
+  color: var(--ink);
+}
+.lesson-cover {
+  font-weight: 900;
+  font-size: var(--size-lesson-cover);
+  line-height: 120px;
+  letter-spacing: -0.04em;
+}
+.lesson-title + .lesson-copy,
+.lesson-cover + .lesson-copy,
+.lesson-title + .lesson-blocks,
+.lesson-title + .lesson-rows,
+.lesson-title + .lesson-fields { margin-top: 48px; }
+.lesson-copy {
+  font-weight: 500;
+  font-size: var(--size-lesson-body);
+  line-height: 72px;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+}
+.lesson-copy + .lesson-copy { margin-top: 24px; }
+.lesson-copy .hl,
+.lesson-cover .hl { background-position: 0 0.2em; background-size: 100% 1.12em; }
+.slide--teach .pen--circle > svg { top: -0.12em; height: 1.42em; }
+.lesson-rule { border-top: var(--w-hair) solid var(--rule); padding-top: 24px; }
+.lesson-emphasis {
+  font-weight: 700;
+  font-size: var(--size-lesson-field);
+  line-height: 72px;
+  letter-spacing: -0.024em;
+  color: var(--ink);
+}
+.lesson-emphasis + .lesson-copy { margin-top: 48px; }
+.lesson-rows { list-style: none; }
+.lesson-rows > li {
+  padding: 24px 0;
+  border-bottom: var(--w-hair) solid var(--rule);
+}
+.lesson-rows > li:first-child { border-top: var(--w-hair) solid var(--rule); }
+.lesson-rows > .lesson-copy + .lesson-copy { margin-top: 0; }
+.lesson-rows--compact > li { padding-top: 0; }
+.lesson-rows + .lesson-copy { margin-top: 24px; }
+.lesson-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 24px;
+  row-gap: 24px;
+  list-style: none;
+}
+.lesson-fields > li {
+  font-weight: 600;
+  font-size: var(--size-lesson-field);
+  line-height: 72px;
+  letter-spacing: -0.024em;
+  color: var(--ink);
+  border-bottom: var(--w-hair) solid var(--rule);
+  padding-bottom: 0;
+}
+.lesson-fields + .lesson-copy { margin-top: 24px; }
+
+/* New layouts include their inverted colors in the same implementation. */
+.slide--teach.slide--invert::before {
+  background-image:
+    linear-gradient(to right, transparent 0 var(--rule-x),
+      rgba(253, 240, 214, 0.28) var(--rule-x) calc(var(--rule-x) + 3px),
+      transparent calc(var(--rule-x) + 3px)),
+    repeating-linear-gradient(to bottom, transparent 0 71px,
+      rgba(253, 240, 214, 0.08) 71px 72px);
+}
+.slide--teach.slide--invert .lesson-title,
+.slide--teach.slide--invert .lesson-cover,
+.slide--teach.slide--invert .lesson-copy,
+.slide--teach.slide--invert .lesson-emphasis,
+.slide--teach.slide--invert .lesson-fields > li { color: var(--paper); }
+.slide--teach.slide--invert .eyebrow,
+.slide--teach.slide--invert .footer { color: var(--paper); }
+.slide--teach.slide--invert .eyebrow::before { background: var(--marker); }
+.slide--teach.slide--invert .lesson-rows > li,
+.slide--teach.slide--invert .lesson-rule,
+.slide--teach.slide--invert .lesson-fields > li { border-color: rgba(253, 240, 214, 0.22); }
+.slide--teach.slide--invert .sel { color: var(--paper); background: var(--sel); }

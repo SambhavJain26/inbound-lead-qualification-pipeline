@@ -54,6 +54,14 @@ for (const dir of [pdfDir, previewDir, scratch]) fs.mkdirSync(dir, { recursive: 
         const bottom = Math.max(...children.map(r => r.bottom));
         const top = Math.min(...children.map(r => r.top));
         const band = body.getBoundingClientRect();
+        const capture = element => {
+          const r = element.getBoundingClientRect();
+          return { text: element.innerText, box: [r.left - origin.left,
+            r.top - origin.top, r.right - origin.left, r.bottom - origin.top] };
+        };
+        const copyBlocks = [...body.querySelectorAll('.lesson-title, .lesson-cover, ' +
+          'p.lesson-copy, p.lesson-emphasis, li.lesson-copy, .lesson-fields > li')].map(capture);
+        const footerCopy = capture(slide.querySelector('.footer span'));
         const violations = [];
         if (top < band.top - 1 || bottom > band.bottom + 1) violations.push('Content exceeds its band');
         if (bottom > (byline ? byline.top : footer.top) - 24) violations.push('Footer/byline clearance');
@@ -67,7 +75,8 @@ for (const dir of [pdfDir, previewDir, scratch]) fs.mkdirSync(dir, { recursive: 
         }
         return { slide: i + 1, fonts: faces, top: top - origin.top,
           bottom: bottom - origin.top, bandBottom: band.bottom - origin.top,
-          violations, bodyText: body.innerText, footerText: slide.querySelector('.footer span').innerText };
+          violations, bodyText: body.innerText, footerText: slide.querySelector('.footer span').innerText,
+          copyBlocks, footerCopy };
       });
     });
     fs.writeFileSync(path.join(scratch, 'layout-checks.json'), JSON.stringify(checks, null, 2));
@@ -96,6 +105,10 @@ for (const dir of [pdfDir, previewDir, scratch]) fs.mkdirSync(dir, { recursive: 
     // Review the final PDF itself, not only its HTML source.
     const poppler = process.env.CAROUSEL_PDFTOPPM ||
       'C:/Users/jains/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/poppler/Library/bin/pdftoppm.exe';
+    // pdftoppm pads filenames after nine pages. Remove only this renderer's
+    // managed page previews so stale seven-page names cannot inflate the count.
+    for (const file of fs.readdirSync(previewDir).filter(n => /^slide-\d+\.png$/.test(n)))
+      fs.unlinkSync(path.join(previewDir, file));
     execFileSync(poppler, ['-png', '-r', '96', pdf, path.join(previewDir, 'slide')]);
     const images = fs.readdirSync(previewDir).filter(n => /^slide-\d+\.png$/.test(n))
       .sort((a, b) => Number(a.match(/\d+/)[0]) - Number(b.match(/\d+/)[0]));

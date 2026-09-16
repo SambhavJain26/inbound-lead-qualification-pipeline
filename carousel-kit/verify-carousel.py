@@ -52,20 +52,35 @@ def inspect_resources(resources):
 
 
 assert len(reader.pages) == len(slides), "PDF page count differs from approved copy"
+layout = json.loads((root / "tmp/carousel-qa" / name / "layout-checks.json").read_text(encoding="utf-8"))
 with pdfplumber.open(pdf) as text_reader:
     for index, (page, slide, text_page) in enumerate(zip(reader.pages, slides, text_reader.pages), 1):
         box = [float(v) for v in page.mediabox]
         # Chromium quantizes the declared CSS paper height by less than one pixel.
         assert all(abs(a - b) <= 0.75 for a, b in zip(box, (0, 0, 810, 1012.5))), box
         text = normalize(text_page.extract_text(x_tolerance=2, y_tolerance=3))
-        for value in slide[1:]:
-            assert normalize(value) in text, (index, value, text)
+        check = layout[index - 1]
+        if check.get("copyBlocks"):
+            # Read each actual semantic block in DOM order. Whole-page x/y
+            # sorting interleaves columns and wrapped footers with page numbers.
+            extracted = []
+            for block in check["copyBlocks"]:
+                region = tuple(v * 0.75 for v in block["box"])
+                block_text = normalize(text_page.crop(region).extract_text(x_tolerance=2, y_tolerance=3) or "")
+                assert block_text == normalize(block["text"]), (index, block, block_text)
+                extracted.append(block_text)
+            assert normalize(" ".join(extracted)) == normalize(slide[1] + " " + slide[2]), (index, extracted)
+            footer_region = tuple(v * 0.75 for v in check["footerCopy"]["box"])
+            footer_text = normalize(text_page.crop(footer_region).extract_text(x_tolerance=2, y_tolerance=3) or "")
+            assert footer_text == normalize(slide[3]), (index, footer_text)
+        else:
+            for value in slide[1:]:
+                assert normalize(value) in text, (index, value, text)
         inspect_resources(page["/Resources"])
         print("Page", index, "approved wording preserved; paper dimensions within Chromium rounding")
 assert len(fonts) >= 2, "Expected multiple embedded font subsets"
 # Fontshare's served font programs have generic internal PostScript names in this
 # export. Verify CSS family loading from the renderer, not those internal labels.
-layout = json.loads((root / "tmp/carousel-qa" / name / "layout-checks.json").read_text(encoding="utf-8"))
 for check in layout:
     assert "Switzer" in check["fonts"] and "Zodiak" in check["fonts"]
     assert not check["violations"]

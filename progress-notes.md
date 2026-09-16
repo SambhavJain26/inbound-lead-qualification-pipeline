@@ -1998,3 +1998,57 @@ Next production step: implement and render the ten-page B5-01 proof, inspect its
 whole-deck annotation balance and all PDF pages, then seek design acceptance before
 batching the remaining five. No publishing, account actions or runtime changes.
 Unrelated dirty work preserved; new documentation rules mirrored in AGENTS/CLAUDE.
+
+## 2026-09-17 — First ten-page teaching carousel proof generated
+
+User requested generation of the first rewritten carousel only. B5-01 now has
+matching editable HTML, a ten-page PDF and ten final-PDF PNG previews. Canonical
+public wording and all 60 script pages are unchanged; only first-deck production
+status notes were updated. The other five PDFs remain ungenerated pending design
+acceptance. No runtime, accounts, publishing, scheduling or applicant actions.
+
+Used the PDF skill's create marker and final export verification, UI/UX Foundations
+for hierarchy/contrast and the reference kit's exact-copy/render rules. Latest
+user direction overrides historical sparse-copy, cover-only box and mandatory
+mark rules. Read shared design guidance, blueprint, example and rendering helpers.
+
+Implemented named shared teaching styles: cover 96/120, title 78/96, body 48/72,
+field 54/72 and metadata 36/48, fixed 1080x1350 and 24px rhythm. Grouped lesson,
+compact ruled roles and three-column worksheet layouts include inverted colors.
+No per-page sizes, inline CSS, fake UI, icons or screenshots. Switzer carries the
+copy; Zodiak is loaded but a giant payoff word isn't forced into teaching content.
+
+First render fitted, but review found low gold swipes, circles too tight to glyphs,
+inherited list sibling margins and a crowded worksheet. Raised marker backgrounds,
+increased circle clearance, separated list/paragraph margins and compacted role
+and field padding. Re-rendered and inspected all ten final-PDF pages/contact sheet
+and representative 360px cover, decision and worksheet views. No clipping, wrapped
+pen text or footer/byline overlap remains. Text contrast pairs pass at >=4.91:1.
+
+The initial PDF verifier failed on the wrapped scope footer because the page
+number interleaved its lines. It now validates actual semantic block regions in
+DOM order, including every worksheet cell and footer. All exact title/body/footer
+words match both the rendered source and final PDF. The renderer clears only its
+managed page PNGs before regeneration; Poppler adds zero-padding above nine pages.
+Old seven-page previews were replaced with slide-01 through slide-10, recoverable
+from Git. Rejected HTML/CSS/PDF/contact sheet were also preserved in ignored
+tmp/carousel-comparison/leasing-sparse before replacing stable artifact paths.
+
+Re-ran the vendor 01/04/07/13 and original-proof comparison read-only and assessed
+against both rejected proofs. Current main copy is 296 words, 29.6/page, range
+26–32. Mean band span 76.5%, range 64.5–90.6%, versus original 84.2%; this includes
+gaps and changed band dimensions, not ink/whitespace or a quality score. Four
+outer shared compositions; grouped evidence varies inside them. Visible devices:
+two blue boxes, four blue underlines, three blue circles, two gold highlights,
+one gold underline on the sole navy human-boundary page. No device quota.
+
+Final output: output/pdf/b5-01-inquiry-to-lease.pdf, ten pages, 124,532 bytes.
+Checks pass page count/dimensions, exact copy, families loaded, embedded used-font
+subsets and one shared grain image. Editorial checker still passes all 60 slides
+and preserved nine non-carousel posts. Updated README, design-system, blueprint,
+plan/status notes and self-assessment; export gotchas mirrored in AGENTS/CLAUDE.
+
+Remaining trade-offs: more instructional text than vendor averages, repeated
+grouped-lesson shell, fullest closing worksheet and two wrapped scope footers.
+User design approval is pending. No engagement, client ROI or accessibility
+certification claimed. Unrelated dirty work preserved; only task files staged.

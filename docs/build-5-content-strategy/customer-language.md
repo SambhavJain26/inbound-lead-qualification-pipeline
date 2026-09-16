@@ -249,6 +249,6 @@ The Build 01/02 maintenance-triage content foundations supplied a structural ref
 
 This document supplies vocabulary, qualified pain themes, source-backed excerpts, proposed language and claim restrictions. The companion product-marketing file supplies audience, positioning, objections and proof.
 
-Next artifact: `linkedin-content-plan.md`, with each planned post assigned a reader, business event, evidence source, demonstration boundary and purpose. Only after that plan is agreed should `linkedin-post-scripts.md` be written.
+The next-stage [content plan](linkedin-content-plan.md) now assigns each post a reader, business event, evidence source, demonstration boundary and purpose. It uses one full demo video, one same-footage short, six carousels and seven text posts; no standalone image posts.
 
-Neither downstream artifact is included in this task. No content has been published and no customer language has been presented as validated interview evidence.
+After that plan is reviewed, `linkedin-post-scripts.md` is the next writing task. No content has been published and no customer language has been presented as validated interview evidence.

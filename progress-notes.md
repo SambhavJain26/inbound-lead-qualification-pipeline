@@ -1820,3 +1820,32 @@ Only these foundations were requested: `linkedin-content-plan.md` and
 `linkedin-post-scripts.md` remain subsequent tasks. No social content published,
 runtime behavior changed or applicant/account data touched. Existing unrelated
 work remains preserved.
+
+### 2026-09-16 — Build 05 LinkedIn Content Plan
+
+Created `docs/build-5-content-strategy/linkedin-content-plan.md` from the completed
+foundations and maintenance-triage Build 02 brief structure. User's format constraint
+is explicit: one full video of the current demo, one short made from that same
+recording and original audio, carousels and text only; no standalone image posts,
+additional short-video recording or supplemental voiceover.
+
+Plan includes 15 unique post briefs: 1 full demo, 1 short, 6 PDF carousels and
+7 text posts. Each brief defines reader, event, purpose, opening angle, turn,
+evidence, structure, takeaway, boundary, invitation and assets. The six carousels
+total 46 planned slides. Added S01–S12 single-master capture inventory, original
+narration reuse, edit/callback-wait disclosure, a narrower same-footage fallback,
+proposed cadence, cross-build collision checks, evaluation and publication gates.
+
+The full demo shows the current synthetic build, not the proposed production PMS
+integration or physical move-in. One short isolates manager review through
+sandbox signing confirmation if captured; it cannot invent unfilmed completion.
+Footage timestamps remain a post-recording task, not fabricated evidence. Optional
+Airtable views remain skipped. LinkedIn official document/caption guidance checked;
+no algorithm, reach or platform-limit guarantee introduced.
+
+Updated foundation handoffs to link the new plan and preserve the format decision.
+Verification: 15 unique brief IDs, 12 unique defined shot IDs, agreed format counts,
+46-slide arithmetic, per-brief required fields, consistent Markdown table columns,
+heading spacing, resolving local links and task-file whitespace checks pass.
+Editorial review completed. Scripts, PDF exports, video recording/editing,
+scheduling and publishing remain subsequent work. No runtime/account changes.

@@ -1730,3 +1730,35 @@ a lawful decline actually requires.
    the Cal.com attendee address. The Cal.com event type is still named "30 min meeting", which
    the renter sees on the booking page.
 4. Record the demo.
+
+## 2026-09-16 — Business-Level Production Blueprint Written
+
+Actor: Codex, at the operator's request. Added
+docs/production-leasing-tenant-screening-blueprint.md, using the maintenance-triage
+production blueprint as the structural reference. Covers all ten requested sections:
+portfolio-scale business impact, household example, production scope, existing-tool
+integration, components, communication, AI/human boundaries, full flow, exception
+ownership/recovery and the complete Excalidraw drawing specification.
+
+Documentation scope revision only: describes potential contracted production
+integrations, durable hosting and optional payment/readiness/possession connections.
+Does not implement them or change the locked demo tool surface, mocks, workflow
+behavior or the already-verified end point. Production business systems own their
+records; the automation retains execution state/audit, not a competing rent roll.
+
+Production clarification overrides older explanatory claims for this blueprint:
+net bank income is not directly comparable with gross payroll, source/period/coverage
+must be preserved, and a mismatch is not proof of fraud. Income and screening
+production access require approved contracts and permitted use, not a sandbox URL swap.
+FTC landlord/employer guidance distinguishes rental notice duties from the
+employment-specific pre-action sequence. No universal rental waiting period is
+assumed. The automation still never generates, drafts or sends adverse-action notices;
+the company's authorized human/legal process owns any required notices and disputes.
+Older demo narratives retain historical wording and must not be used as production
+legal guidance; no live criteria or messages were changed by this documentation task.
+
+Checks: ten top-level sections present; all referenced map IDs resolve (8 actors,
+20 systems, 30 processes, 17 decisions, 16 exceptions, 12 outcomes). Illustrative
+capacity math checked, source links verified against official FTC, CFPB and Plaid
+documentation, and final wording reviewed with completeness/copyediting skills.
+No real applicant data, secrets, service changes or external business actions involved.

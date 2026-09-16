@@ -1,6 +1,6 @@
 # Production Blueprint: Leasing And Tenant-Screening Coordination
 
-Business and workflow-map reference · 16 September 2026
+Business and workflow-map reference · Expanded research edition, 16 September 2026
 
 ## 1. Business impact at scale
 
@@ -46,6 +46,27 @@ Faster administration can also remove avoidable delays between an interested pro
 
 The system removes coordination work. It doesn't remove accountability, applicant rights or the need for professional judgment. Less administration, not less responsibility.
 
+### Establish the baseline before claiming improvement
+
+The company samples its own work across quiet properties, busy properties and different office hours. It records time spent acknowledging inquiries, finding facts, scheduling, assembling evidence, correcting errors and chasing outstanding actions. Waiting for an applicant isn't employee labor; those measures stay separate.
+
+| Baseline question | Evidence to collect | Why the business needs it |
+|---|---|---|
+| How much incoming work is unique? | Distinct households, messages and repeated listing-channel contacts | Avoid counting five messages from one person as five new opportunities |
+| Where does employee time go? | Sampled task time, including corrections and follow-up | Identify administration the deployment can remove |
+| Which steps delay progress? | Milestone times and the party being waited on | Distinguish a system delay from an applicant or reviewer delay |
+| How often does work need correction? | Incorrect matches, wrong facts, incomplete files and rework | Include quality, not only processing speed |
+| How much work is handled outside office hours? | Inquiry time and actual response coverage | Define the value and limits of unattended assistance |
+| What remains manual after deployment? | Review, exceptions, site work and unsupported integrations | Calculate net capacity, not gross automated activity |
+
+A credible business case subtracts the new work: reviewing exception queues, maintaining policy records, supporting integrations and checking service quality. If administration falls but human rework rises, the company hasn't achieved the intended outcome.
+
+### Costs and benefits belong in different columns
+
+Finance separates recurring operating cost, one-time implementation cost, released staff capacity and any measured change in leasing delays. It doesn't turn every saved hour into a payroll reduction or count the same benefit as both labor savings and vacancy savings.
+
+The approved budget includes provider charges, software access, communications, hosting, support and the employees responsible for governance. A busy month can increase report, signature and message costs even when the automation works correctly. Leaders need cost per completed household process and cost of unresolved exceptions, not AI-token spending alone.
+
 ## 2. A real-world production example
 
 The company in this example is fictional. Its operating conditions are representative of the production design, not evidence of a deployed client system.
@@ -86,6 +107,28 @@ The system records the external handoff and follows the internal task until some
 
 At portfolio scale, both households follow controlled processes. The straightforward file moves without repeated copying. The uncertain file stays visible and receives human attention.
 
+### The same Monday through each employee's existing tools
+
+At 8:30 a.m., the leasing coordinator opens the normal work queue. Twelve weekend conversations need human answers. Each task includes the original question, the property facts already checked and the reason the system couldn't answer. The coordinator doesn't have to reconstruct a conversation from separate inboxes.
+
+The application reviewer sees seven new files ready for a decision and four held for specific evidence issues. Those numbers are illustrative workload counts, not a service commitment. Each held file explains what is missing and which employee or provider is responsible.
+
+Accounting sees three onboarding files awaiting financial confirmation. One payer has submitted a transfer that remains pending. The system hasn't described it as settled and hasn't released resident access because of a payment screenshot.
+
+The site team sees two homes scheduled for possession later in the week. One readiness task remains open. Its manager receives an escalation before the planned handoff, with no automated promise of a replacement home or compensation.
+
+| Existing workplace | What the employee sees | What the employee can do |
+|---|---|---|
+| CRM conversation/task | Unanswered question and checked context | Respond, correct an association or assign help |
+| Application review task | Evidence, limitations, policy version and authority requested | Decide, request approved follow-up or route for specialist review |
+| Accounting queue | Relevant lease, charge and payment references | Verify the ledger and resolve financial exceptions |
+| Site operations queue | Readiness items, due times and planned possession | Confirm work and authorize the permitted handoff |
+| Regional report | Aging by stage, owner coverage and exception backlog | Reassign work and adjust operating capacity |
+
+The automation doesn't make all of these jobs disappear. It gives each person the right unfinished work, with enough context to act. Shared visibility also helps when one employee is absent: a backup sees the file and history, not a private inbox containing the only explanation.
+
+A regional leader can inspect a delayed household process from inquiry to the latest confirmed milestone. The same history shows what ran automatically, what a person authorized and what remains outside the automation. That distinction matters during both service reviews and complaints.
+
 ## 3. What the production system does
 
 This is a coordination layer around the company's existing leasing operation. It watches for business events, prepares the next permitted action, carries out routine authorized work and gives employees clear review tasks when a person must act.
@@ -119,6 +162,29 @@ The system tracks several related records. A lead can have multiple applications
 | Payment | Requested, submitted, confirmed under ledger policy, returned or reconciled | A submission or pending bank transfer is not settled funds |
 
 Every active record has a next action, accountable owner and due time. Business closure is recorded by an authorized person or a confirmed system event. The system never treats an internal error as a completed household process.
+
+### Portfolio and program boundaries
+
+A company managing several property types shouldn't operate one universal application checklist. Conventional rentals, student housing, affordable programs, furnished homes and corporate arrangements can require different authorized processes. The deployment selects the correct process from controlled property/program records, never from assumptions about the person asking.
+
+| Operating dimension | Configuration the company supplies | Safe boundary |
+|---|---|---|
+| Company or legal entity | Record ownership, sender identity, approved provider accounts | No cross-company access or accidental disclosure |
+| Property and jurisdiction | Approved criteria, disclosures, fees and templates | No copying another region's legal settings without review |
+| Leasing program | Required documents, role of guarantors and eligibility process | Unsupported program stays human-operated |
+| Calendar and location | Local time zone, staffed resources and permitted tour windows | No interpreting a local appointment as another property's time |
+| Household structure | Applicant, signer, occupant and guarantor roles | No assuming every occupant is an applicant or lease signer |
+| Unit allocation | Published ordering/reservation process and authorized exceptions | No AI ranking or preferred-applicant selection |
+
+The core design coordinates ordinary rental applications. A specialized program's eligibility assessment is outside automatic handling until the company has approved its exact rules and evidence process. Connecting to a PMS doesn't make the automation competent to administer every program that PMS supports.
+
+For a multi-company operator, business records and provider accounts remain separated even when a central team handles work. Staff access follows their assigned company and property responsibilities. A central report can show permitted aggregate workload without exposing one owner's applicant documents to another owner.
+
+### What counts as scope growth
+
+Adding document verification is different from adding a new decision rule. Connecting onboarding tasks is different from authorizing money movement or legal notices. Each additional capability needs an owner, prerequisites, acceptance checks and an explicit operating boundary.
+
+The production scope register names what is connected, what remains manual and what is excluded. It also records dependencies the deployment can't control, such as provider licensing or a property platform's write restrictions. Prospects should see those limits before approving the implementation.
 
 ## 4. How it fits into an existing PM business
 
@@ -179,6 +245,49 @@ Finally, expand based on measured accuracy, service quality and operational capa
 
 Production services require contracts, approved hosting and operating budgets. They are not assumed to share the demo's free or sandbox pricing. No purchases or live integration changes are authorized by this document.
 
+### Discovery produces a signed-off connection inventory
+
+Before implementation, operations and the platform owner complete the following inventory. "The vendor has an API" isn't an acceptable answer to whether this company's account can perform the required action.
+
+| Discovery item | Required answer or evidence | Business owner |
+|---|---|---|
+| Exact platform and subscription | Product, account, company scope and enabled functions | PMS administrator |
+| Authorized access route | Vendor-supported connection and any partner approval | Platform owner/procurement |
+| Readable records | Units, facts, leads, applications, lease and task data available to this account | Leasing operations |
+| Permitted updates | Specific milestones, attachments, reservations and tasks that can be written | Operations/platform owner |
+| Change detection | Supported notifications, scheduled retrieval or approved export process | Technical operator |
+| Identity relationships | Stable identifiers for household, adult applicant, unit and external action | Data owner |
+| Financial visibility | Ledger meanings, pending/confirmed states and access limitations | Accounting |
+| Existing automation ownership | Which system already sends reminders, receipts or lease invitations | Leasing/platform administrator |
+| Failure route | Support contact, incident channel and manual process | Regional operations |
+| Data-use conditions | Allowed purpose, retention, access and third-party processing terms | Legal/security |
+
+AppFolio describes a partner approval and security-review process, while its published API catalogue lists specific business resources. Those materials support checking access operation by operation; they don't establish that an arbitrary customer or custom automation receives unrestricted access. [AppFolio partner program](https://www.appfolio.com/stack/become-a-partner), [AppFolio API catalogue](https://www.appfolio.com/stack/partners/api).
+
+Yardi publishes separate interfaces for business needs such as listing facts and guest-card activity. The relevant interface, product and account permissions must be confirmed; a listing-data connection doesn't establish authority to reserve a unit or create an executed lease. [Yardi interface directory](https://www.yardi.com/company/find-an-interface-partner/).
+
+### Avoid two systems contacting the same applicant
+
+The company assigns a sender of record for each message type. If the portal sends submission receipts, the automation doesn't send a competing receipt unless that additional communication serves an approved purpose. If the signature platform sends reminders, the coordination layer tracks them or assigns exceptions instead of sending an overlapping reminder series.
+
+The same rule applies to tasks and milestone updates. One system owns the action; other systems receive its confirmed outcome. Parallel automation without an ownership agreement creates duplicate work and conflicting instructions.
+
+### Rollout gates, not a fixed launch-date promise
+
+| Gate | Evidence needed to proceed | Who accepts it |
+|---|---|---|
+| Discovery complete | Approved scope, connection inventory, policy ownership and manual fallback | Operations, platform owner, legal/security |
+| Shadow outputs accepted | Correct matching, supported facts and understandable evidence files | Leasing and application reviewers |
+| Inquiry/scheduling pilot accepted | Real delivery outcomes, permitted bookings and working exceptions | Leasing lead/site operations |
+| Evidence preparation accepted | Source citations, alternative routes and correction handling | Authorized reviewers/compliance |
+| Lease pilot accepted | Version-bound authority, allocation protection and signature reconciliation | Manager/lease administrator |
+| Onboarding connections accepted | Accurate ledger meanings, readiness controls and possession handoff | Accounting/site operations |
+| Recovery accepted | Restored work, duplicate prevention and verified manual-mode reconciliation | Technical operator/regional operations |
+
+Training follows each employee's work, not the internals of the automation. Staff learn how to identify a prepared task, inspect source evidence, record authority, correct an error and request help. Supervisors learn how to identify an overloaded queue and assign a qualified backup.
+
+The support agreement names who maintains connections, approves policy changes, investigates failures and communicates with providers. The company also agrees how to pause an affected capability without shutting down its entire leasing operation. Expansion happens after acceptance, not because the demonstration looked convincing.
+
 ## 5. Major components and why they exist
 
 These are business roles within the design. Several roles may be supplied by the same existing platform. They are not a shopping list of products the company must add.
@@ -216,6 +325,38 @@ If the company already has suitable database, queue, document and monitoring ser
 
 The plan must also account for licensed report charges, income verification, messaging, signatures, storage, hosting, AI usage and ongoing support. Report ordering is permission-controlled and duplicate-safe; a retry must not silently create another charge.
 
+### What the company checks when selecting providers
+
+| Provider role | Questions procurement and operations must settle | Boundary retained by the company |
+|---|---|---|
+| Income verification | Supported income types, measurement basis, applicant method, permissible use and alternatives | Provider data is evidence, not an automatic decision |
+| Consumer screening | Authorized housing purpose, coverage, source traceability, dispute route and report access | Every rental decision and applicable notice process |
+| Signature | Required signer roles, final-document access, status reporting and correction process | Approved lease content and authority to send/void |
+| Messaging | Sender registration where required, permission evidence, opt-out, delivery visibility and support | What communication is authorized and who receives it |
+| Tour access | Property hardware coverage, prerequisite checks, code expiry/revocation and staff fallback | Whether and when the prospect may enter |
+| AI/document processing | Permitted data, retention, training/data-use terms, output constraints and service support | No decision, identity judgment or legal drafting |
+| Hosting and storage | Region, restricted access, backups, restore evidence and exit/export rights | Ownership of records, security acceptance and recovery expectations |
+
+The company doesn't have to replace a provider that already supports the approved process. Selection starts with the current stack, then identifies unmet needs. A new service must remove a defined gap without creating an unnecessary applicant step or a second business record.
+
+Plaid Check is a consumer-report product family with stated eligibility and product-access requirements. Its public material is not a blanket approval for a housing deployment. Any selected income service must confirm the actual permitted purpose and contracted product; credit/lending scores and predictive outputs are not added to this design. [Plaid Check product documentation](https://plaid.com/docs/check/).
+
+### Capacity and service limits
+
+Production sizing uses peak events and open work, not unit count alone. A 1,000-home lease-up can produce more concentrated inquiry and application activity than a stable 5,000-home portfolio. Seasonal hiring, office closures and provider delays also change how many files remain open simultaneously.
+
+| Load to plan for | What the operator measures | Business consequence of overload |
+|---|---|---|
+| Inquiry burst | Accepted events, answer delay and human fallback volume | Slow contact or overloaded leasing queue |
+| Document burst | Upload volume, processing delay and uncertain extraction | Files wait longer for review |
+| Review burst | Ready files per qualified reviewer and oldest pending task | Human decisions become the limiting step |
+| External-provider delay | Requests outstanding and known response deadlines | Pending evidence or signatures accumulate |
+| Recovery burst | Backlog size, safe replay rate and protected current actions | Old work competes with new work after an outage |
+
+The queue regulates work within provider limits and protects consequential actions from careless resubmission. Increasing processing capacity doesn't authorize faster human decisions or greater report spending. Budget ceilings create operational alerts or controlled pauses, not an undisclosed negative finding about an applicant.
+
+If a provider limit is reached, staff see which files are delayed and the expected next action. Urgent business handling remains an employee responsibility. The system must not hide the backlog by changing pending work to completed.
+
 ## 6. How the components communicate
 
 A business event signals that something changed: an inquiry arrived, an applicant submitted a file, a manager recorded a decision or an envelope reached a new status. Platforms either send supported event notifications or expose changes through approved scheduled checks. Both methods retrieve the current authoritative record before an important action; neither assumes every signal arrives once or in order.
@@ -251,6 +392,29 @@ Employee changes in the PMS matter too. A cancellation, revised price, withdrawn
 Ordinary task notifications contain a name or reference, status, next action and secure link, not a full consumer report, identity document or bank statement. Sensitive identifiers are collected through the approved portal/provider where possible. Full SSNs, bank credentials and payment card details are not stored in chat, exposed in model prompts or included in general logs.
 
 The company chooses the minimum information needed for each component and restricts who can access it. Provider contracts, AI data-use settings, retention schedules, deletion rules and legal holds are reviewed before production use. A general-purpose AI service does not automatically receive consumer reports, raw banking histories or complete identity documents.
+
+### Accepted, completed and visible are different confirmations
+
+When a business system accepts an event, the automation first preserves it for processing. It then confirms the permitted external action, and finally confirms the required business-record update. These are separate checkpoints. An employee can see "lease sent; PMS update pending" without receiving a false claim that everything completed.
+
+Buildium's documentation describes prompt acknowledgement, finite callback retries and suspension after repeated failures. The design therefore includes independent health checks and source reconciliation, not an assumption that the provider will keep delivering every missed event forever. [Buildium Open API documentation](https://developer.buildium.com/).
+
+Docusign documents Connect status notifications and failed-delivery logging/retry support. A signature notification is an input to reconciliation, not a substitute for checking execution and filing the final agreement. Recovery verifies the existing envelope before taking another action. [Docusign Connect notifications](https://www.docusign.com/blog/developers/dsdev-webhook-listeners-part-1), [Docusign failure logs and retry support](https://www.docusign.com/blog/developers/common-api-tasks-get-connect-failure-logs-and-attempt-to-retry-webhook-call).
+
+### How record conflicts are resolved
+
+| Conflict | Authority applied | Work that must wait |
+|---|---|---|
+| CRM interested; application withdrawn in the authoritative file | Confirmed withdrawal governs dependent application work | Report order, follow-up or lease action |
+| Cached listing says available; allocation process says reserved | Current allocation state governs the reservation | New lease send |
+| Provider says executed; PMS still says sent | Provider execution is preserved; PMS update is reconciled | Completion claim requiring the filed business record |
+| Applicant reports payment; ledger says pending | Financial system meaning governs the payment milestone | Financial readiness confirmation |
+| Old task includes earlier terms; manager changed terms | Current material version requires appropriate renewed approval | Preparation/send against stale terms |
+| Employee completed a task manually; automation still waiting | Verified manual outcome closes only the corresponding work | Duplicate action while reconciliation is unresolved |
+
+Facts and policies also have freshness limits chosen during implementation. A long-running conversation rechecks important facts before making another statement. The system retains which version supported an earlier answer, but it doesn't use that older version to justify a new commitment.
+
+Time records distinguish the event's business time, receipt time and action time. Appointment wording uses the property's local time zone. The history can then explain whether a delay came from event delivery, automation processing, provider response or a person waiting to act.
 
 ## 7. Human involvement and AI boundaries
 
@@ -306,6 +470,44 @@ Don't assume the employment-specific pre-adverse-action sequence and waiting per
 Applicants must have a route to correct or dispute information with the appropriate provider and receive human handling. The system records that a dispute is pending; it does not silently continue toward a lease or an adverse outcome using superseded evidence. [CFPB: Rental applications and tenant-screening reports](https://www.consumerfinance.gov/ask-cfpb/what-should-i-do-if-my-rental-application-is-denied-because-of-a-tenant-screening-report-en-2105/).
 
 This blueprint describes operating controls, not legal advice or a certification of compliance.
+
+### Evidence quality and alternative income routes
+
+| Evidence situation | Preparation the system can perform | Review that remains human |
+|---|---|---|
+| Regular gross payroll with clear pay frequency | Record source, covered period and policy-approved monthly calculation | Verify that the input and applicable rule are correct |
+| Net bank deposits only | Record deposit evidence separately with coverage limitations | Determine the permitted way to substantiate gross or other qualifying income |
+| Several jobs or income sources | Keep each source separate and avoid duplicate counting | Confirm permitted aggregation and whether coverage is adequate |
+| Variable/self-employed income | Organize the approved documents and periods | Apply the authorized method or specialist process; no invented forecast |
+| Assistance or subsidized rent arrangement | Route approved program facts to the designated reviewer | Determine lawful treatment and any required rent-share calculation |
+| Guarantor or co-applicant | Link the distinct person's evidence and role | Apply the approved policy without transferring one person's findings to another |
+| Unavailable electronic connection | Record the technical limitation | Accept an approved alternative; unavailability isn't a negative income result |
+
+The evidence file must distinguish an eviction filing from its disposition, repeated entries from distinct cases and a provider finding from a verified identity association. It doesn't flatten all records into "number of evictions." In a 2023 case, the FTC and CFPB alleged duplicate entries, incomplete dispositions and other inaccuracies in TransUnion tenant reports. That historical example supports retaining context and correction routes; it is not a claim that every current provider report is wrong. [FTC tenant-report accuracy case](https://www.ftc.gov/news-events/news/press-releases/2023/10/ftc-cfpb-settlement-require-trans-union-pay-15-million-over-charges-it-failed-ensure-accuracy-tenant).
+
+The manager can inspect source facts and note a correction without editing the original document or erasing a provider result. Any dependent criteria output is recalculated against the corrected version. A prior approval isn't reused if that material change requires renewed review.
+
+### Accommodation and sensitive help requests
+
+Ordinary pet questions can use approved property facts. A request involving an assistance animal follows a different human process; it isn't automatically handled as a pet-policy failure or pet fee. HUD describes assistance animals as distinct from pets and explains the accommodation route. The deployment's legal advisers approve the handling applicable to the company. [HUD assistance animals](https://www.hud.gov/helping-americans/assistance-animals).
+
+The conversation can identify that specialist help is requested without inferring a diagnosis or collecting unnecessary medical details. Ordinary leasing notifications carry only the operational handoff. Any required sensitive evidence belongs in the restricted company process, not a general AI context or portfolio dashboard.
+
+### Human review must be real review
+
+Reviewers see the limitations beside the evidence, not hidden below a confident summary. The screen doesn't preselect approval, rank files by supposed applicant quality or present a model-written recommendation. Review work can be ordered by neutral operating rules such as submission time or due date, not by predicted tenancy quality.
+
+Supervisors sample files to check source accuracy, unexplained overrides and whether reviewers are treating criteria labels as automatic decisions. The company allows employees to report misleading output and pause a questionable rule. Faster clicking isn't a success measure if substantive review disappears.
+
+| Governance event | Required response | Accountable owner |
+|---|---|---|
+| Model or document-processing provider changes | Re-test factual grounding, extraction and failure behavior before release | Technical operator and business reviewer |
+| Criteria/template changes | Obtain approval, set effective scope/date and review affected open work | Operations/compliance |
+| Repeated incorrect extraction or answer | Limit the affected capability and investigate source/provider behavior | Business owner/support |
+| Privacy/security concern | Restrict access, preserve incident evidence and follow the company response process | Security/legal |
+| Permission or staff-role change | Remove obsolete access and reassign open tasks | Company administrator/operations |
+
+NIST's Generative AI Profile is a voluntary risk-management resource, not a housing compliance certificate. This blueprint uses ongoing evaluation and accountable change control as operating principles; the company still approves its own risk controls. [NIST Generative AI Profile](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence).
 
 ## 8. The end-to-end production workflow
 
@@ -373,6 +575,31 @@ Each problem is assigned in the normal company queue. A timed escalation reaches
 
 After recovery, reconciliation verifies the actual outcome before completing or replaying an action. Staff are told which household steps were delayed. The business record and operational history agree before the exception closes.
 
+### Detailed handoffs inside a household file
+
+Suppose Maya applies with another adult, while a guarantor supplies separate information. The household application records their distinct roles. Each person's required documents, authorizations and provider results remain linked to that person. The household file becomes review-ready only when the approved process accounts for all required individual items or a reviewer authorizes a documented alternative.
+
+The manager's decision covers the stated household and terms. Adding an adult later isn't a minor contact edit. The system returns the affected work for review, adjusts the required signer list through authorized handling and checks whether existing verification and lease preparation remain usable.
+
+| Handoff | Sender confirms | Receiver owns next |
+|---|---|---|
+| Portal to evidence preparation | Submission, relationships, documents and prerequisites | Processing and missing-item tasks |
+| Evidence preparation to reviewer | Usable facts, sources, limitations and policy version | Decision or authorized request for more work |
+| Reviewer to allocation/lease team | Current household and exact approved terms | Reservation confirmation and authorized document preparation |
+| Signature to onboarding | Full required execution and final document reference | Financial/readiness checklist |
+| Onboarding to site handoff | Required confirmations and outstanding exceptions | Authorized access/possession decision |
+| Site handoff to resident operations | Actual possession and reconciled business record | Ongoing resident service in existing processes |
+
+Each receiver acknowledges the assigned next step or the company queue records the assignment under its established rules. A notification without an owner doesn't count as a handoff. A rejected handoff returns with a specific reason and an accountable sender.
+
+### Changes after lease sending
+
+A request to change the move-in date enters an employee task. The system identifies the current envelope or executed agreement, but doesn't decide whether an amendment, correction or new document is required. The manager/lease administrator follows the approved process and authorizes any resulting document and communication.
+
+If the property becomes unavailable while a lease is pending, the team resolves the contractual and allocation issue. No automatic switch to a "similar" home occurs. The same stop applies when an executed agreement exists: this is a business/legal event, not a failed technical step to replay.
+
+If a signature is completed during an outage, reconciliation retrieves that existing agreement and resumes filing/onboarding only after confirmation. It doesn't ask the household to sign again to restore the automation's preferred sequence.
+
 ## 9. Exceptions, edge cases and preventing lost work
 
 ### Business exceptions
@@ -437,6 +664,66 @@ Backups, restore exercises, access reviews and safe replay are part of operation
 Track response time, appointments successfully confirmed, missing-document aging, ready-for-review backlog, human-review time, time from authorization to confirmed lease send, signature aging, onboarding blockers and unresolved exceptions. Show rates of human correction and fallback as well as throughput.
 
 Measure saved administrative time against sampled baseline work. Separate system processing time from time waiting for applicants, employees or providers. Do not turn a criteria label or applicant demographic inference into a performance metric. Access to outcomes and any authorized fairness review follows the company's legal and privacy controls.
+
+### Communication permissions are an operating record
+
+The company records the permitted sender, channel, subject, source and time of permission, plus any withdrawal. Responding to an inquiry isn't a blanket authorization for every future campaign. The deployment separates requested operational communication from marketing and applies the approved law, provider and carrier requirements to each route.
+
+For example, Twilio's policy distinguishes an inbound conversational response from recurring engagement, requires sender/subject-specific consent and provides an opt-out route. Its US A2P 10DLC documentation describes business and campaign registration for that messaging route. These are examples of production dependencies, not an instruction to install Twilio or a complete statement of messaging law. [Twilio messaging policy](https://www.twilio.com/en-us/legal/messaging-policy), [Twilio A2P 10DLC registration](https://www.twilio.com/docs/messaging/compliance/a2p-10dlc/direct-standard-onboarding).
+
+A renter who stops one channel isn't marked withdrawn from the rental application on that basis. The company uses a permitted alternative or employee handling for required business communication. A household withdrawal and a messaging opt-out are different events.
+
+### Daily, weekly and change-driven operation
+
+| Cadence | Review | Owner | Evidence left behind |
+|---|---|---|---|
+| Start of business day | Unowned work, overdue reviews, failed delivery and today's access/readiness issues | Leasing/site supervisors | Assignment and coverage decisions |
+| Throughout the day | New exceptions and time-sensitive escalations | Named stage owners | Acknowledged tasks and next actions |
+| End of business day | Tomorrow's tours/possession and handoff coverage | Leasing/site leads | Confirmed coverage and unresolved blockers |
+| Weekly | Backlog, rework, service failures, spending and correction samples | Regional operations/support | Action list and accountable follow-up |
+| After provider/policy change | Affected workflows, open files and acceptance evidence | Platform owner/compliance | Approved release or continued pause |
+| Scheduled recovery exercise | Backup restoration and reconciliation without duplicate actions | Technical operator/operations | Test outcomes and remediation |
+| Staff access change | Removed permissions, reassigned tasks and provider credentials | Administrator/security | Access review and ownership changes |
+
+These are proposed operating routines; the company chooses the actual cadence and coverage. They use existing meetings and queues where possible. A background service still needs accountable maintenance, even when leasing employees don't log into it.
+
+### Incident recovery: a signature service outage
+
+1. Monitoring identifies the failure and opens an incident with the affected envelope references and last confirmed outcomes.
+2. Operations pauses affected sends/reminders and assigns manual coverage. Staff see which lease files are delayed; unrelated inquiry handling can continue if its services remain safe.
+3. The technical operator restores connectivity and checks the provider's actual statuses before retrying any send.
+4. Envelopes that already exist continue from their confirmed state. Unknown outcomes stay blocked for investigation; they don't trigger replacement agreements.
+5. Filing and PMS updates are reconciled separately. Employees check any manually completed work so recovery doesn't repeat it.
+6. Operations closes the incident only after the affected-work list has owners or confirmed completion. The team records the cause, correction and prevention work.
+
+If the full automation is unavailable, the company's existing application, provider and lease processes remain usable. Manual-mode instructions identify which automatic actions are paused and what references employees must record. Recovery imports or reconciles those confirmations instead of replaying the outage period indiscriminately.
+
+### Privacy lifecycle and controlled disposal
+
+Access rights depend on job and record scope. A reviewer may need source evidence that a regional workload report does not. Support usually needs action references and failure context, not full applicant documents. Elevated access for an incident is approved, time-limited and logged under company policy.
+
+The retention schedule distinguishes original documents, reports, extracted fields, agreements, message history and operational logs. It names the retention authority, legal-hold route and disposal method. The FTC's Disposal Rule guidance includes landlords and covers consumer-report information and information derived from it; deletion planning must include more than the original PDF. [FTC consumer-report disposal guidance](https://www.ftc.gov/business-guidance/resources/disposing-consumer-report-information-rule-tells-how).
+
+Backups follow the approved retention and recovery schedule too. The company documents how removed records remain protected until backup expiry and how a restore avoids reactivating withdrawn contact permission or deleted work. It doesn't promise instant erasure from every historical backup if the storage process cannot provide it.
+
+### Acceptance scenarios the company signs off
+
+| Scenario | Required business result | Acceptance owner |
+|---|---|---|
+| Same event delivered twice | One permitted action, one external reference, retained duplicate history | Technical operator/business owner |
+| Contact changed or ambiguous | No private disclosure until verified | Leasing/security |
+| Unknown fact or AI outage | Visible help task and permitted acknowledgement, no invented answer | Leasing |
+| Net/gross mismatch or unreadable document | Uncertain evidence stays out of unsupported criteria calculation | Application reviewer |
+| Report dispute or sensitive request | Correct restricted human route, no automated adverse notice | Compliance |
+| Two approvals competing for one home | Only the authoritative permitted allocation proceeds | Manager |
+| Approval changed before send | Stale authorization cannot send the old document | Manager/lease administrator |
+| Signer complete; countersigner outstanding | Lease remains not fully executed | Lease administrator |
+| Lease complete; PMS update fails | Existing agreement preserved, sync exception, no duplicate envelope | Platform owner |
+| Payment pending or home unready | No false readiness/possession confirmation | Accounting/site operations |
+| Outage with manual work completed | Recovery reconciles actual outcomes without repeating actions | Technical operator/operations |
+| Primary owner absent | Qualified backup receives the existing task and context | Regional operations |
+
+Acceptance is based on received messages, actual provider outcomes, authoritative records and visible tasks. A successful internal run or attractive workflow drawing isn't enough. Unpassed controls remain manual or out of launch scope until the owner accepts the evidence.
 
 ## 10. Complete production workflow map reference
 
@@ -667,3 +954,53 @@ The drawing is complete only if a prospect can trace both the ordinary path and 
 - Resident operations receives a confirmed handoff, not an assumed move-in.
 
 The meeting explanation is simple: the company keeps its tools and decisions. The background system connects the work, prepares evidence, completes routine authorized steps and makes unfinished work visible. Its value comes from doing that consistently across the portfolio, not from letting AI decide who gets a home.
+
+### 10.12 Supporting records to show beside the map
+
+These are record labels, not additional process nodes. Draw them beside the existing containers and arrows. They explain what information makes a handoff trustworthy without turning the map into a database diagram.
+
+| Record label | Attached to existing map elements | Business meaning |
+|---|---|---|
+| Source event/reference | P1, S15, S16 | What arrived, when and whether it already ran |
+| Contact permission/verification | P2, S4, E1, E13 | Where communication is permitted and identity/contact uncertainty remains |
+| Household/adult relationships | P10, S3, S7 | Which distinct people belong to the file and in which roles |
+| Facts and policy versions | P3, P14, S13 | Which authorized facts and rules supported the work |
+| Evidence basis/period/source | P12, P13, P14, S8 | What the value means and where it came from |
+| Action-specific human authority | P16, P20, S15 | Who authorized which version, terms, document and communication |
+| Allocation confirmation | P19, O7, S3 | Whether the unit is authoritatively reserved |
+| Envelope and execution evidence | P21, P23, O9, S17 | Which agreement exists and whether every required signature completed |
+| Financial/readiness confirmations | P25, S18, S19 | What is satisfied, pending or unresolved before possession |
+| Exception/incident record | P29, S2, S20 | Owner, deadline, last confirmed state and recovery route |
+| Retention/legal-hold instruction | S8, S15, S20 | How the company preserves or disposes of the record under approved policy |
+
+### 10.13 Diagram overlays for a prospect meeting
+
+Use the primary map for the ordinary household process. Then reveal separate overlays for four questions: who decides, which system owns the record, what happens on failure, and what the company must configure before launch. Those overlays reuse the existing IDs so the prospect doesn't have to learn four different maps.
+
+The "who decides" overlay highlights A3/A4 and D9–D11, plus the possession authority at D15. The "record owner" overlay highlights S2, S3, S8, S17 and S18, with S15 labeled as execution memory. The failure overlay follows E boxes to P29 and the recovery decisions, showing that a blocked file still has an owner.
+
+The configuration overlay highlights S13, the integration inventory and rollout acceptance gates. It makes clear that published criteria, approved templates, provider access, permissions and service coverage belong to the company before unattended work begins.
+
+For a prospect with read-only PMS access, annotate the affected arrow as "employee completes and confirms update." For a company without self-guided tours, keep the staff-guided branch and remove the access-service branch from that company's implementation view. The master blueprint retains both routes; the prospect-specific map shows only supported, agreed capabilities.
+
+### 10.14 Research register and limits
+
+Research checked on 16 September 2026. These sources support the specific observations beside them; the proposed workflow and controls are this blueprint's design. Vendor documentation can change, and public pages don't replace a signed agreement, approved account access or jurisdiction-specific legal review.
+
+| Research area | Primary source | Implication for this blueprint |
+|---|---|---|
+| PMS access approval | [AppFolio partner process](https://www.appfolio.com/stack/become-a-partner) | Confirm approval and security review; don't promise unrestricted integration |
+| Specific PMS business resources | [AppFolio API catalogue](https://www.appfolio.com/stack/partners/api) | Validate each required read/write operation against actual account access |
+| Interface-specific PM connections | [Yardi interfaces](https://www.yardi.com/company/find-an-interface-partner/) | Match the interface to the business action; don't assume one connection covers everything |
+| Event-delivery failure | [Buildium Open API](https://developer.buildium.com/) | Include prompt preservation, failure monitoring and catch-up reconciliation |
+| Signature status | [Docusign Connect explanation](https://www.docusign.com/blog/developers/dsdev-webhook-listeners-part-1) | Distinguish recipient progress from whole-agreement completion |
+| Signature delivery recovery | [Docusign failure logs/retries](https://www.docusign.com/blog/developers/common-api-tasks-get-connect-failure-logs-and-attempt-to-retry-webhook-call) | Verify existing outcomes and investigate failed callbacks before resubmission |
+| Income product restrictions | [Plaid Check documentation](https://plaid.com/docs/check/) | Confirm the selected product and permitted purpose; no automatic addition of predictive scoring |
+| Screening evidence limitations | [FTC 2023 tenant-report case](https://www.ftc.gov/news-events/news/press-releases/2023/10/ftc-cfpb-settlement-require-trans-union-pay-15-million-over-charges-it-failed-ensure-accuracy-tenant) | Preserve source context, dispositions and correction routes |
+| Accommodation route | [HUD assistance animals](https://www.hud.gov/helping-americans/assistance-animals) | Keep human accommodation handling distinct from ordinary pet policy |
+| Communication permission | [Twilio messaging policy](https://www.twilio.com/en-us/legal/messaging-policy) | Track sender/channel/subject permission and opt-out; don't assume recurring contact authority |
+| Business texting setup | [Twilio registration guide](https://www.twilio.com/docs/messaging/compliance/a2p-10dlc/direct-standard-onboarding) | Treat registration and provider acceptance as launch dependencies where applicable |
+| Information disposal | [FTC Disposal Rule guidance](https://www.ftc.gov/business-guidance/resources/disposing-consumer-report-information-rule-tells-how) | Include extracted/derived report information in the approved disposal process |
+| AI governance resource | [NIST Generative AI Profile](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence) | Use risk review and evaluation; don't present a voluntary framework as certification |
+
+The existing legal and income sources in Section 7 remain part of the reference. This research register doesn't authorize new data collection, screening rules, marketing, provider purchases or automated notices. It identifies questions and dependencies the company must resolve before deployment.

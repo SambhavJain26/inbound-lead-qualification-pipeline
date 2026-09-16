@@ -1762,3 +1762,31 @@ Checks: ten top-level sections present; all referenced map IDs resolve (8 actors
 capacity math checked, source links verified against official FTC, CFPB and Plaid
 documentation, and final wording reviewed with completeness/copyediting skills.
 No real applicant data, secrets, service changes or external business actions involved.
+
+## 2026-09-16 — Production Blueprint Expanded With Further Research
+
+Actor: Codex, at the operator's request for further research and approximately
+1,000 lines. Expanded the same production blueprint from 669 to 1,006 lines while
+retaining the ten-section business-first progression and existing diagram IDs.
+
+New material covers baseline/net capacity measurement, costs, Monday staff workloads,
+portfolio/program boundaries, signed-off integration discovery, overlapping sender
+prevention, rollout acceptance gates, provider selection, peak-load limits, event and
+record reconciliation, alternative income evidence, report context, accommodations,
+substantive human review, household handoffs, post-send changes, contact permission,
+operating cadences, incident recovery, privacy/disposal and launch acceptance tests.
+Added supporting-record labels, prospect-specific diagram overlays and a research
+register distinguishing public-source observations from proposed operating controls.
+
+Research uses official AppFolio, Yardi, Buildium, Docusign, Plaid, Twilio, FTC, HUD
+and NIST material, with 18 unique primary-source links across the finished document.
+Buildium's publicly indexed documentation supports finite retry/suspension behavior;
+full-page fetch is too large. Provider-specific capabilities remain subject to
+approved account access/contracts. Twilio is a production-dependency example only,
+not a demo tool-surface revision or installation request. The NIST profile is a
+voluntary resource, not compliance certification. No new legal notice automation.
+
+Verification: ten top-level sections, 33 well-formed tables, 103 unique defined map
+IDs with no unresolved references, illustrative math unchanged, copyediting checks
+and Git whitespace check pass. Blueprint only; no workflows, services, applicants,
+provider accounts or operational data changed. Existing unrelated work preserved.

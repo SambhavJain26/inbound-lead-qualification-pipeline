@@ -66,6 +66,23 @@ column labels and right-side page numbers while still checking every exact word.
 Managed preview filenames are regenerated cleanly when page counts change;
 historical proofs remain recoverable from Git and the comparison backup.
 
+### Implemented written-question worksheet — second deck, 2026-09-17
+
+.lesson-fields--questions uses two equal columns for complete review questions,
+at the existing 48/72 body scale; it is not a smaller per-page font override.
+Ruled rows and inverted colors inherit from .lesson-fields. Selection boxes in
+this layout have compact horizontal padding and no exterior margin. Include a
+selected question's question mark inside its span so it stays attached and the
+exact-copy extractor doesn't introduce whitespace before punctuation. Measure the
+full phrase plus box padding rather than assuming the word alone fits a cell.
+
+Use .nb for short hyphenated terms or closing phrases when a line break splits a
+compound word or leaves a one-word orphan. This preserves exact writing rather
+than weakening the PDF checker or introducing nonstandard hyphen characters.
+Inspect SVG loop paths too: their bounding boxes can fit while an inset curve
+crosses the first or last glyph. Geometry is supplied by each post; shared size,
+palette and leading remain unchanged.
+
 The fixed template behind every LinkedIn document carousel built with this kit.
 `carousel-template.css` is the single source of truth; per-post HTML supplies
 content and picks layout classes only, and must never introduce its own sizes,

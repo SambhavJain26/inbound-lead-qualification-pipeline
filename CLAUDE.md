@@ -291,3 +291,11 @@ because whole-page x/y sorting can interleave labels or page numbers. Managed
 slide-N.png previews must be regenerated without stale names when page counts
 change: Poppler pads after nine pages. Preserve historical proofs before replacing
 them and inspect full-size final-PDF pages plus representative mobile previews.
+
+## Written-Question Carousel Layout
+
+Use the shared lesson-fields--questions modifier for complete two-column review
+questions at the existing body scale. Measure selection padding plus punctuation;
+keep a selected question's question mark inside its span. Use nb for short compound
+words or closing phrases to avoid split hyphens and one-word orphans without
+changing copy. Inspect circle curves against glyphs, not only their outer bounds.

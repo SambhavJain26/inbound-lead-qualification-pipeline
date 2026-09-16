@@ -140,7 +140,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Use the synthetic demo as the pattern's evidence, not as a client-results claim. No real consumer reports, protected-class inference, AI decisions, rankings or outcome recommendations. The worksheet is an operational aid, not legal advice or a universal screening policy.
 
-The matching ten-page first-carousel PDF proof was rendered and inspected on 2026-09-17. Exact wording, layout and final-PDF checks pass; user design approval is pending. Earlier seven-page previews are superseded. Do not batch the other five or publish this proof before the appropriate approval.
+The matching ten-page first-carousel PDF proof was rendered and inspected on 2026-09-17. Exact wording, layout and final-PDF checks pass. Earlier seven-page previews are superseded. The user subsequently requested B5-04 individually; four decks now remain ungenerated. Technical QA is not user design approval or authorization to publish.
 
 ## B5-02 — Full current-build demo
 
@@ -521,7 +521,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Use the synthetic demo as the pattern's evidence, not as a client-results claim. No real consumer reports, protected-class inference, AI decisions, rankings or outcome recommendations. The worksheet is an operational aid, not legal advice or a universal screening policy.
 
-Only copy and design directions are current in this pass. The earlier first-carousel PDF and previews are superseded; they must not be published or treated as matching this rewrite. Render one new design proof before batching the other five.
+Generated individually on 2026-09-17 after the user's next-carousel request. Matching source: carousel-kit/b5-04-reviewable-application-file.html. Final PDF: output/pdf/b5-04-reviewable-application-file.pdf, nine pages, 116,563 bytes. Every final-PDF page and representative mobile previews inspected; exact title/body/footer wording, layout, dimensions, embedded used fonts and one grain image checks pass. The written-question worksheet uses the shared two-column variant; page seven remains a quiet navy human-action boundary. See [b5-04-carousel-design-assessment.md](b5-04-carousel-design-assessment.md). No publication or approval of the remaining four decks is implied.
 
 ## B5-05 — The booking worked. The time was wrong.
 

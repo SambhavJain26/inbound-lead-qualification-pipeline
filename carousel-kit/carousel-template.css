@@ -760,6 +760,13 @@ html, body {
 }
 .lesson-fields + .lesson-copy { margin-top: 24px; }
 
+/* Written review questions need wider columns than short worksheet labels.
+   This uses the existing body step, never a per-page shrink-to-fit. Inverted
+   colors inherit from the shared .lesson-fields rules below. */
+.lesson-fields--questions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lesson-fields--questions > li { font-size: var(--size-lesson-body); font-weight: 600; }
+.lesson-fields--questions .sel { margin-left: 0; margin-right: 0; padding-left: .06em; padding-right: .06em; }
+
 /* New layouts include their inverted colors in the same implementation. */
 .slide--teach.slide--invert::before {
   background-image:

@@ -4,8 +4,10 @@ Updated 2026-09-17 after the second design review. This is the current productio
 brief for six carousels, not a claim that new PDFs have been rendered or approved.
 The current exact public copy is in [linkedin-post-scripts.md](linkedin-post-scripts.md).
 Earlier seven-page PDF/PNG proofs are rejected and superseded. The first ten-page
-proof is now rendered and inspected; its design approval is pending. The other
-five decks remain briefs, not completed PDFs. See the latest self-assessment.
+proof is now rendered and inspected. The user requested the next deck, so the
+nine-page B5-04 review-file checklist is also rendered and inspected; the other
+four remain briefs. Individual technical QA does not establish design approval.
+See the first and B5-04 self-assessments.
 
 ## 1. What these documents must do for the reader
 
@@ -150,8 +152,8 @@ in the shared stylesheet before rendering. Do not silently shrink type per page.
 | Scope/footer note and eyebrow | 36px / 48px | About 12px at 360px width; reserve up to two footer lines, never shrink to fit. |
 | Payoff word, if the sentence supports one | Existing Zodiak 192px | One word, not a whole paragraph in a second face. |
 
-These are design specifications, not claims that those new tokens are already
-implemented. A teaching page needs a visible title/body difference; it should not
+These tokens are implemented in the shared teaching stylesheet and used by the
+two generated decks. A teaching page needs a visible title/body difference; it should not
 look like two paragraphs set in the same weight and size.
 
 Budget a 48px title-to-body gap. Use 24px spacing within a related group and 48–72px
@@ -323,14 +325,17 @@ Technical review checks exact copy, page count, mark fit, content/footer clearan
 loaded fonts, equal page dimensions, embedding and the single shared grain tile.
 Those tests do not establish that the user likes the design.
 
-## 10. Next production step
+## 10. Current production status and next step
 
 The new ten-page B5-01 proof is rendered. It uses its identity/reference page,
 booked-versus-attended comparison, review boundary and final worksheet to test the
 new hierarchy and annotation mix. Every final-PDF page was inspected; representative
-360px-wide previews were checked too. Await user feedback before applying the
-accepted implementation to the remaining five PDFs.
+360px-wide previews were checked too. The subsequent request generated only the
+next nine-page B5-04 checklist. It shares the teaching hierarchy and adds a named
+two-column written-question worksheet, rather than shrinking long field labels.
 
-The earlier copy-and-design-brief pass produced no PDF. This follow-up generated
-only the first proof, with no external publication, recording or runtime change.
-The video and seven text-post scripts remain unchanged.
+The earlier copy-and-design-brief pass produced no PDF. There are now two matching
+PDFs, with no external publication, recording or runtime change. B5-06/09/11/13
+remain ungenerated. Continue with the next requested deck individually. The video
+and seven text-post scripts remain unchanged. B5-04's detailed review is in
+[b5-04-carousel-design-assessment.md](b5-04-carousel-design-assessment.md).

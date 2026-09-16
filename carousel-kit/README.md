@@ -1,6 +1,6 @@
 # Leasing carousel production status
 
-## Current first proof; design approval pending
+## Current generated decks; individual review
 
 All six carousel sections in ../docs/build-5-content-strategy/linkedin-post-scripts.md
 were rewritten after the user's second design review. Current counts are
@@ -30,8 +30,21 @@ No page contains inline size/color/spacing overrides. The new proof uses two blu
 boxes, four visible blue underlines, three blue circles, two gold highlights and
 one gold underline on its dark page. These are observations, not quotas.
 
-Next step is user review. Don't batch the other five PDFs until the direction is
-accepted. No account uploads, publishing or operational-service changes happened.
+The user subsequently requested the next carousel. B5-04 is now rendered as
+b5-04-reviewable-application-file.html and output/pdf/b5-04-reviewable-application-file.pdf:
+nine pages, 116,563 bytes. All final-PDF pages, its contact sheet and representative
+360px cover/human-action/review-packet previews were inspected. Exact copy, layout,
+fonts and the single grain-image checks pass. Its separate assessment is
+../docs/build-5-content-strategy/b5-04-carousel-design-assessment.md.
+
+The shared .lesson-fields--questions layout sets full written questions in two
+columns at the existing 48/72 body scale, with compact selection-box padding.
+B5-04 has two blue boxes, four blue underlines, two blue circles and three gold
+highlights. Page seven is the only dark page and deliberately has no focal mark.
+
+Two decks are generated; B5-06/09/11/13 remain briefs. Continue one requested deck
+at a time, not a batch inferred from this request. No account uploads, publishing
+or operational-service changes happened. Technical QA is not user preference.
 
 ## Existing helpers
 

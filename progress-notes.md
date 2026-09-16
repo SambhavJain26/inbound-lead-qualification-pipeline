@@ -2052,3 +2052,39 @@ Remaining trade-offs: more instructional text than vendor averages, repeated
 grouped-lesson shell, fullest closing worksheet and two wrapped scope footers.
 User design approval is pending. No engagement, client ROI or accessibility
 certification claimed. Unrelated dirty work preserved; only task files staged.
+
+## 2026-09-17 — Second carousel generated: application review-file checklist
+
+The user requested the next carousel individually. Generated B5-04 only, nine
+pages, with matching editable HTML, final PDF, nine PDF-derived PNGs and contact
+sheet. B5-06/09/11/13 remain ungenerated. Public slide copy and caption unchanged;
+all 60 written pages and nine non-carousel posts pass the editorial checker.
+
+Used PDF verification, UI/UX Foundations and the reference kit's shared layouts.
+Same cream/navy frame and teaching hierarchy, no per-page type/spacing overrides.
+Added shared lesson-fields--questions: complete two-column questions at 48/72,
+ruled rows and inherited inverted colors. Two blue boxes, four blue underlines,
+two blue circles, three gold highlights; sole dark page seven is intentionally quiet.
+
+Initial question grid overset when the selected question's punctuation detached.
+Included question mark inside the selection and compacted shared box padding.
+Kept follow-up together after final-PDF extraction exposed a broken hyphen; kept
+routine chat together to remove a single-word orphan. Inspected and widened circle
+paths inside the existing shared frame for glyph clearance. No words deleted.
+
+All full-size final-PDF pages, contact sheet and 360px cover/human-action/packet
+previews inspected. Compared with the current first deck and previously rendered
+vendor Post 01 reference read-only. Canonical main copy: 287 words, 31.9/page,
+range 28-35. Mean band span 80.4%, range 72.6-92.4%, with the packet fullest;
+includes gaps, not ink coverage, whitespace percentage or a design-quality score.
+
+Final output: output/pdf/b5-04-reviewable-application-file.pdf, nine pages,
+116,563 bytes. Exact copy, semantic reading order, dimensions, loaded families,
+embedded used-font subsets, content/footer clearance and one grain image pass.
+Remaining trade-offs: repeated grouped lessons, denser packet, less composition
+variety than vendor reference. Technical QA is not user acceptance or client ROI.
+
+Updated production statuses, shared design guidance and separate B5-04 assessment.
+Durable question/punctuation/compound-word gotchas mirrored in AGENTS/CLAUDE.
+No runtime, applicant, account, upload, publishing or scheduling actions. Existing
+unrelated dirty changes preserved; only this task's files and append entries staged.

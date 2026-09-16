@@ -254,3 +254,15 @@ Request Switzer and Zodiak through separate Fontshare stylesheet links and check
 the loaded faces; a successful fetch of one family does not prove both loaded.
 Keep approved slide wording unchanged and never batch the remaining carousels
 when the user has asked for one design proof before approval.
+
+## Carousel Review And Revisions
+
+User-authorized copy revisions update canonical scripts and HTML together; the
+exact-copy checks then validate the revised wording. Keep internal build numbers
+off public pages. Favor short claims and varied existing layouts, not a paragraph
+on every slide. Compare rendered vendor COI references, the previous proof and
+the revision; record weaknesses and trade-offs in the content-strategy assessment.
+Use `node carousel-kit/assess-carousel.cjs --current` for repeatable comparison.
+Count visible `innerText`, not `textContent`, which can merge words across breaks.
+Content-band span measures block height including gaps, not actual ink coverage
+or whitespace percentage. Technical fit does not establish design acceptance.

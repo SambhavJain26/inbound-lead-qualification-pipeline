@@ -26,83 +26,83 @@ Each handoff is small. Across a busy portfolio, the checking and chasing can occ
 
 I built a demo around those handoffs, from first inquiry to a sandbox lease signature. The point isn't to let AI choose a tenant. It's to prepare the work, keep its status visible and leave the rental decision with a person.
 
-This carousel shows the scope. Synthetic applicant, test services, no physical move-in.
+This carousel shows the scope. Synthetic applicant, operator-simulated tour completion and sandbox signing. It ends at a confirmed test signature and welcome message, not physical move-in. AI extracts sourced information; configured rules check criteria; the manager decides.
 
 ### Carousel slides
 
 #### Slide 1
 
-Title: The work between an inquiry and a lease
+Title: A fast reply isn't a signed lease.
 
-Body: A quick reply starts the conversation. The operational work continues through scheduling, application review, a manager's decision and signature confirmation.
+Body: The work is in the handoffs.
 
-Footer: Build 05 · Synthetic leasing demo
+Footer: Synthetic leasing demo
 
-Visual: A simple horizontal sequence, inquiry through signed test lease. Mark the human decision separately.
+Visual: Bold typographic cover. Highlight “fast reply”; select “lease” once. No diagram or screenshot panel.
 
 #### Slide 2
 
-Title: First, answer the question
+Title: Answer from approved facts.
 
-Body: The renter asks about the home. The reply uses approved property facts, records the inquiry and keeps unsupported promises out of the conversation.
+Body: Not guesses. Not promises.
 
-Footer: Grounded answers, not invented availability
+Footer: Property facts, not invented availability
 
-Visual: Listing facts beside a short factual reply. Use a verified demo frame if available.
+Visual: Short statement and two-line contrast, with one gold marker phrase.
 
 #### Slide 3
 
-Title: A booking isn't an attended tour
+Title: Booked isn't attended.
 
-Body: The selected slot becomes a calendar booking. Attendance is a separate event; a confirmed appointment must not silently become a completed showing.
+Body: An appointment isn't proof of a visit.
 
-Footer: Demo attendance is simulated by the operator
+Footer: Tour completion is simulated in this demo
 
-Visual: Two distinct states, booked and tour completed. Label the simulated transition.
+Visual: Oversized two-line statement. Circle “Booked”; leave the explanation short and separated.
 
 #### Slide 4
 
-Title: An application isn't a lease
+Title: An application isn't approval.
 
-Body: The renter submits information and documents for review. The system organizes those materials; submitting the form doesn't grant approval or create a tenancy.
+Body: Collect information. Organize documents. Prepare the review.
 
-Footer: Application → evidence preparation
+Footer: Evidence preparation, not a tenancy
 
-Visual: Form and uploaded document feeding a review card, not a signed contract.
+Visual: Three unnumbered ruled rows beneath the statement. No application screenshot.
 
 #### Slide 5
 
-Title: The manager makes the decision
+Title: AI makes the rental decision?
 
-Body: Extracted values carry sources. Configured rules produce a criteria result. The manager reviews the file and records the rental decision; AI doesn't choose the applicant.
+Body: No. The manager does.
 
 Footer: Human authority stays explicit
 
-Visual: Evidence and criteria feeding a human review point. Keep the decision outside the AI box.
+Visual: The only inverted page. A large Zodiak “No.” rejects AI authority; the manager is named underneath.
 
 #### Slide 6
 
-Title: Sent isn't signed
+Title: Sent isn't signed.
 
-Body: An approved template goes to the signing service. The signature callback updates the record only after completion is confirmed, not when an email is sent.
+Body: Wait for the signing service to confirm completion.
 
-Footer: DocuSign developer sandbox in this demo
+Footer: DocuSign sandbox · Test lease only
 
-Visual: Separate sent and signed states with the provider confirmation between them.
+Visual: Quiet lead-in above an oversized highlighted “signed.” Provider confirmation remains explicit in the short explanation.
 
 #### Slide 7
 
 Title: Less chasing. Clearer handoffs.
 
-Body: The design keeps the next step, owner and status visible. This demo stops after a confirmed test signature and welcome message, before physical move-in.
+Body: Next step. Owner. Status.
 
-Footer: Production value must be measured in a pilot
+Footer: Demo ends at test signing + welcome, not move-in
 
-Visual: Recap the six handoffs. Add a clear scope boundary after the welcome message.
+Visual: Strong closing statement, three short lines, personal byline and a scope-boundary footer.
 
 ### Production notes
 
-Use a diagram-led layout; screenshots are supporting evidence, not the entire slide. Don't add a time-saved number. Sources: `the-full-flow.md`, newest `progress-notes.md`, and the B5-01 brief. Booking and attendance must remain separate on the slide.
+Revised 2026-09-17 at the user's request after comparing vendor COI carousels. Use annotated typography, varied existing kit layouts and sparse copy, not screenshot panels or dense diagrams. Public slides must not carry internal build numbers. Supporting detail stays in this caption. Don't add a time-saved number. Sources: `the-full-flow.md`, newest `progress-notes.md`, and the B5-01 brief. Booking and attendance remain separate; AI never decides; signing and physical move-in remain separate. Only this seven-slide design proof is approved for production work; the other five await design acceptance.
 
 ## B5-02 — Full current-build demo
 

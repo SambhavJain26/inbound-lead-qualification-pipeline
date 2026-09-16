@@ -1917,3 +1917,39 @@ footer overlap remains. No claim that design has been approved by the user.
 
 Other five carousels remain ungenerated pending feedback. No publishing, upload,
 runtime/service changes or applicant/account actions. Existing dirty work preserved.
+
+## 2026-09-17 — Carousel redesign after vendor COI comparison
+
+User rejected first proof's text density and repetitive design; requested vendor
+COI references, shorter slides, breathing room, no public Build 05 and self-review.
+This supersedes the prior first-proof design choices, not project/runtime scope.
+
+Read and rendered vendor decks 01/04/07/13 from their moved project directory,
+inspected all four contact sheets and compared the preserved first proof against
+the revision. Reference files were not edited. Used existing positioning, social,
+copy-editing and PDF verification skills; no new marketing claims or ROI numbers.
+
+Revised only B5-01 canonical caption, slide copy, footers and visual directions
+alongside its HTML. Main reading copy fell from 197 to 70 words (64.5% reduction),
+28.1 to 10 words/page; current range 8–13. Visible innerText preserves breaks in
+counts; preliminary textContent counts were corrected in the written assessment.
+Seven existing block combinations replace three repetitive arrangements.
+Mean content-band span fell 84.2% to 56.0%; this is not actual whitespace coverage.
+
+Removed build numbering from public page furniture. Kept kit type sizes/palette,
+one selection and one inverted page with Zodiak No. AI authority is rejected;
+the manager makes the rental decision. Tour simulation, test signing and no
+physical move-in remain disclosed. Added only checks--plain to remove the unused
+numeral gutter; documented it and unchanged inverted list colors in the system.
+
+Added repeatable read-only comparison helper and detailed comparative assessment.
+Original proof comes from commit 8c016e9 on a fresh checkout. Renderer now rejects
+public build numbering. README/design guidance and identical AGENTS/CLAUDE review
+rules updated. Final PDF is 7 pages, 98,574 bytes, with final-PDF PNG previews.
+Layout/copy, footer/pen, fonts, dimensions, embedding and one-grain-image checks
+pass. Inspected all seven full-size pages and the contact-sheet rhythm.
+
+Self-review acknowledges the caption carries more detail, the list page remains
+fullest, micro footers are small, and this is not proof of engagement or measured
+client ROI. The user's design acceptance is pending; other five decks stay on hold.
+No publishing, runtime/service or external-account actions. Unrelated work preserved.

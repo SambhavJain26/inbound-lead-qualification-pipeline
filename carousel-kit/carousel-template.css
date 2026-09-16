@@ -554,6 +554,7 @@ html, body {
 }
 
 .checks li:first-child { border-top: var(--w-hair) solid var(--rule); }
+.checks--plain li { padding-left: 0; }
 .checks li b {
   position: absolute;
   left: 0;

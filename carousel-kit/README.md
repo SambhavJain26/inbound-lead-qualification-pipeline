@@ -1,38 +1,69 @@
-# Build 05 carousel design proof
+# Leasing carousel design proof
 
-Only B5-01 has been produced. The other five carousels remain on hold for the user's design approval. No LinkedIn upload or publishing occurred.
+Only the first seven-slide carousel has been produced. The other five remain on
+hold for design acceptance. Nothing has been uploaded or published to LinkedIn.
+
+## Current direction
+
+The first proof was too dense and repetitive. On 2026-09-17 the user requested a
+revision based on vendor COI decks: shorter copy, breathing room and no public build
+numbers. This version follows that direction, not the superseded first proof.
+
+The palette, paper, grain and fonts come from the maintenance-triage kit. Vendor
+COI decks inform the editorial rhythm: claims, contrasting type treatments,
+lists and one brief dark payoff. Main copy now averages 10 words per page, down
+from 28.1, excluding furniture. Details and demo boundaries remain in the caption.
+
+The user authorized shortening. B5-01 copy and visual directions in
+`../docs/build-5-content-strategy/linkedin-post-scripts.md` were revised with the
+HTML; exact-copy checks still apply. Other posts are unchanged.
 
 ## Files and provenance
 
-- `b5-01-inquiry-to-lease.html`: seven-slide editable source beside the shared stylesheet.
-- `carousel-template.css` and `design-system.md`: unchanged copies from the maintenance-triage carousel kit at its current location, `D:/codex_projects/automation_projects/maintenance-triage/carousel-kit/`.
-- `render-carousel.cjs`: local headless renderer and checks, using the bundled desktop runtime. It renders only the named deck; it doesn't open account tabs or modify application services.
-- Final document: `../output/pdf/b5-01-inquiry-to-lease.pdf`.
-- Approval previews: `../output/carousels/b5-01-inquiry-to-lease/contact-sheet.png` and seven full-size slide PNGs rendered from the final PDF.
-- Intermediate layout diagnostics: ignored `../tmp/carousel-qa/`.
+- `b5-01-inquiry-to-lease.html`: editable seven-slide source.
+- `carousel-template.css`: maintenance kit copy plus `.checks--plain`, removing
+  the unused numeral gutter for unnumbered rows.
+- `design-system.md`: reference system with local revision guidance.
+- `render-carousel.cjs`: named-deck renderer and layout checks.
+- `verify-carousel.py`: read-only checks of the final PDF.
+- `assess-carousel.cjs`: read-only vendor comparison and before/after render;
+  retrieves the original proof from Git commit `8c016e9`.
+- PDF: `../output/pdf/b5-01-inquiry-to-lease.pdf`.
+- PDF-derived contact sheet and full pages: `../output/carousels/b5-01-inquiry-to-lease/`.
+- Assessment: `../docs/build-5-content-strategy/carousel-design-assessment.md`.
+- Intermediate checks and comparisons: ignored `../tmp/`.
 
-The approved title, body and footer wording comes from B5-01 in `docs/build-5-content-strategy/linkedin-post-scripts.md`. The copy is not shortened to fit. The kit's newer design directions supersede that script's optional screenshot/diagram stage directions: this version uses annotated typography, not screenshot panels or interface mockups.
+References now live under `D:/codex_projects/automation_projects/`, not the old
+`D:/codex/_projects/automation/_projects/` path. Reference files were not edited.
 
 ## Design choices
 
-Cream ruled paper, the existing baked grain tile, Switzer text, gold marker and blue pen annotations. One selection box identifies “lease” on the cover. Slide 5 is the only dark slide and the only Zodiak word: “decision,” affirmed with an underline because the manager owns it. No images, icon set, progress dots or swipe prompt added.
+Cream ruled paper, Switzer, gold marker, blue pen and one cover selection on
+“lease.” Slide 5 alone is inverted; Zodiak sets “No.” AI authority is explicitly
+rejected and the manager named. Seven block combinations vary the reading rhythm
+without introducing new themes or smaller type. No screenshots, mock interfaces,
+icons, image assets, progress dots or swipe prompts were added.
 
-The existing `.lead` size step carries the longer cover. All interior sentences use the shared statement layout. The final slide uses `.body--close` with a byline. No new layout, stylesheet override, color or per-post size rule introduced.
+## Render, verify and compare
 
-Annotation tally: eight highlights, four underlines, one circle and one selection box. Each slide has a mark; each interior slide has at most two. “Sent” is circled for examination, not struck out: it is a valid state, but not proof of signing. The dark slide's highlight stays short to avoid a wrapped swipe obscuring letter tops.
-
-## Render and verification
-
-Run from the project root:
+From the project root:
 
 ```powershell
 node carousel-kit/render-carousel.cjs b5-01-inquiry-to-lease
+& 'C:\Users\jains\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' carousel-kit/verify-carousel.py b5-01-inquiry-to-lease
+node carousel-kit/assess-carousel.cjs --current
 ```
 
-Requires installed Chrome, the bundled Playwright/sharp packages and Poppler. The defaults point to the verified local desktop runtime. Optional environment overrides are `CAROUSEL_BROWSER`, `CAROUSEL_NODE_MODULES` and `CAROUSEL_PDFTOPPM`.
+Requires Chrome, bundled Playwright/sharp, Poppler and Python PDF libraries.
+Renderer overrides: `CAROUSEL_BROWSER`, `CAROUSEL_NODE_MODULES`, `CAROUSEL_PDFTOPPM`.
+Comparison additionally requires the vendor checkout and original Git commit.
 
-Fonts still load from Fontshare. This run found that the kit's combined family URL returned Switzer without Zodiak. The HTML requests each family through its own stylesheet link, preserving the original families and weights. The renderer checks loaded font faces and refuses to export a fallback-font deck. It reruns the example's unchanged baseline-snap script after fonts settle.
+Request Switzer and Zodiak through separate Fontshare links; the combined URL can
+omit Zodiak. Check loaded faces and rerun baseline snapping after fonts settle.
+Never export a fallback-font version.
 
-The renderer checks content-band fit, footer/byline clearance, pen wrapping, exact approved wording and final PDF page count. Poppler renders the resulting PDF to PNGs; inspect the contact sheet and full pages. Run `carousel-kit/verify-carousel.py b5-01-inquiry-to-lease` with the bundled Python for final-PDF text, dimensions, font embedding and grain-image checks. Chromium rounds the declared paper height by less than one pixel; the verifier allows only that small tolerance. A successful HTML layout check alone is not visual approval.
-
-Review state: technical and visual QA completed; design acceptance is still the user's decision. Use “The work between an inquiry and a lease” as the document title on a later upload, not the filename.
+Checks cover exact revised copy, content bands, footer/byline clearance, pen fit,
+page count, paper dimensions, font embedding and the shared grain tile. Chromium's
+sub-pixel height rounding is allowed, not larger drift. Inspect the contact sheet
+and every full-size PDF page. Technical QA isn't visual acceptance or a prediction
+of engagement. Later upload title: “A fast reply isn't a signed lease.”

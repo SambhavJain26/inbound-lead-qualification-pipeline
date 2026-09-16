@@ -1,5 +1,29 @@
 # Carousel Design System
 
+## Local revision guidance — 2026-09-17
+
+The reference system below supplies the visual vocabulary, not a reason to fill
+every page. User feedback overrides the first leasing proof's density.
+Follow the vendor COI decks' contrasting layouts and shorter statements.
+
+- Remove internal build identifiers from public slide copy and page furniture.
+- Aim for 8–18 main-copy words on simple statements. Lists can be longer when
+  needed; shorten wording before reducing type or cramming the content band.
+- Keep decision authority and mock/sandbox boundaries. Supporting detail can move
+  to the caption, but don't remove disclosures merely to reach a word target.
+- Vary the reading rhythm with existing display, framing, claim, statement, list
+  and payoff blocks. Don't force every deck to use all layouts.
+- `.checks--plain` removes the unused numeral gutter while retaining existing
+  row rules, type and vertical spacing. Existing inverted list colors still apply.
+- User-authorized copy revisions update the canonical scripts and HTML together.
+- Compare actual rendered references, previous proof and revision. Record trade-offs,
+  not only successful fit checks. Measurements don't establish design approval.
+
+Use the local `node carousel-kit/render-carousel.cjs <deck-name>` renderer and
+Python verifier, not the reference's historical PowerShell render command below.
+
+## Reference system
+
 The fixed template behind every LinkedIn document carousel built with this kit.
 `carousel-template.css` is the single source of truth; per-post HTML supplies
 content and picks layout classes only, and must never introduce its own sizes,

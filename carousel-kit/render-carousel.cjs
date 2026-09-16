@@ -40,6 +40,8 @@ for (const dir of [pdfDir, previewDir, scratch]) fs.mkdirSync(dir, { recursive: 
       (0, eval)(script.textContent);
     });
     const checks = await page.evaluate(() => {
+      if (/\bbuild\s+0?\d+\b/i.test(document.body.innerText))
+        throw new Error('Remove internal build numbers from public carousel pages.');
       const faces = [...document.fonts].filter(f => f.status === 'loaded').map(f => f.family);
       if (!faces.some(f => /Switzer/.test(f)) || !faces.some(f => /Zodiak/.test(f)))
         throw new Error('Required webfonts did not load; do not export a fallback-font deck.');

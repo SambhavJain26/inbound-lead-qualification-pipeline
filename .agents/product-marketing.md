@@ -339,8 +339,10 @@ Completed in this task: customer-language foundation and product-marketing conte
 
 Content plan created: [linkedin-content-plan.md](../docs/build-5-content-strategy/linkedin-content-plan.md). It specifies fifteen posts: one full current-build demo, one short using clips and original audio from the same recording, six PDF carousels and seven text posts. No standalone image posts or extra recording task.
 
-After that plan is reviewed: draft `linkedin-post-scripts.md`. The plan is a writing/production brief, not finished copy or a published campaign.
+The completed [post scripts](../docs/build-5-content-strategy/linkedin-post-scripts.md) supply fifteen finished posts, 46 carousel slides, full-demo narration and the same-recording short edit brief. The plan remains the strategy reference. Recording, asset exports and publishing are later tasks.
 
 2026-09-16 — Created Build 05 foundations from maintenance references, current leasing evidence and primary public research. Recorded unvalidated audience/commercial assumptions, separated proposed phrasing from customer quotations, defined AI/human boundaries and restricted claims to the demonstrated scope. No content published or operational system changed.
 
 2026-09-16 — Added the content-plan handoff and the user's format contract: one master demo recording, one short extracted from that footage/audio, carousel and text support only. Scripts and production assets remain subsequent tasks.
+
+2026-09-17 — Linked the completed scripts package. Production assets and publishing remain subsequent tasks; no positioning, offer or demo-scope change.

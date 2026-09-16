@@ -1849,3 +1849,35 @@ Verification: 15 unique brief IDs, 12 unique defined shot IDs, agreed format cou
 heading spacing, resolving local links and task-file whitespace checks pass.
 Editorial review completed. Scripts, PDF exports, video recording/editing,
 scheduling and publishing remain subsequent work. No runtime/account changes.
+
+## 2026-09-17 — Build 05 LinkedIn post scripts completed
+
+Created `docs/build-5-content-strategy/linkedin-post-scripts.md` from the approved
+fifteen-post plan and completed marketing/customer-language foundations. Package
+contains fifteen finished captions/text posts, six carousels with 46 exact slides,
+twelve-shot full-demo narration/capture guidance and one same-recording short edit
+brief. No standalone image posts or extra video recording introduced.
+
+The master narration includes five exact reusable passages for the short. Its
+55-second allocation is editorial timing, not fabricated source timestamps or a
+processing-time claim. Actual source timestamps remain a post-recording task.
+Added a review-to-send fallback if signing-confirmation footage is unusable; it
+replaces the primary short, not a second short or another publication slot.
+
+Current-build captions preserve synthetic data, messaging stand-in, Sandbox and
+mock boundaries, operator-simulated attendance, human rental decisions and the
+endpoint before physical move-in. Video completion claims are gated on the fresh
+recorded evidence. Production-only integrations and readiness controls are labeled
+as proposals. No automated adverse-action wording or consumer-report collection.
+
+Primary Plaid definitions, FTC landlord guidance and LinkedIn document guidance
+checked on 2026-09-17. Definitions aren't a universal provider recommendation or
+compliance certification. No accuracy, client-results or guaranteed savings claim.
+
+Verification: fifteen ordered IDs, agreed format totals, 7/8/7/8/8/8 slide counts,
+all slide fields, twelve shot headings, exact narration reuse, no placeholders,
+caption budgets, heading spacing, resolving handoff links and task-file whitespace
+checks pass. Editorial review and hook/narrative working notes are ignored local
+artifacts. Linked the completed package from the plan and both foundation files.
+Recording, carousel design/PDF exports, editing, scheduling and publishing remain
+later tasks. No runtime changes, Airtable views or external-account mutations.

@@ -251,4 +251,4 @@ This document supplies vocabulary, qualified pain themes, source-backed excerpts
 
 The next-stage [content plan](linkedin-content-plan.md) now assigns each post a reader, business event, evidence source, demonstration boundary and purpose. It uses one full demo video, one same-footage short, six carousels and seven text posts; no standalone image posts.
 
-After that plan is reviewed, `linkedin-post-scripts.md` is the next writing task. No content has been published and no customer language has been presented as validated interview evidence.
+The completed [post scripts](linkedin-post-scripts.md) now provide all fifteen posts, exact carousel copy, full-demo narration and the original-audio short edit brief. Recording and asset production remain later tasks. No content has been published and no customer language has been presented as validated interview evidence.

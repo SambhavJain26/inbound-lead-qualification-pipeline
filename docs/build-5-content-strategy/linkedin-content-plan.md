@@ -634,7 +634,7 @@ Run a final copyedit before scripts or assets ship. Check rhythm, repeated openi
 
 ## 14. Handoff to scripts and asset production
 
-The next writing deliverable is `linkedin-post-scripts.md`, organized by B5-01 through B5-15. It should contain finished LinkedIn copy for all posts, exact slide copy for the six carousels, full-demo narration/capture guidance and an edit brief for the one short based on reusable original narration.
+The completed [post scripts](linkedin-post-scripts.md) are organized by B5-01 through B5-15. They contain finished LinkedIn copy for all posts, exact slide copy for the six carousels, full-demo narration/capture guidance and an edit brief for the one short based on reusable original narration.
 
 Before recording, the demo script should make S08–S12 intelligible on their own. After recording, replace planned capture descriptions with actual footage notes and in/out timestamps for the short. If the footage differs, revise the relevant script/brief; don't narrate missing evidence.
 
@@ -649,3 +649,5 @@ Planning references: completed Build 05 foundations, newest progress notes, manu
 External product/process interpretations rely on primary sources already registered in customer-language; B5-09 links the relevant Plaid definitions directly. LinkedIn document/caption guidance was checked on 2026-09-16. The help pages retain older update dates, so verify current composer behavior when uploading; no upload maximum or algorithm advantage is asserted by this plan.
 
 2026-09-16 — Created the fifteen-post Build 05 plan under the user's format constraint: one full current-build demo video, one short extracted from the same footage/audio, carousel and text support only. Added the single-master capture inventory, per-post evidence boundaries, proposed cadence, other-build collision checks and scripts handoff. No content published or runtime changed.
+
+2026-09-17 — Linked the completed fifteen-post scripts package. Recording, actual footage timestamps, carousel design/PDF exports, video editing and publication remain later tasks; format and evidence boundaries are unchanged.

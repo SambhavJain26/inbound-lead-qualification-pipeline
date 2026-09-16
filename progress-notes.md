@@ -1790,3 +1790,33 @@ Verification: ten top-level sections, 33 well-formed tables, 103 unique defined 
 IDs with no unresolved references, illustrative math unchanged, copyediting checks
 and Git whitespace check pass. Blueprint only; no workflows, services, applicants,
 provider accounts or operational data changed. Existing unrelated work preserved.
+
+### 2026-09-16 — Build 05 LinkedIn content foundations
+
+Created `docs/build-5-content-strategy/customer-language.md` and
+`.agents/product-marketing.md` using the sibling maintenance-triage Build 02
+foundations as structural references, not as transferable leasing evidence or fees.
+The customer-language file distinguishes operator-published tasks, vendor-hosted
+practitioner quotes, association survey findings and constructed draft phrasing.
+The product-marketing context includes a Core Position Matrix, working audience,
+buyer/champion/reviewer roles, competitive alternatives, 16 objection responses,
+proof register, voice, proposed invitations and publication safeguards.
+
+Primary public research checked 2026-09-16: Progress Residential, Mynd, Greystar,
+Funnel, EliseAI, Snappt, NMHC, FTC and Plaid. NMHC's income-document statistic is
+59/70 fraud-reporting respondents (84.3%) in its January 2024 survey, not a share of
+all applications. Vendor-hosted quotes remain attributed and are not presented as
+our customer testimonials. No interviews or measured client outcomes invented.
+
+Positioning emphasizes coordination and human authority, not AI tenant selection
+or fraud detection. Demo execution proof is separated from the production design;
+Telegram messaging, Sandbox income/signing, mock screening/access and unimplemented
+move-in steps remain explicit. The initial 50–500-home segment is a planning
+hypothesis, not validated demand. Pricing, guarantees and timelines remain unapproved.
+
+Verification: local links resolve, 18 Markdown tables have consistent columns,
+heading spacing and task-file whitespace checks pass; editorial review completed.
+Only these foundations were requested: `linkedin-content-plan.md` and
+`linkedin-post-scripts.md` remain subsequent tasks. No social content published,
+runtime behavior changed or applicant/account data touched. Existing unrelated
+work remains preserved.

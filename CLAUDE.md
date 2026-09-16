@@ -243,3 +243,14 @@ Reset and seed scripts must touch fixture/demo data only. Never run reset or del
 Before finishing implementation work, decide whether the task exposed a durable command, workaround, gotcha, or rule. If yes, update `CLAUDE.md` and `AGENTS.md` (identical in substance) and `progress-notes.md`.
 
 After every completed task, commit and push to `main` unless told otherwise. Use short imperative or conventional commit messages, e.g. `docs: lock stage 0 scope` or `feat: add wf1 application intake export`. If push fails because no remote or authentication is configured, say so clearly and include the local commit hash.
+
+## Carousel Production
+
+Use `carousel-kit/design-system.md` and the shared stylesheet for LinkedIn decks.
+Render a named deck with `node carousel-kit/render-carousel.cjs <deck-name>`;
+verify the final PDF with the bundled Python and `carousel-kit/verify-carousel.py`.
+Inspect the PDF-derived contact sheet and full-size pages before delivery.
+Request Switzer and Zodiak through separate Fontshare stylesheet links and check
+the loaded faces; a successful fetch of one family does not prove both loaded.
+Keep approved slide wording unchanged and never batch the remaining carousels
+when the user has asked for one design proof before approval.

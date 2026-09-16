@@ -1881,3 +1881,39 @@ checks pass. Editorial review and hook/narrative working notes are ignored local
 artifacts. Linked the completed package from the plan and both foundation files.
 Recording, carousel design/PDF exports, editing, scheduling and publishing remain
 later tasks. No runtime changes, Airtable views or external-account mutations.
+
+## 2026-09-17 — First carousel design proof completed; approval pending
+
+User requested the maintenance-triage carousel kit style and only one deck before
+approving the remaining carousels. The old D:/codex/_projects path no longer exists;
+located the kit under D:/codex_projects/automation_projects/maintenance-triage/.
+Read the README, full design system, kit's linkedin-carousel skill, stylesheet,
+closest example and rendering helpers. Used social and PDF verification skills.
+
+Created B5-01, seven pages, from its exact approved title/body/footer wording.
+Copied the source kit's stylesheet and design-system reference unchanged into
+`carousel-kit/`; added editable HTML, named-deck renderer, final-PDF verifier and
+usage/provenance README. New kit direction overrides optional screenshot/diagram
+stage directions: annotated typography only, not new screenshots or mock UI.
+
+Design retains cream ruled paper, baked grain, Switzer, semantic gold highlights
+and blue pen marks. One cover selection box; one inverted manager-decision page;
+one Zodiak payoff word, decision. Existing layouts and type steps only, no CSS
+fork or added layout. Eight highlights, four underlines, one circle, one box.
+
+Caught Fontshare's combined-family request returning Switzer without Zodiak.
+Separate family stylesheet links load both; renderer fails if either is missing
+and reruns the unchanged baseline snap after loading. A dark-page wrapped
+highlight obscured letter tops in visual review; narrowed the mark without
+changing any copy. Recorded durable render/review guidance in AGENTS and CLAUDE.
+
+Final output: `output/pdf/b5-01-inquiry-to-lease.pdf`, 7 pages, 107,973 bytes.
+PDF-derived seven full-page PNGs and contact sheet under `output/carousels/`.
+QA passes exact copy, content bands, footer/byline clearance, pen fit, page count,
+paper dimensions within sub-pixel Chromium rounding, loaded families, embedded
+font subsets and one shared grain image. Source CSS SHA-256 matches the reference.
+Inspected contact-sheet rhythm and all seven full-size PDF pages; no clipping or
+footer overlap remains. No claim that design has been approved by the user.
+
+Other five carousels remain ungenerated pending feedback. No publishing, upload,
+runtime/service changes or applicant/account actions. Existing dirty work preserved.

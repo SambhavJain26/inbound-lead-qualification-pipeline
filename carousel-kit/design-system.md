@@ -1,26 +1,39 @@
 # Carousel Design System
 
-## Local revision guidance — 2026-09-17
+## Local value and annotation direction — 2026-09-17
 
-The reference system below supplies the visual vocabulary, not a reason to fill
-every page. User feedback overrides the first leasing proof's density.
-Follow the vendor COI decks' contrasting layouts and shorter statements.
+The latest user feedback supersedes the sparse first revision and fixed page
+counts. Carousels are useful reference documents, not collections of short opinions.
+Read ../docs/build-5-content-strategy/carousel-design-blueprint.md before rendering.
 
-- Remove internal build identifiers from public slide copy and page furniture.
-- Aim for 8–18 main-copy words on simple statements. Lists can be longer when
-  needed; shorten wording before reducing type or cramming the content band.
-- Keep decision authority and mock/sandbox boundaries. Supporting detail can move
-  to the caption, but don't remove disclosures merely to reach a word target.
-- Vary the reading rhythm with existing display, framing, claim, statement, list
-  and payoff blocks. Don't force every deck to use all layouts.
-- `.checks--plain` removes the unused numeral gutter while retaining existing
-  row rules, type and vertical spacing. Existing inverted list colors still apply.
-- User-authorized copy revisions update the canonical scripts and HTML together.
-- Compare actual rendered references, previous proof and revision. Record trade-offs,
-  not only successful fit checks. Measurements don't establish design approval.
+- Use 7–11 pages based on distinct reader value, not a forced seven-page brief.
+- Teaching slides usually need 20–35 title/body words. Preserve enough detail to
+  explain an action, its basis and a useful check; shorter pages must still teach.
+- Use blue and gold deliberately. Blue boxes, blue underlines and blue circles
+  carry visible structural emphasis; gold highlights identify selected phrases.
+- Blue boxes can appear on selected interior pages, not only the cover. Their
+  quantity follows content; there is no device quota. Never box .pay.
+- Budget zero, one or two focal annotations per page. Mix devices across the
+  whole deck, not every page; quiet pages are valid. Tiny blue page numbers don't
+  establish color balance, and every page need not carry both blue and gold.
+- Keep ink/cream text contrast; the dark page can use gold pen strokes because
+  blue pen strokes would not remain legible against navy.
+- Use the documented teaching-page scale, not oversized opinion-slide type for
+  every paragraph. Add named shared layouts, including inverted colors, before
+  rendering; no per-slide size overrides or automatic shrink-to-fit.
+- Keep internal build IDs off public pages and preserve human decision authority,
+  simulation/test boundaries and proposed-production labels.
+- User-authorized copy revisions update scripts and source together. Prior proof
+  HTML/PDF is superseded until regenerated to match the 60-slide rewrite.
+- Compare reader usefulness, hierarchy, readability and annotation balance, not
+  word reduction alone. Exact fit checks cannot establish design acceptance.
 
-Use the local `node carousel-kit/render-carousel.cjs <deck-name>` renderer and
-Python verifier, not the reference's historical PowerShell render command below.
+The existing .checks--plain modifier removes the unused list numeral gutter and
+inherits .checks type, rules, spacing and inverted colors. Its presence does not
+mean the new worksheet layouts have already been implemented or visually tested.
+
+Use the local node carousel-kit/render-carousel.cjs <deck-name> and verifier,
+not the reference document's historical PowerShell render command below.
 
 ## Reference system
 

@@ -1,5 +1,10 @@
 # First carousel: vendor COI comparison and redesign assessment
 
+Current status: the user rejected the sparse revision assessed below. The latest
+rewrite and design brief supersede that proof; the earlier measurements remain
+historical observations, not targets or approval. See the latest review at the
+end and [carousel-design-blueprint.md](carousel-design-blueprint.md).
+
 Reviewed 2026-09-17. This is a self-assessment, not user design approval.
 Only the first seven-slide leasing carousel was redesigned. The other five remain
 ungenerated. Nothing was uploaded, scheduled or published to LinkedIn.
@@ -130,3 +135,46 @@ the local Python verifier. Final PDF previews live under
 
 Next decision: present this proof for feedback. Don't batch the remaining five
 until the user accepts the direction.
+
+## Second review — value and annotation balance
+
+The user is right that the sparse revision lost too much information. I treated
+word reduction as the solution, despite acknowledging that fit and word counts
+don't establish design quality. The gold-heavy annotation mix also survived the
+rewrite. Blue appeared in a cover box, one circle and page numbers; that wasn't
+the fuller use of the kit the user wanted.
+
+The latest pass rewrites all six decks as usable reference documents, not just
+builder commentary. It adds an eight-check handoff audit, review-file checklist,
+message-permission worksheet, income reconciliation method, readiness signoffs
+and an existing-business pilot brief. The decks have 10/9/9/11/10/11 pages.
+Two worked income examples are explicitly illustrative, not recorded fixture results.
+
+Current teaching pages contain 26–35 title/body words. This is more information
+than either rejected proof, not a claim that fewer words alone produce better
+design. The proposed teaching-page scale and grouped compositions must support
+that information instead of repeating giant headings over full paragraphs.
+
+The user's clarification is deck-level variety, not every device on each page.
+The brief now mixes boxes, underlines, circles, highlights and quiet pages across
+each document without imposing a device quota. Marks identify specific phrases
+and jobs; blue page numbers don't count as substantive balance. The dark page's
+pen stays gold for contrast, so nominal blue-mark counts aren't visible-blue counts.
+Selected interior boxes override the old cover-only rule; they are not compulsory.
+
+UI/UX Foundations informs hierarchy, grouping, mobile-scale readability and contrast.
+The high-end visual-design skill was inspected but not selected: app motion, glass
+cards and decorative effects would conflict with this static reference-document task.
+The social framework uses practical Value-Stack structures rather than a generic rant.
+
+Editorial checks cover current page counts, complete slide fields, public build-ID
+removal, focal mark budgets, exact marked phrases, caption lengths, numerical examples
+and unchanged non-carousel scripts. Plain-language editing removes hype and filler.
+Parallel worksheet labels and concise instructional sentences remain intentional;
+forced stutter transitions and long-sentence quotas would add copy without value.
+
+Remaining limitation: this is a copy-and-design-brief pass, not a new rendered proof.
+No new visual quality, fit or color-balance result is claimed. The old PDF/PNG assets
+and HTML are superseded and don't match the new ten-page first deck. Retained assets
+are comparison evidence only. One new B5-01 proof must test the hierarchy, field/list
+treatments and visible blue/gold distribution before batching the remaining five.

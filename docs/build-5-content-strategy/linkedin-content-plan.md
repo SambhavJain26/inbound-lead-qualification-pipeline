@@ -1,12 +1,12 @@
 # LinkedIn content plan — Build 05: leasing coordination
 
-Created: 2026-09-16. Status: planning document; footage, carousel exports and finished post scripts are not deliverables of this task.
+Created: 2026-09-16. Carousel briefs revised: 2026-09-17 after user feedback. Current slide copy lives in the scripts; earlier design proofs are superseded, and a new proof is still required.
 
 Fifteen posts: one full demo video, one short video cut from that same recording, six document carousels and seven text posts. No standalone image posts. One recording, two video posts.
 
 The demo video follows the build that exists now: listing inquiry, factual conversation, self-reported pre-qualification, real tour booking, simulated tour completion, application, evidence preparation, human review, DocuSign sandbox signing and welcome delivery. It doesn't show a production PM deployment or completed physical move-in.
 
-Finished captions, slide copy and narration will belong in `linkedin-post-scripts.md` after this plan is reviewed. Working titles below identify subjects, not final hooks.
+Current captions, slide copy and narration belong in `linkedin-post-scripts.md`. Working titles below identify subjects, not necessarily the final cover hooks.
 
 ## 1. Inputs and authority
 
@@ -56,7 +56,7 @@ Pricing, deployment timing, guarantees and recurring support terms remain unappr
 | Text-only post | 7 | B5-03, B5-05, B5-07, B5-10, B5-12, B5-14, B5-15 | No accompanying standalone screenshot, stock photo or generated graphic |
 | Standalone image post | 0 | None | Excluded by the user's instruction |
 
-Screenshots inside a carousel are permitted supporting evidence, not an additional image-post format. A video cover frame is part of the video asset, not another feed post. Don't add a teaser, trailer, second short, talking-head response video or alternate demo post to the count.
+The current carousel design uses annotated typography, not screenshots or mocked interfaces. A video cover frame is part of the video asset, not another feed post. Don't add a teaser, trailer, second short, talking-head response video or alternate demo post to the count.
 
 ### Editorial length targets
 
@@ -64,7 +64,7 @@ The full demo edit targets about 6–9 minutes, allowing more time if that's nec
 
 B5-08 targets 45–60 seconds. Supporting text posts generally target 150–250 words; carousel captions target 80–140 words. These are writing targets, not proven optimal lengths or platform limits.
 
-Each carousel carries one idea per slide, usually about 20–35 words of main copy, with a short source or boundary note where needed. Mobile legibility takes priority over filling the page. Dense legal explanations belong in the source context, not tiny slide footnotes.
+Each carousel delivers usable guidance, usually about 20–35 words of title and body per teaching slide, with a short source or boundary note where needed. Covers and synthesis pages can be shorter, but don't strip out the method to hit a word target. Mobile legibility takes priority over filling the page. Dense legal explanations belong in the source context, not tiny slide footnotes.
 
 ### Why these formats
 
@@ -88,19 +88,19 @@ The opening three posts establish the problem, show the demonstration and clarif
 
 | Order | ID | Format | Working subject | Intended reader |
 | --- | --- | --- | --- | --- |
-| 1 | B5-01 | Carousel, 7 slides | The work between an inquiry and a lease | Owner / operations leader |
+| 1 | B5-01 | Carousel, 10 slides | The work between an inquiry and a lease | Owner / operations leader |
 | 2 | B5-02 | Full demo video | One fictional renter through the current build | Owner / leasing lead |
 | 3 | B5-03 | Text | Pre-qualification isn't a rental decision | Leasing lead / owner |
-| 4 | B5-04 | Carousel, 8 slides | Prepare the evidence; keep the decision human | Reviewer / operations leader |
+| 4 | B5-04 | Carousel, 9 slides | Prepare the evidence; keep the decision human | Reviewer / operations leader |
 | 5 | B5-05 | Text | A successful booking can still be at the wrong time | Leasing coordinator |
-| 6 | B5-06 | Carousel, 7 slides | Which messages can leave automatically? | Manager / operations leader |
+| 6 | B5-06 | Carousel, 9 slides | Which messages can leave automatically? | Manager / operations leader |
 | 7 | B5-07 | Text | Start with the leasing tools the company already has | Buyer / owner |
 | 8 | B5-08 | Short video from B5-02 | Manager review to confirmed signing state | Owner / reviewer |
-| 9 | B5-09 | Carousel, 8 slides | Different income numbers aren't a verdict | Reviewer / operations leader |
+| 9 | B5-09 | Carousel, 11 slides | Different income numbers aren't a verdict | Reviewer / operations leader |
 | 10 | B5-10 | Text | A lead changed stages; the display made more rows | Operations / systems-minded PM |
-| 11 | B5-11 | Carousel, 8 slides | Signed isn't the same as move-in ready | Operations leader / owner |
+| 11 | B5-11 | Carousel, 10 slides | Signed isn't the same as move-in ready | Operations leader / owner |
 | 12 | B5-12 | Text | A safety block shouldn't leave the prospect in silence | Leasing lead / operations leader |
-| 13 | B5-13 | Carousel, 8 slides | How this would fit an existing PM company | Owner / executive |
+| 13 | B5-13 | Carousel, 11 slides | How this would fit an existing PM company | Owner / executive |
 | 14 | B5-14 | Text | What the passing checks prove—and don't | Buyer / operations leader |
 | 15 | B5-15 | Text | Discuss one handoff, not a new software stack | Owner / operations leader |
 
@@ -116,31 +116,34 @@ Boundary labels have three meanings: demonstrated with synthetic data, mock/Sand
 
 ### B5-01 — The work between an inquiry and a lease
 
-Format: PDF carousel, 7 slides. Framework: Value-Stack adapted to distinct handoffs. Pillar: leasing coordination distinctions.
+Format: PDF carousel, 10 slides. Framework: Value-Stack: eight handoff checks and a reusable record.
 
-Reader and event: an owner or operations leader looking at a new rental inquiry. Purpose: establish that the administrative work continues after the first reply.
+Reader: Owner, leasing lead or operations manager. Reader deliverable: Leasing handoff audit.
 
-Opening angle: follow one inquiry as it becomes several pieces of work. Don't open on tools, a fictitious customer result or an unsupported number of hours lost.
+Purpose: Audit one household's handoffs and write an explicit owner, next action and completion event.
 
-The turn: fast answers are one useful step, but the harder operating question is whether the next handoff is clear. The demonstration coordinates several stages; it doesn't replace the employee's judgment.
+Opening angle: a specific operating task the reader can improve, not a generic opinion or client-results claim. This deck must work as a reference document without needing the caption to supply its method.
 
-Evidence: P1–P5, current flow in progress notes, and the customer-language distinction between inquiry, application and lease. The opening scenario is hypothetical; don't say these events occurred at a client's properties.
-
-| Slide | Job |
+| Slide | Reader value |
 | --- | --- |
-| 1 | Establish the inquiry-to-lease coordination problem and identify this as a build example |
-| 2 | Inquiry: answer from approved property facts without repeated lookup |
-| 3 | Tour: check a slot, confirm the booking and keep scheduling distinct from attendance |
-| 4 | Application: collect the required information and prepare its evidence |
-| 5 | Review: show the authorized manager's decision boundary |
-| 6 | Signing: distinguish sending the lease from receiving the completion event |
-| 7 | Synthesize the handoffs; state that the demo ends before production move-in readiness |
+| 1 | Eight checks for your leasing handoffs |
+| 2 | 1. Keep one household reference |
+| 3 | 2. Name the source of each answer |
+| 4 | 3. Separate booked from attended |
+| 5 | 4. Define an application-ready file |
+| 6 | 5. Separate evidence from the decision |
+| 7 | 6. Use confirmation, not assumption |
+| 8 | 7. Give waiting work an owner |
+| 9 | 8. Don't collapse signing into move-in |
+| 10 | Use this handoff record |
 
-Takeaway: evaluate the work between stages, not only the speed of the first answer. Invitation: none; close with the operating distinction.
+Takeaway: Audit one household's handoffs and write an explicit owner, next action and completion event.
 
-Boundary: synthetic demonstration; income/signing Sandbox, screening/access mocks and human rental decisions. Don't imply the illustrated tour proves attendance or the lease completes possession.
+Evidence and boundary: current synthetic demo patterns, bounded AI roles and recorded human authority; not verified real-applicant evidence or measured client outcomes.
 
-Assets: a simple stage diagram and optional cropped frames from S02, S05, S08 and S11. This teaching carousel can be prepared without footage; any UI proof frame must wait for a checked capture.
+Invitation: use the worksheet or checklist; no gated download or sales demand.
+
+Assets: annotated typography with structured lists, comparisons and templates from the current [post scripts](linkedin-post-scripts.md). Follow [carousel-design-blueprint.md](carousel-design-blueprint.md). No invented screenshots, borrowed evidence or build-number page labels. A new design proof must precede the remaining PDF exports.
 
 ### B5-02 — One fictional renter through the current build
 
@@ -194,32 +197,33 @@ Assets: none. This is a text post, not a screenshot post.
 
 ### B5-04 — Prepare the evidence; keep the decision human
 
-Format: PDF carousel, 8 slides. Framework: Demo Walkthrough focused on review preparation. Pillar: human control and information quality.
+Format: PDF carousel, 9 slides. Framework: Value-Stack: traceable review-file components.
 
-Reader and event: a reviewer receives an application with documents. Purpose: demonstrate the useful AI task and the decision boundary through concrete evidence.
+Reader: Application reviewer or operations leader. Reader deliverable: Application review-file checklist.
 
-Opening angle: begin with a reviewable cited value, not an AI verdict. The reader should understand what the manager receives before seeing the machinery.
+Purpose: Specify a review packet that lets staff trace values, inspect rules and record a human decision.
 
-The turn: a readable summary isn't enough; the reviewer needs the source and the rule that used it. AI extraction, deterministic criteria and authorized decision are three separate steps.
+Opening angle: a specific operating task the reader can improve, not a generic opinion or client-results claim. This deck must work as a reference document without needing the caption to supply its method.
 
-Evidence: synthetic extraction behavior, source citations, configured criteria evidence and manager review P3. Use S08–S09 for checked frames, not a fabricated manager card or borrowed customer screenshot.
-
-| Slide | Job |
+| Slide | Reader value |
 | --- | --- |
-| 1 | Show the useful output: a synthetic evidence card ready for review |
-| 2 | Explain the document-reading and source-checking work it prepares |
-| 3 | Preview the three roles: extraction, configured criteria, human decision |
-| 4 | Crop a value together with its document/source reference |
-| 5 | Explain a deterministic criterion without presenting it as universally lawful |
-| 6 | Show what the model doesn't produce: no rental decision, ranking or recommendation |
-| 7 | Show the manager's authorized action and recorded result |
-| 8 | Close on the separation of preparation and judgment, with demo boundaries |
+| 1 | What belongs in a reviewable application file? |
+| 2 | Start with a stable identity |
+| 3 | Keep the amount beside its source |
+| 4 | Show the rule and its evidence |
+| 5 | Make missing evidence explicit |
+| 6 | Keep conflicting values visible |
+| 7 | Log the human action separately |
+| 8 | Build the review packet around questions |
+| 9 | Test whether the file is reviewable |
 
-Takeaway: demand traceable facts, not an unexplained recommendation. Invitation: none.
+Takeaway: Specify a review packet that lets staff trace values, inspect rules and record a human decision.
 
-Boundary: test evidence, Plaid Sandbox and mocked identity/background data. Human approval and fixed rules aren't compliance certification. Don't turn a meeting-friendly explanation into legal advice.
+Evidence and boundary: current synthetic demo patterns, bounded AI roles and recorded human authority; not verified real-applicant evidence or measured client outcomes.
 
-Assets: reviewed S08/S09 frames and a small role-separation diagram. If a citation isn't legible in the footage, use a checked synthetic source excerpt or paraphrase; don't invent a UI field.
+Invitation: use the worksheet or checklist; no gated download or sales demand.
+
+Assets: annotated typography with structured lists, comparisons and templates from the current [post scripts](linkedin-post-scripts.md). Follow [carousel-design-blueprint.md](carousel-design-blueprint.md). No invented screenshots, borrowed evidence or build-number page labels. A new design proof must precede the remaining PDF exports.
 
 ### B5-05 — A successful booking can still be at the wrong time
 
@@ -243,31 +247,33 @@ Assets: none. No reenactment or additional video capture required.
 
 ### B5-06 — Which messages can leave automatically?
 
-Format: PDF carousel, 7 slides. Framework: Value-Stack with two communication tiers. Pillar: human control and information quality.
+Format: PDF carousel, 9 slides. Framework: Value-Stack: message-permission matrix and send-time checks.
 
-Reader and event: a manager evaluates automated applicant communication. Purpose: show why blanket auto-send and blanket approval are both too coarse for this build.
+Reader: Manager or operations leader. Reader deliverable: Leasing message-permission worksheet.
 
-Opening angle: compare a factual property answer with a screening-stage document request. Both are messages, but their permissions differ.
+Purpose: Write a message permission matrix that depends on stage, final content, current facts and recorded authority.
 
-The turn: automate the routine work with guardrails; hold sensitive screening communication for individual approval. The permission belongs to the message and the stage, not the model's confidence.
+Opening angle: a specific operating task the reader can improve, not a generic opinion or client-results claim. This deck must work as a reference document without needing the caption to supply its method.
 
-Evidence: current Tier A/Tier B rules, message logging and send-time guardrails. This post explains configured behavior; it doesn't claim a live recording exercised every allowed message type.
-
-| Slide | Job |
+| Slide | Reader value |
 | --- | --- |
-| 1 | Establish that automatic communication needs a written boundary |
-| 2 | Show the factual property-answer example grounded in approved information |
-| 3 | Explain routine booking/application-link communication under guardrails |
-| 4 | Contrast screening-stage wording and further-document requests requiring approval |
-| 5 | Identify the manager approval and logged actor |
-| 6 | Explain that edited wording faces a fresh send-time check |
-| 7 | Close with the two-tier distinction and no adverse-notice automation |
+| 1 | Write the rules before messages send |
+| 2 | Classify by content and stage |
+| 3 | Tier A: approved factual answers |
+| 4 | Tier A: routine coordination |
+| 5 | Tier B: screening-stage messages |
+| 6 | Approval needs a named person |
+| 7 | Check the final message again |
+| 8 | A blocked send needs a visible route |
+| 9 | Use this permission worksheet |
 
-Takeaway: specify what may send, when, and under whose authority. Invitation: none.
+Takeaway: Write a message permission matrix that depends on stage, final content, current facts and recorded authority.
 
-Boundary: no negotiated terms, invented availability or legal wording. Don't say every outbound message requires manual approval or that all status messages are always safe.
+Evidence and boundary: current synthetic demo patterns, bounded AI roles and recorded human authority; not verified real-applicant evidence or measured client outcomes.
 
-Assets: simple two-tier layout; optional S03/S09 evidence frames. No new recording.
+Invitation: use the worksheet or checklist; no gated download or sales demand.
+
+Assets: annotated typography with structured lists, comparisons and templates from the current [post scripts](linkedin-post-scripts.md). Follow [carousel-design-blueprint.md](carousel-design-blueprint.md). No invented screenshots, borrowed evidence or build-number page labels. A new design proof must precede the remaining PDF exports.
 
 ### B5-07 — Start with the leasing tools the company already has
 
@@ -321,32 +327,35 @@ If callback/welcome footage isn't usable, use a shorter review-to-lease-sent cut
 
 ### B5-09 — Different income numbers aren't a verdict
 
-Format: PDF carousel, 8 slides. Framework: Value-Stack with comparison questions. Pillar: human control and information quality.
+Format: PDF carousel, 11 slides. Framework: Value-Stack: reconciliation questions with two labeled worked examples.
 
-Reader and event: a reviewer sees different income amounts across evidence. Purpose: teach source interpretation without recasting the demo as fraud detection.
+Reader: Application reviewer or operations leader. Reader deliverable: Income evidence reconciliation worksheet.
 
-Opening angle: stated income, a document figure and bank-derived income can differ. Start with the need to understand the comparison, not an accusation.
+Purpose: Preserve source, basis, frequency, period and coverage; use labeled calculations to explain rather than accuse.
 
-The turn: matching or mismatching digits mean little without income basis, period and coverage. AI can extract a figure; it can't decide that a person is dishonest.
+Opening angle: a specific operating task the reader can improve, not a generic opinion or client-results claim. This deck must work as a reference document without needing the caption to supply its method.
 
-Evidence: the synthetic fixture comparison and corrected production blueprint, plus [Plaid Bank Income](https://plaid.com/docs/income/bank-income/) and [Plaid Payroll Income](https://plaid.com/docs/income/payroll-income/) for net/gross distinctions. These provider definitions don't validate the fixture as real income verification.
-
-| Slide | Job |
+| Slide | Reader value |
 | --- | --- |
-| 1 | Establish the distinction between a discrepancy and a conclusion |
-| 2 | Identify the sources: self-report, document, provider output |
-| 3 | Ask whether each amount is gross or net |
-| 4 | Ask whether periods and payment frequency match |
-| 5 | Ask whether the evidence covers all relevant income under approved policy |
-| 6 | Explain human review and approved alternative evidence when coverage is unsuitable |
-| 7 | State exactly what the demo uses: synthetic documents and Plaid Sandbox |
-| 8 | Close on comparing like with like, without a fraud or rental-decision claim |
+| 1 | Check the meaning before the number |
+| 2 | Keep three sources separate |
+| 3 | Ask: gross or net? |
+| 4 | A difference can start with definitions |
+| 5 | Check the payment frequency |
+| 6 | Frequency changes the monthly equivalent |
+| 7 | Check what the source covers |
+| 8 | Check timing and unusual periods |
+| 9 | Write the explanation, not an accusation |
+| 10 | Keep the demonstration boundary visible |
+| 11 | Use this reconciliation note |
 
-Takeaway: preserve context alongside values. Invitation: none.
+Takeaway: Preserve source, basis, frequency, period and coverage; use labeled calculations to explain rather than accuse.
 
-Boundary: don't label Devon dishonest, claim bank data is infallible, or show the old stated-versus-bank arithmetic as proof of fraud. No real applicant records or invented standard income threshold.
+Evidence and boundary: current synthetic demo patterns, bounded AI roles and recorded human authority; not verified real-applicant evidence or measured client outcomes. Worked figures are constructed illustrative examples, not fixture results. Income definitions use [Plaid Bank Income](https://plaid.com/docs/income/bank-income/) and [Payroll Income](https://plaid.com/docs/income/payroll-income/). No fraud or rental verdict.
 
-Assets: labelled illustrative comparison diagram, optionally a sanitized synthetic S08 excerpt. No need to record a second applicant or an exception video.
+Invitation: use the worksheet or checklist; no gated download or sales demand.
+
+Assets: annotated typography with structured lists, comparisons and templates from the current [post scripts](linkedin-post-scripts.md). Follow [carousel-design-blueprint.md](carousel-design-blueprint.md). No invented screenshots, borrowed evidence or build-number page labels. A new design proof must precede the remaining PDF exports.
 
 ### B5-10 — A lead changed stages; the display made more rows
 
@@ -370,32 +379,34 @@ Assets: none. Historical evidence supports the lesson; no separate screenshot po
 
 ### B5-11 — Signed isn't the same as move-in ready
 
-Format: PDF carousel, 8 slides. Framework: Value-Stack separating production milestones. Pillar: existing-business deployment.
+Format: PDF carousel, 10 slides. Framework: Value-Stack: distinct readiness signoffs and a reusable gate.
 
-Reader and event: an operations leader receives a signature-complete event. Purpose: explain the real operating boundary beyond the demonstrated endpoint.
+Reader: Operations leader or owner. Reader deliverable: Post-signature readiness worksheet.
 
-Opening angle: a signed agreement is a milestone. It isn't by itself authority to release access to a home.
+Purpose: Assign evidence and authority to applicable readiness conditions instead of treating a signature event as permission for possession.
 
-The turn: production coordination must keep review, allocation, signatures, money, readiness and possession distinct. Requirements and ordering come from the operator's approved process, not a universal checklist invented by the model.
+Opening angle: a specific operating task the reader can improve, not a generic opinion or client-results claim. This deck must work as a reference document without needing the caption to supply its method.
 
-Evidence: production blueprint sections 3, 7–9; P4–P5 for the narrower demo endpoint. Published operator process variation is recorded in customer-language, not proof our demo performs those operators' processes.
-
-| Slide | Job |
+| Slide | Reader value |
 | --- | --- |
-| 1 | Separate signed from ready to hand over the home |
-| 2 | Identify the authorized rental decision and its record |
-| 3 | Explain property allocation/hold rules as operator-specific |
-| 4 | Check the required parties and signature completion |
-| 5 | Identify required funds and accounting confirmation under policy |
-| 6 | Identify readiness, insurance/access requirements where applicable |
-| 7 | Show the authorized possession handoff, not a generated lock code |
-| 8 | Mark the demo endpoint and the proposed production steps beyond it |
+| 1 | Signing isn't your move-in checklist |
+| 2 | Start from the authorized decision |
+| 3 | Confirm the home allocation |
+| 4 | Confirm the required signing transaction |
+| 5 | Get funds status from its source |
+| 6 | Give home readiness an owner |
+| 7 | Check other applicable conditions |
+| 8 | Release access through an authorized step |
+| 9 | Keep this demo's endpoint separate |
+| 10 | Use a readiness signoff record |
 
-Takeaway: don't collapse several obligations into leased. Invitation: none.
+Takeaway: Assign evidence and authority to applicable readiness conditions instead of treating a signature event as permission for possession.
 
-Boundary: funds, full household signing, readiness and physical possession aren't implemented in the demo. The demo may set a synthetic unit to leased after the tested signer completes; don't present that state rule as production allocation policy.
+Evidence and boundary: production blueprint, explicitly proposed; the local demo doesn't perform all these controls or connect to a client's PMS.
 
-Assets: milestone diagram with a clear line between demonstrated endpoint and proposed production controls. No simulated payment screenshots, access animation or fake inspection record.
+Invitation: use the worksheet or checklist; no gated download or sales demand.
+
+Assets: annotated typography with structured lists, comparisons and templates from the current [post scripts](linkedin-post-scripts.md). Follow [carousel-design-blueprint.md](carousel-design-blueprint.md). No invented screenshots, borrowed evidence or build-number page labels. A new design proof must precede the remaining PDF exports.
 
 ### B5-12 — A safety block shouldn't leave the prospect in silence
 
@@ -419,32 +430,35 @@ Assets: none. No new exception footage; this is an evidence-backed text lesson.
 
 ### B5-13 — How this would fit an existing PM company
 
-Format: PDF carousel, 8 slides. Framework: Value-Stack organized around system roles. Pillar: existing-business deployment.
+Format: PDF carousel, 11 slides. Framework: Value-Stack: discovery questions, exception design and a pilot brief.
 
-Reader and event: an owner asks where the automation would sit in the business. Purpose: make implementation understandable without prescribing the demo stack.
+Reader: Owner, executive or operations leader. Reader deliverable: Existing-business automation fit worksheet.
 
-Opening angle: the company already has property records, applications, calendars and employees. Keep those systems central.
+Purpose: Scope one supported event-to-task gap, define system authority and test normal and failure paths before rollout.
 
-The turn: the deployed layer handles agreed event-to-task handoffs around existing records. Employees shouldn't have to adopt the demo's tools to obtain the business outcome, but actual integration access determines what is feasible.
+Opening angle: a specific operating task the reader can improve, not a generic opinion or client-results claim. This deck must work as a reference document without needing the caption to supply its method.
 
-Evidence: production blueprint sections 4–6 and 10. This is a proposed system-level design, not footage of live PMS connections or an existing customer deployment.
-
-| Slide | Job |
+| Slide | Reader value |
 | --- | --- |
-| 1 | Identify the existing-business starting point; label proposed production design |
-| 2 | PM software / CRM: approved facts, identifiers and authoritative records |
-| 3 | Existing communication and calendars: permitted contact and real scheduling events |
-| 4 | Application portal / evidence providers: secure information with approved access |
-| 5 | Coordination layer: track events, waiting work and safe updates |
-| 6 | Authorized people: decisions, message approvals and exception ownership |
-| 7 | Existing work surfaces: statuses, assignments and follow-up where integrations support them |
-| 8 | Discovery and monitored pilot before rollout; no universal plug-in promise |
+| 1 | Map the gap before adding automation |
+| 2 | Check what your software already does |
+| 3 | Name the authority for each record |
+| 4 | Define the event that starts work |
+| 5 | Use approved channels and calendars |
+| 6 | Keep sensitive evidence in approved systems |
+| 7 | Make the human handoff explicit |
+| 8 | Design the failed path before rollout |
+| 9 | Return work to the team's system |
+| 10 | Pilot one path, including failure |
+| 11 | Use this one-path pilot brief |
 
-Takeaway: define system authority and employee interaction before adding software. Invitation: soft availability of the written blueprint, without a free implementation offer.
+Takeaway: Scope one supported event-to-task gap, define system authority and test normal and failure paths before rollout.
 
-Boundary: Telegram, Airtable and local tunnels are demo surfaces, not required production tools. Vendor permissions, licensing and provider contracts must be checked. Don't imply that continued human work or policy changes disappear.
+Evidence and boundary: production blueprint, explicitly proposed; the local demo doesn't perform all these controls or connect to a client's PMS.
 
-Assets: a simplified business-level diagram derived from the blueprint. The current demo Excalidraw drawing isn't a finished production map. Create/review the simplified carousel diagram later; don't promise an asset that doesn't yet exist.
+Invitation: soft availability of the existing production blueprint, without a free offer or universal integration promise.
+
+Assets: annotated typography with structured lists, comparisons and templates from the current [post scripts](linkedin-post-scripts.md). Follow [carousel-design-blueprint.md](carousel-design-blueprint.md). No invented screenshots, borrowed evidence or build-number page labels. A new design proof must precede the remaining PDF exports.
 
 ### B5-14 — What the passing checks prove—and don't
 
@@ -548,15 +562,15 @@ Review subtitles manually, especially rent, dates, names and income figures. Ret
 
 ## 9. Carousel production rules
 
-The six briefs total 46 slides: 7 + 8 + 7 + 8 + 8 + 8. Don't add filler slides or change the count without updating the brief and scripts together.
+The current six briefs total 60 slides: 10 + 9 + 9 + 11 + 10 + 11. The user authorized 7–11 pages per carousel based on value; there is no fixed seven- or eight-page requirement. Add or remove a page only for a distinct teaching point, and keep briefs and scripts aligned.
 
 Use a consistent template within each carousel. One strong cover, one idea per interior slide and a close that fits the post's purpose. An informational close doesn't need a comment keyword or sales CTA.
 
-Screenshots must come from this build's checked synthetic evidence. Crop to the relevant action, redact private account details and preserve mock/Sandbox labels. Text and diagrams can carry conceptual carousels without pretending to be UI captures.
+Use the kit's annotated document style: structured text, comparisons, lists and worksheets. Don't introduce screenshots, simulated interfaces or decorative diagrams. Carry needed mock/Sandbox and proposed-production labels onto each relevant page.
 
 Prepare carousels as multi-page PDFs with equal-size pages; PDF document sharing is supported by LinkedIn's [document guidance](https://www.linkedin.com/help/linkedin/answer/a519831). This is not a plan to publish separate JPEG image posts. Review every exported page before upload because a carousel's explanatory boundaries need to survive outside the caption too.
 
-Label diagrams carefully: current demonstration for B5-01/B5-04, communication rules for B5-06, explanatory comparison for B5-09, and proposed production controls/design for B5-11/B5-13. A polished diagram mustn't make a proposal look deployed.
+Label teaching content carefully: demo-informed operating patterns for B5-01/B5-04, configured communication rules for B5-06, illustrative reconciliation for B5-09, and proposed production controls for B5-11/B5-13. A polished page mustn't make a proposal look deployed.
 
 ## 10. Cadence, publication order and other builds
 
@@ -651,3 +665,5 @@ External product/process interpretations rely on primary sources already registe
 2026-09-16 — Created the fifteen-post Build 05 plan under the user's format constraint: one full current-build demo video, one short extracted from the same footage/audio, carousel and text support only. Added the single-master capture inventory, per-post evidence boundaries, proposed cadence, other-build collision checks and scripts handoff. No content published or runtime changed.
 
 2026-09-17 — Linked the completed fifteen-post scripts package. Recording, actual footage timestamps, carousel design/PDF exports, video editing and publication remain later tasks; format and evidence boundaries are unchanged.
+
+2026-09-17 — Revised all six carousel briefs to practical reference-document deliverables and 10/9/9/11/10/11 pages (60 total). The user authorized a 7–11-page value-led range, balanced copy and more visible blue/gold annotation variety. No change to the two-video/six-carousel/seven-text format contract or original recording burden. New PDFs remain pending one revised design proof.

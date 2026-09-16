@@ -1,52 +1,44 @@
-# Leasing carousel design proof
+# Leasing carousel production status
 
-Only the first seven-slide carousel has been produced. The other five remain on
-hold for design acceptance. Nothing has been uploaded or published to LinkedIn.
+## Current rewrite; previous PDF is superseded
 
-## Current direction
+All six carousel sections in ../docs/build-5-content-strategy/linkedin-post-scripts.md
+were rewritten after the user's second design review. Current counts are
+10/9/9/11/10/11 pages: 60 total. Teaching pages have balanced explanatory text,
+practical examples and reusable worksheets, not the rejected sparse statements.
 
-The first proof was too dense and repetitive. On 2026-09-17 the user requested a
-revision based on vendor COI decks: shorter copy, breathing room and no public build
-numbers. This version follows that direction, not the superseded first proof.
+The existing b5-01-inquiry-to-lease.html, seven-page PDF and PNG previews are
+historical rejected proofs. They do not match the current ten-page copy and must
+not be published. They are retained for comparison, not silently deleted. The
+renderer checks canonical wording and count and will reject the old source.
 
-The palette, paper, grain and fonts come from the maintenance-triage kit. Vendor
-COI decks inform the editorial rhythm: claims, contrasting type treatments,
-lists and one brief dark payoff. Main copy now averages 10 words per page, down
-from 28.1, excluding furniture. Details and demo boundaries remain in the caption.
+Current design specification:
+../docs/build-5-content-strategy/carousel-design-blueprint.md.
 
-The user authorized shortening. B5-01 copy and visual directions in
-`../docs/build-5-content-strategy/linkedin-post-scripts.md` were revised with the
-HTML; exact-copy checks still apply. Other posts are unchanged.
+Latest self-assessment and limitations:
+../docs/build-5-content-strategy/carousel-design-assessment.md.
 
-## Files and provenance
+Next production step is one new proof implementing the teaching-page layouts and
+blue/gold annotation balance. Inspect every final PDF page before presenting it.
+Don't batch the other five PDFs until that direction is accepted. This rewrite
+produced no new PDF, no account uploads and no operational-service changes.
 
-- `b5-01-inquiry-to-lease.html`: editable seven-slide source.
-- `carousel-template.css`: maintenance kit copy plus `.checks--plain`, removing
-  the unused numeral gutter for unnumbered rows.
-- `design-system.md`: reference system with local revision guidance.
-- `render-carousel.cjs`: named-deck renderer and layout checks.
-- `verify-carousel.py`: read-only checks of the final PDF.
-- `assess-carousel.cjs`: read-only vendor comparison and before/after render;
-  retrieves the original proof from Git commit `8c016e9`.
-- PDF: `../output/pdf/b5-01-inquiry-to-lease.pdf`.
-- PDF-derived contact sheet and full pages: `../output/carousels/b5-01-inquiry-to-lease/`.
-- Assessment: `../docs/build-5-content-strategy/carousel-design-assessment.md`.
-- Intermediate checks and comparisons: ignored `../tmp/`.
+## Existing helpers
 
-References now live under `D:/codex_projects/automation_projects/`, not the old
-`D:/codex/_projects/automation/_projects/` path. Reference files were not edited.
+- check-carousel-copy.cjs: read-only copy, page-count and design-map checks; no visual approval.
+- render-carousel.cjs: renders only a named deck; checks fonts, copy and layout.
+- verify-carousel.py: verifies the final PDF, not only HTML.
+- assess-carousel.cjs: read-only vendor comparison and preserved first-proof render.
+- carousel-template.css: maintenance kit style with the checks--plain modifier.
+- design-system.md: reference vocabulary plus the latest local overrides.
 
-## Design choices
+Check the current copy independently of the superseded HTML:
 
-Cream ruled paper, Switzer, gold marker, blue pen and one cover selection on
-“lease.” Slide 5 alone is inverted; Zodiak sets “No.” AI authority is explicitly
-rejected and the manager named. Seven block combinations vary the reading rhythm
-without introducing new themes or smaller type. No screenshots, mock interfaces,
-icons, image assets, progress dots or swipe prompts were added.
+```powershell
+node carousel-kit/check-carousel-copy.cjs
+```
 
-## Render, verify and compare
-
-From the project root:
+For an updated, matching source, run:
 
 ```powershell
 node carousel-kit/render-carousel.cjs b5-01-inquiry-to-lease
@@ -54,16 +46,12 @@ node carousel-kit/render-carousel.cjs b5-01-inquiry-to-lease
 node carousel-kit/assess-carousel.cjs --current
 ```
 
-Requires Chrome, bundled Playwright/sharp, Poppler and Python PDF libraries.
-Renderer overrides: `CAROUSEL_BROWSER`, `CAROUSEL_NODE_MODULES`, `CAROUSEL_PDFTOPPM`.
-Comparison additionally requires the vendor checkout and original Git commit.
+The reference projects now live under D:/codex_projects/automation_projects/.
+Chrome, bundled Playwright/sharp, Python PDF libraries and Poppler were verified
+for earlier proofs. Load Switzer and Zodiak with separate Fontshare links, check
+both faces and rerun baseline snapping after fonts settle. Do not export fallback
+fonts or replace baked grain with a full-page SVG turbulence filter.
 
-Request Switzer and Zodiak through separate Fontshare links; the combined URL can
-omit Zodiak. Check loaded faces and rerun baseline snapping after fonts settle.
-Never export a fallback-font version.
-
-Checks cover exact revised copy, content bands, footer/byline clearance, pen fit,
-page count, paper dimensions, font embedding and the shared grain tile. Chromium's
-sub-pixel height rounding is allowed, not larger drift. Inspect the contact sheet
-and every full-size PDF page. Technical QA isn't visual acceptance or a prediction
-of engagement. Later upload title: “A fast reply isn't a signed lease.”
+The sparse revision's earlier numbers are historical, not targets. Only assess
+rendered band span once the new source exists; it isn't actual ink coverage,
+whitespace percentage or proof that the revised design is good.

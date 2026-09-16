@@ -252,3 +252,5 @@ This document supplies vocabulary, qualified pain themes, source-backed excerpts
 The next-stage [content plan](linkedin-content-plan.md) now assigns each post a reader, business event, evidence source, demonstration boundary and purpose. It uses one full demo video, one same-footage short, six carousels and seven text posts; no standalone image posts.
 
 The completed [post scripts](linkedin-post-scripts.md) now provide all fifteen posts, exact carousel copy, full-demo narration and the original-audio short edit brief. Recording and asset production remain later tasks. No content has been published and no customer language has been presented as validated interview evidence.
+
+2026-09-17 — Carousel-only rewrite: all six decks now deliver practical checklists and worksheets, with 10/9/9/11/10/11 pages. See the current scripts and carousel design blueprint. Earlier PDF proofs are superseded; new asset exports await one design proof. Positioning, legal/proof boundaries, seven text posts and the single-master video contract are unchanged.

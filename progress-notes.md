@@ -1953,3 +1953,48 @@ Self-review acknowledges the caption carries more detail, the list page remains
 fullest, micro footers are small, and this is not proof of engagement or measured
 client ROI. The user's design acceptance is pending; other five decks stay on hold.
 No publishing, runtime/service or external-account actions. Unrelated work preserved.
+
+## 2026-09-17 — All carousel copy rewritten for practical value and deck-level design balance
+
+User rejected the sparse second proof: insufficient information, too gold-heavy,
+not enough purposeful use of the design vocabulary. Authorized all six carousel
+rewrites and a 7–11-page value-led range. Clarified that the mix belongs to the
+whole deck, not every design device or both colors on every page. This supersedes
+prior density targets and fixed 7/8-page briefs, not operational project scope.
+
+Rewrote all six canonical script sections, captions and exact slide fields into
+practical reference documents. Counts: B5-01 10, B5-04 9, B5-06 9, B5-09 11,
+B5-11 10, B5-13 11; 60 total. Current main-copy range 26–35 words/page; meaningful
+context replaces the rejected slogans. Each deck delivers a checklist or worksheet.
+Income examples include labeled gross/net comparison and explicit 24/26-pay-period
+annualization formulas, not real applicant or stored fixture results.
+
+Updated six plan briefs, index, current totals and both foundation handoffs. The
+nine non-carousel post sections (seven text plus two videos) remain byte-identical
+after newline normalization to commit 7acef8d. The one-master recording contract,
+proof limits, human decision authority and no-adverse-notice boundary are unchanged.
+
+Read general copywriter, social/frameworks, offer-positioner and syntax-polish;
+used the existing position matrix. UI/UX Foundations guides hierarchy, grouping,
+contrast and mobile legibility. High-end visual-design was inspected but not
+selected because its app motion/cards conflict with static teaching documents.
+Rechecked primary Plaid income definitions and FTC landlord guidance for source
+and boundary notes; no provider recommendation or compliance certification.
+
+Added carousel-design-blueprint.md with reader deliverables, named composition
+plans, teaching type/spacing, page-level focal phrases, selective blue boxes,
+underlines/circles and restrained gold highlights. Removed device quotas after the
+clarification; quiet pages are intentional. One dark page per deck, gold pen on
+navy for contrast. Proposed main body is 48px and metadata 36px, with shared named
+layouts required before rendering. These are specifications, not implemented QA.
+
+Added read-only check-carousel-copy.cjs: current counts, sequence, complete fields,
+marked phrases, focal budget, caption lengths, copy-language check, arithmetic and
+preserved non-carousel scripts pass; no length warnings. Updated design-system,
+README and latest self-assessment. Explicitly marked old HTML/PDF/PNG proofs as
+superseded and retained them for comparison. No new PDF was created in this pass.
+
+Next production step: implement and render the ten-page B5-01 proof, inspect its
+whole-deck annotation balance and all PDF pages, then seek design acceptance before
+batching the remaining five. No publishing, account actions or runtime changes.
+Unrelated dirty work preserved; new documentation rules mirrored in AGENTS/CLAUDE.

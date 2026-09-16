@@ -1,12 +1,12 @@
 # Build 05 — LinkedIn post scripts
 
-Written 2026-09-17. This is the finished writing package for the fifteen-post content plan, not a publication log. Nothing has been recorded, designed, uploaded or scheduled by this task.
+Written 2026-09-17; all six carousel sections revised 2026-09-17 after design feedback. This is the writing package for the fifteen-post content plan, not a publication log. Nothing has been recorded, designed, uploaded or scheduled by this task.
 
 ## How to use this file
 
-Copy only the text under **LinkedIn post** when preparing a caption or text post. Slide titles, bodies and footers below are final copy; visual directions and production notes are instructions, not publishing copy. Source links sit beside the claims they support. For LinkedIn, preserve the source URLs when converting Markdown links to plain text.
+Copy only the text under **LinkedIn post** when preparing a caption or text post. Slide titles, bodies and footers below are the current rewritten copy; visual directions and production notes are instructions, not publishing copy. Source links sit beside the claims they support. For LinkedIn, preserve the source URLs when converting Markdown links to plain text.
 
-The package contains six carousels with 46 slides, seven text posts, one full demo video and one short cut from that same recording. There are no standalone image posts. Publish in B5-01–B5-15 order unless the content plan is revised.
+The package contains six carousels with 60 slides, seven text posts, one full demo video and one short cut from that same recording. There are no standalone image posts. Publish in B5-01–B5-15 order unless the content plan is revised.
 
 The master video covers the current synthetic, operator-run demo. It does not show a deployed client system, real consumer screening, real SMS, a physical tour or a completed move-in. Telegram stands in for messaging; Plaid and DocuSign run in their test environments. Proposed production integrations are labeled as proposals.
 
@@ -14,95 +14,133 @@ Captions describing video events are release-gated: record and verify those even
 
 ## B5-01 — The work between an inquiry and a lease
 
-Format: carousel, seven slides. Purpose: introduce the business problem before the build.
+Format: carousel, 10 slides. Purpose: Audit one household's handoffs and write an explicit owner, next action and completion event.
+
+Framework: Value-Stack: eight handoff checks and a reusable record. Reader: Owner, leasing lead or operations manager.
+
+Saveable asset: Leasing handoff audit. The pages deliver the method and template themselves; the caption is supporting context, not a substitute for information missing from the slides.
 
 ### LinkedIn post
 
-A fast reply answers the first question. It doesn't finish the leasing work.
+A fast reply doesn't tell you whether the leasing work is under control.
 
-Someone still has to arrange the tour, collect the application, organize the evidence, get a manager's decision and check whether the lease was signed.
+The useful audit is what happens between stages: which record carries the household, what proves a tour happened, who reviews the application, and what confirms signing.
 
-Each handoff is small. Across a busy portfolio, the checking and chasing can occupy a large part of the day.
+I've turned the coordination pattern behind my demo into eight checks and a handoff-record template. You can use them to walk through one recent leasing file, even without adding software.
 
-I built a demo around those handoffs, from first inquiry to a sandbox lease signature. The point isn't to let AI choose a tenant. It's to prepare the work, keep its status visible and leave the rental decision with a person.
+The demo behind this pattern uses synthetic applicants, simulated tour completion, mocked checks and sandbox signing. It stops at a test signature and welcome message, not possession.
 
-This carousel shows the scope. Synthetic applicant, operator-simulated tour completion and sandbox signing. It ends at a confirmed test signature and welcome message, not physical move-in. AI extracts sourced information; configured rules check criteria; the manager decides.
+The audit is about finding unfinished work and unclear ownership. It isn't an AI tenant-selection method.
 
 ### Carousel slides
 
 #### Slide 1
 
-Title: A fast reply isn't a signed lease.
+Title: Eight checks for your leasing handoffs
 
-Body: The work is in the handoffs.
+Body: Use this audit to find missing owners, vague statuses and work that looks complete before the next team can act.
 
-Footer: Synthetic leasing demo
+Footer: Process audit · Based on a synthetic demo
 
-Visual: Bold typographic cover. Highlight “fast reply”; select “lease” once. No diagram or screenshot panel.
+Visual: cover layout. Blue box: “handoffs”. Gold highlight: “Eight checks”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 2
 
-Title: Answer from approved facts.
+Title: 1. Keep one household reference
 
-Body: Not guesses. Not promises.
+Body: Attach the inquiry, booking, application and signing record to the same reference. If two records don't clearly match, pause for review instead of letting AI choose.
 
-Footer: Property facts, not invented availability
+Footer: Check identity before acting
 
-Visual: Short statement and two-line contrast, with one gold marker phrase.
+Visual: reference layout. Blue underline: “one household reference”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 3
 
-Title: Booked isn't attended.
+Title: 2. Name the source of each answer
 
-Body: An appointment isn't proof of a visit.
+Body: Use approved property facts for replies. Check who updates them when policies change; a polished message still fails if it quotes yesterday's information.
 
-Footer: Tour completion is simulated in this demo
+Footer: Facts need an owner and a current source
 
-Visual: Oversized two-line statement. Circle “Booked”; leave the explanation short and separated.
+Visual: statement layout. Blue circle: “source”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 4
 
-Title: An application isn't approval.
+Title: 3. Separate booked from attended
 
-Body: Collect information. Organize documents. Prepare the review.
+Body: A calendar confirmation proves an appointment exists. Record tour completion separately, with an owner and timestamp, before treating the showing as finished.
 
-Footer: Evidence preparation, not a tenancy
+Footer: Demo tour completion is simulated
 
-Visual: Three unnumbered ruled rows beneath the statement. No application screenshot.
+Visual: contrast layout. Blue circle: “booked”. Blue underline: “Record tour completion separately”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 5
 
-Title: AI makes the rental decision?
+Title: 4. Define an application-ready file
 
-Body: No. The manager does.
+Body: Agree which information and documents the reviewer needs. Missing evidence creates a follow-up task; submitting a form doesn't make the file complete or approve the renter.
 
-Footer: Human authority stays explicit
+Footer: Application ≠ approval
 
-Visual: The only inverted page. A large Zodiak “No.” rejects AI authority; the manager is named underneath.
+Visual: checklist layout. Gold highlight: “Missing evidence”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 6
 
-Title: Sent isn't signed.
+Title: 5. Separate evidence from the decision
 
-Body: Wait for the signing service to confirm completion.
+Body: AI extracts sourced facts. Configured rules check criteria. The authorized manager records the rental decision. A criteria result must never masquerade as that person's approval.
 
-Footer: DocuSign sandbox · Test lease only
+Footer: Synthetic evidence · Human rental decision
 
-Visual: Quiet lead-in above an oversized highlighted “signed.” Provider confirmation remains explicit in the short explanation.
+Visual: roles layout. Blue underline: “authorized manager”. Use only this focal mark; preserve unmarked supporting copy. On the dark page the pen stroke becomes gold for contrast.
 
 #### Slide 7
 
-Title: Less chasing. Clearer handoffs.
+Title: 6. Use confirmation, not assumption
 
-Body: Next step. Owner. Status.
+Body: Lease sent and lease signed need different statuses. Update completion only when the signing service confirms the event for the correct application.
 
-Footer: Demo ends at test signing + welcome, not move-in
+Footer: Demo signing uses DocuSign sandbox
 
-Visual: Strong closing statement, three short lines, personal byline and a scope-boundary footer.
+Visual: contrast layout. Blue circle: “sent”. Use only these focal marks; preserve unmarked supporting copy.
+
+#### Slide 8
+
+Title: 7. Give waiting work an owner
+
+Body: For an unsigned lease or missing document, record who acts next and when to follow up. Failed delivery needs an exception, not another silent waiting status.
+
+Footer: Production follow-up design · Not a tested SLA
+
+Visual: exception layout. Blue underline: “who acts next”. Use only these focal marks; preserve unmarked supporting copy.
+
+#### Slide 9
+
+Title: 8. Don't collapse signing into move-in
+
+Body: Keep required funds, unit readiness and authorized access separate from signatures. Define applicable conditions with your operations team; the demo doesn't perform these possession checks.
+
+Footer: Proposed production controls · Move-in excluded
+
+Visual: boundary layout. Blue underline: “separate from signatures”. Use only these focal marks; preserve unmarked supporting copy.
+
+#### Slide 10
+
+Title: Use this handoff record
+
+Body: Household reference. Current stage. Completion evidence. Next action. Owner. Follow-up time. Exception. Fill it in for one recent file; an empty field shows what to investigate.
+
+Footer: Reusable template · No sensitive applicant data needed
+
+Visual: template layout. Blue box: “Owner”. Use only these focal marks; preserve unmarked supporting copy.
 
 ### Production notes
 
-Revised 2026-09-17 at the user's request after comparing vendor COI carousels. Use annotated typography, varied existing kit layouts and sparse copy, not screenshot panels or dense diagrams. Public slides must not carry internal build numbers. Supporting detail stays in this caption. Don't add a time-saved number. Sources: `the-full-flow.md`, newest `progress-notes.md`, and the B5-01 brief. Booking and attendance remain separate; AI never decides; signing and physical move-in remain separate. Only this seven-slide design proof is approved for production work; the other five await design acceptance.
+Rewritten 2026-09-17 following the user's balanced-text and reference-document direction. Page count follows value, not the old fixed brief. Public pages contain no internal build number. Follow [carousel-design-blueprint.md](carousel-design-blueprint.md) for hierarchy, spacing, annotation roles and the selected dark page. Do not force the longest copy into the old giant-type statement layout.
+
+Use the synthetic demo as the pattern's evidence, not as a client-results claim. No real consumer reports, protected-class inference, AI decisions, rankings or outcome recommendations. The worksheet is an operational aid, not legal advice or a universal screening policy.
+
+Only copy and design directions are current in this pass. The earlier first-carousel PDF and previews are superseded; they must not be published or treated as matching this rewrite. Render one new design proof before batching the other five.
 
 ## B5-02 — Full current-build demo
 
@@ -367,105 +405,123 @@ No asset required. Keep the distinction between self-reported scheduling informa
 
 ## B5-04 — Prepare the evidence; don't choose the tenant
 
-Format: carousel, eight slides. Purpose: make the division of labor visible.
+Format: carousel, 9 slides. Purpose: Specify a review packet that lets staff trace values, inspect rules and record a human decision.
+
+Framework: Value-Stack: traceable review-file components. Reader: Application reviewer or operations leader.
+
+Saveable asset: Application review-file checklist. The pages deliver the method and template themselves; the caption is supporting context, not a substitute for information missing from the slides.
 
 ### LinkedIn post
 
-The manager shouldn't have to accept an unexplained AI conclusion.
+An application summary is only useful if the reviewer can check how it was made.
 
-For this build, I separated document reading, configured criteria and the rental decision.
+A detached income number doesn't tell you which document supplied it, what period it covers or which criterion used it.
 
-The reading step returns a value with its source. The criteria check applies the configured rules and records the evidence behind each result. The manager reviews the file and decides.
+This checklist separates the parts of a reviewable file: stable identity, source context, configured rules, unresolved evidence and the authorized person's action. It ends with a packet template you can use when assessing your own review process.
 
-That separation makes the system easier to inspect. A wrong extracted value, a missing document and a disputed rule aren't the same problem, so they shouldn't disappear into one score.
+My demo illustrates the pattern with synthetic documents, Plaid Sandbox and mocked identity/background checks. AI prepares bounded information; it doesn't recommend, rank or decide.
 
-The card in this carousel is from a synthetic demo. It shows the review pattern, not verified information about a real renter.
+The checklist describes operational controls. It doesn't certify a screening policy or replace authorized policy review.
 
 ### Carousel slides
 
 #### Slide 1
 
-Title: Prepare the evidence. Don't choose the tenant.
+Title: What belongs in a reviewable application file?
 
-Body: The review card organizes a synthetic application. It gives the manager a way to inspect the file without asking AI to make the rental decision.
+Body: A useful packet lets the manager trace each value, inspect the configured criteria and see unresolved evidence before recording a rental decision.
 
-Footer: Synthetic evidence · Human decision
+Footer: Review-file checklist · Synthetic demo basis
 
-Visual: Review card cropped for readability, retaining all relevant source labels.
+Visual: cover layout. Blue box: “reviewable”. Gold highlight: “trace each value”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 2
 
-Title: Start with the reading work
+Title: Start with a stable identity
 
-Body: Documents arrive in different formats. Reading them can produce useful fields, but every extracted value needs a source the reviewer can check.
+Body: Match the household and property through trusted references before processing documents. An ambiguous match goes to a person; a language model must not assign evidence to an applicant.
 
-Footer: Extraction is preparation, not approval
+Footer: Identity matching is deterministic
 
-Visual: Paystub section connected to its extracted value. Use only the synthetic fixture.
+Visual: reference layout. Blue underline: “trusted references”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 3
 
-Title: Three jobs, three boundaries
+Title: Keep the amount beside its source
 
-Body: AI reads bounded material. Configured rules check criteria. A manager reviews and decides. Each result stays distinct so one role can't quietly replace another.
+Body: For each extracted value, retain the document, field or location, income basis and period. The reviewer should be able to check the original, not trust a floating number.
 
-Footer: Read → check → human decision
+Footer: Extraction prepares evidence, not truth certification
 
-Visual: Three separate boxes; only the third carries the rental decision.
+Visual: evidence layout. Blue underline: “document”. Gold highlight: “income basis and period”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 4
 
-Title: A value needs its citation
+Title: Show the rule and its evidence
 
-Body: The card links the extracted amount to the document field behind it. The reviewer can inspect the evidence instead of trusting a detached number.
+Body: Record the configured criterion, relevant value and resulting classification together. Separate this from the manager's decision; a model shouldn't invent a threshold or recommend an outcome.
 
-Footer: Value + document + field
+Footer: Policy review remains a business responsibility
 
-Visual: Annotate one actual citation from the verified synthetic card; don't invent a source location.
+Visual: roles layout. Blue underline: “rule”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 5
 
-Title: The rules aren't a model opinion
+Title: Make missing evidence explicit
 
-Body: The criteria check uses manager-configured thresholds and evidence. It records which rule was evaluated; those demo rules aren't universal legal requirements or production policy.
+Body: List what is missing, who owns the follow-up and which approved evidence route is available. Don't fill a blank with an inference to make the summary look finished.
 
-Footer: Configured criteria, not an AI recommendation
+Footer: Screening-stage requests require human approval
 
-Visual: A criterion and its evidence, clearly separated from the decision controls.
+Visual: exception layout. Blue circle: “missing”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 6
 
-Title: No ranking. No hidden recommendation.
+Title: Keep conflicting values visible
 
-Body: The model doesn't score applicants, label risk or recommend approval. Uncertain or missing evidence needs review, not a confident-sounding guess about the person.
+Body: Preserve both sources and their definitions. A gross-versus-net mismatch needs explanation; replacing them with one tidy number hides the reason the file requires review.
 
-Footer: AI stays inside bounded tasks
+Footer: Difference ≠ dishonesty
 
-Visual: Show allowed extraction outputs; don't add a fictional risk gauge even as decoration.
+Visual: contrast layout. Blue underline: “both sources”. Blue circle: “definitions”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 7
 
-Title: Record who decided
+Title: Log the human action separately
 
-Body: The manager's action is stored with the actor and time. The audit trail distinguishes a criteria result from an authorized person's rental decision.
+Body: Record the authorized reviewer, time, decision and relevant approved conditions in the restricted application record. Reading output and criteria classifications do not count as human approval.
 
-Footer: Decision ownership stays visible
+Footer: No AI decision, ranking or recommendation
 
-Visual: Fresh manager action and matching recorded state; conceal unrelated identifiers.
+Visual: payoff layout. Quiet page: use hierarchy, spacing and rules without a focal color annotation. Keep the complete useful copy.
 
 #### Slide 8
 
-Title: Make each part reviewable
+Title: Build the review packet around questions
 
-Body: A disputed value goes back to its source. A rule belongs to policy review. The rental decision belongs to the manager, not the model.
+Body: Which household? What evidence? Which rule? What's unresolved? Who acts next? Where is the decision recorded? Put those answers together without exposing sensitive documents in routine chat.
 
-Footer: Separate responsibilities make errors easier to locate
+Footer: Template, not a screenshot of a real applicant
 
-Visual: Recap value, rule and decision as three independent review points.
+Visual: template layout. Blue box: “What's unresolved”. Use only these focal marks; preserve unmarked supporting copy.
+
+#### Slide 9
+
+Title: Test whether the file is reviewable
+
+Body: Pick one synthetic or properly redacted example. Trace a value to its source, explain a rule result and find the human action. Any missing link becomes a process fix.
+
+Footer: Reusable review test · No consumer-report collection
+
+Visual: close layout. Gold highlight: “Any missing link”. Use only these focal marks; preserve unmarked supporting copy.
 
 ### Production notes
 
-Use S08–S09 frames from the master, with explicit synthetic and mock labels. Don't imply the demo includes a live bureau integration. This describes the build's design boundary, not a certification that any screening policy is lawful.
+Rewritten 2026-09-17 following the user's balanced-text and reference-document direction. Page count follows value, not the old fixed brief. Public pages contain no internal build number. Follow [carousel-design-blueprint.md](carousel-design-blueprint.md) for hierarchy, spacing, annotation roles and the selected dark page. Do not force the longest copy into the old giant-type statement layout.
+
+Use the synthetic demo as the pattern's evidence, not as a client-results claim. No real consumer reports, protected-class inference, AI decisions, rankings or outcome recommendations. The worksheet is an operational aid, not legal advice or a universal screening policy.
+
+Only copy and design directions are current in this pass. The earlier first-carousel PDF and previews are superseded; they must not be published or treated as matching this rewrite. Render one new design proof before batching the other five.
 
 ## B5-05 — The booking worked. The time was wrong.
 
@@ -493,95 +549,123 @@ No new recording required. Source: recorded timezone defect and correction in `p
 
 ## B5-06 — Permission changes as the application progresses
 
-Format: carousel, seven slides. Purpose: explain automatic messaging versus individual human approval.
+Format: carousel, 9 slides. Purpose: Write a message permission matrix that depends on stage, final content, current facts and recorded authority.
+
+Framework: Value-Stack: message-permission matrix and send-time checks. Reader: Manager or operations leader.
+
+Saveable asset: Leasing message-permission worksheet. The pages deliver the method and template themselves; the caption is supporting context, not a substitute for information missing from the slides.
 
 ### LinkedIn post
 
-Not every message in a leasing process needs the same permission.
+Before automating leasing messages, write down who can send what.
 
-A factual answer about the listing is different from a message about an application outcome. Treating both as interchangeable makes the workflow harder to control.
+A parking answer, a tour reminder and a screening-stage document request aren't interchangeable. The stage matters as much as the wording.
 
-This demo uses two messaging tiers. Approved factual and routine coordination messages can send after checks. Once screening begins, applicant-facing messages need a manager's individual approval.
+This worksheet explains the two-tier boundary used in my demo, then shows the fields a team needs in a message-permission matrix: allowed content, recipient checks, approval owner, final check and failure route.
 
-The check runs again at send time, including after an edit. Approval isn't a reason to skip the last check against current information.
+Routine factual coordination can send after checks. Once screening begins, applicant-facing messages need individual manager approval, including after edits.
 
-These slides explain the configured boundary. They don't claim that every possible message or legal exception has been tested.
+The demo uses Telegram as a messaging stand-in. This isn't a claim of live SMS, universal consent clearance or automated legal notices. Those production choices require the company's authorized process.
 
 ### Carousel slides
 
 #### Slide 1
 
-Title: Who can send what?
+Title: Write the rules before messages send
 
-Body: Permission depends on the message and stage. A routine listing answer and an application-outcome message shouldn't pass through the same approval path.
+Body: Use a message-permission matrix: what may send automatically, what needs a person's approval, and what must stop. Don't leave those boundaries to the model's confidence.
 
-Footer: Build 05 messaging boundaries
+Footer: Communication controls · Demo pattern
 
-Visual: Two labeled lanes, Tier A and Tier B, not “safe people” versus “risky people.”
+Visual: cover layout. Blue box: “rules”. Gold highlight: “message-permission matrix”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 2
 
-Title: Factual answers can move quickly
+Title: Classify by content and stage
 
-Body: Tier A permits answers grounded in approved property facts. Checks block invented terms, unsupported commitments and content outside the assistant's allowed role.
+Body: Identify the current application stage and the message's purpose. A routine status phrase can become sensitive in screening; wording alone isn't enough to choose its permission path.
 
-Footer: Automatic only after guardrail checks
+Footer: Tier A and Tier B describe messages, not people
 
-Visual: Question → approved facts → check → factual reply.
+Visual: roles layout. Blue underline: “content and stage”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 3
 
-Title: Routine coordination has a lane
+Title: Tier A: approved factual answers
 
-Body: Tour confirmations, reminders and application links can use the permitted automatic path. The message still needs the right recipient, reference and current facts.
+Body: Allow grounded property answers only after checks. Use current approved facts, the right reference and recipient; block invented terms, negotiation and unsupported availability promises.
 
-Footer: Routine doesn't mean unchecked
+Footer: Automatic does not mean unchecked
 
-Visual: A confirmation and an application-link example, with references concealed.
+Visual: evidence layout. Blue underline: “approved facts”. Gold highlight: “right reference and recipient”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 4
 
-Title: Screening changes the permission
+Title: Tier A: routine coordination
 
-Body: Applicant-facing screening messages, outcome wording, conditional terms and requests for further documents require individual human approval. They aren't routine factual replies.
+Body: Tour confirmations, reminders and application links can use the permitted automatic lane. Check the booked event and link destination; a scheduled send isn't proof that delivery succeeded.
 
-Footer: Tier B · Manager approval required
+Footer: Telegram stands in for messaging in the demo
 
-Visual: Draft paused at a clearly marked human review point.
+Visual: checklist layout. Blue circle: “delivery”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 5
 
-Title: Approval needs an owner
+Title: Tier B: screening-stage messages
 
-Body: The record captures the authorized person's action and time. A model-generated draft or criteria result doesn't count as permission to send an outcome message.
+Body: In this demo, applicant-facing screening messages need individual manager approval. That includes further-document requests and outcome-related wording; they aren't ordinary listing replies.
 
-Footer: Human approval is a recorded event
+Footer: Configured demo boundary · Not universal policy
 
-Visual: Manager action → audit entry, kept separate from AI output.
+Visual: boundary layout. Blue underline: “individual”. Gold highlight: “screening messages”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 6
 
-Title: Check again before sending
+Title: Approval needs a named person
 
-Body: A manager may edit the wording, and the record may change. The send-time check evaluates the final message against the information available now.
+Body: Record who approved which final draft and when. A generated message or criteria result supplies no sending authority. Changed wording must return through the required approval path.
 
-Footer: Approval doesn't bypass the final check
+Footer: Approval is a recorded event
 
-Visual: Edit → current-state check → send or visible exception.
+Visual: reference layout. Blue underline: “which final draft”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 7
 
-Title: A stop must stay visible
+Title: Check the final message again
 
-Body: A blocked message needs a safe fallback and human alert, not silence. This demo never generates or sends adverse-action notices; that process stays outside automation.
+Body: Before sending, validate the approved text against current facts and stage. If the manager edits it or the record changes, earlier checks must not authorize stale or unsupported wording.
 
-Footer: No silent failure. No automated legal notice.
+Footer: Send-time check follows approval
 
-Visual: Failure path to fallback and manager alert, not a disappearing arrow.
+Visual: contrast layout. Blue underline: “current facts”. Gold highlight: “earlier checks”. Use only these focal marks; preserve unmarked supporting copy.
+
+#### Slide 8
+
+Title: A blocked send needs a visible route
+
+Body: Log the failure and alert its owner. In conversation, use a permitted neutral fallback instead of silence. This demo never drafts or sends adverse-action notices.
+
+Footer: Legal notices stay outside this automation
+
+Visual: exception layout. Blue circle: “silence”. Blue underline: “alert its owner”. Use only these focal marks; preserve unmarked supporting copy.
+
+#### Slide 9
+
+Title: Use this permission worksheet
+
+Body: For each message type, record: stage, allowed facts, automatic or approved lane, approver, send-time check, delivery evidence and failure owner. Review the matrix before enabling outbound work.
+
+Footer: Reusable matrix · Adapt with authorized staff
+
+Visual: template layout. Blue box: “failure owner”. Use only these focal marks; preserve unmarked supporting copy.
 
 ### Production notes
 
-Don't stage a Conditional decision to illustrate document collection: in the current build, that action can start the sandbox lease path. Use diagram copy to explain message permissions. No legal notice wording, invented approval policy or universal two-step notice claim.
+Rewritten 2026-09-17 following the user's balanced-text and reference-document direction. Page count follows value, not the old fixed brief. Public pages contain no internal build number. Follow [carousel-design-blueprint.md](carousel-design-blueprint.md) for hierarchy, spacing, annotation roles and the selected dark page. Do not force the longest copy into the old giant-type statement layout.
+
+Use the synthetic demo as the pattern's evidence, not as a client-results claim. No real consumer reports, protected-class inference, AI decisions, rankings or outcome recommendations. The worksheet is an operational aid, not legal advice or a universal screening policy.
+
+Only copy and design directions are current in this pass. The earlier first-carousel PDF and previews are superseded; they must not be published or treated as matching this rewrite. Render one new design proof before batching the other five.
 
 ## B5-07 — Start with the software the company already has
 
@@ -661,107 +745,143 @@ Release primary only if the master passes S08–S12 checks. Use one caption and 
 
 ## B5-09 — A different income number isn't a verdict
 
-Format: carousel, eight slides. Purpose: explain source reconciliation without a fraud story.
+Format: carousel, 11 slides. Purpose: Preserve source, basis, frequency, period and coverage; use labeled calculations to explain rather than accuse.
+
+Framework: Value-Stack: reconciliation questions with two labeled worked examples. Reader: Application reviewer or operations leader.
+
+Saveable asset: Income evidence reconciliation worksheet. The pages deliver the method and template themselves; the caption is supporting context, not a substitute for information missing from the slides.
 
 ### LinkedIn post
 
-Two income numbers can differ without either one proving dishonesty.
+Before comparing income numbers, compare their definitions.
 
-One may be self-reported gross monthly income. Another may reflect net deposits into a connected account. A third may come from a pay period that needs conversion.
+A monthly gross figure, a pay-period amount and a bank-derived net amount can all belong to the same file without measuring the same thing.
 
-Plaid distinguishes bank-income information based on net income from payroll-income information that includes gross income. Those definitions matter before comparing a number with a rental criterion. [Bank income documentation](https://plaid.com/docs/income/bank-income/), [payroll income documentation](https://plaid.com/docs/income/payroll-income/).
+This worksheet covers source, gross/net basis, payment frequency, coverage and timing. Two labeled examples show why matching digits isn't the first review task. Plaid describes Bank Income as net-income information and Payroll Income as gross-income information. [Bank Income](https://plaid.com/docs/income/bank-income/), [Payroll Income](https://plaid.com/docs/income/payroll-income/).
 
-For my demo, the income result is Sandbox data and the paystub is synthetic. I don't present a mismatch as fraud or ask AI to decide what it means about the applicant.
+The examples are illustrative, not Maya's verified income. My demo uses synthetic documents and Plaid Sandbox.
 
-The review needs to compare like with like—and leave an unresolved discrepancy visible for a person.
+Use the checklist to prepare a human review. It doesn't supply a screening threshold, fraud verdict or rental decision.
 
 ### Carousel slides
 
 #### Slide 1
 
-Title: A different income number isn't a verdict
+Title: Check the meaning before the number
 
-Body: Before drawing a conclusion, check what each number measures, where it came from and which period it covers. A discrepancy needs explanation, not accusation.
+Body: Use this worksheet when income evidence differs. Preserve the source, basis, period and coverage before asking whether two amounts should match or which further review is needed.
 
-Footer: Evidence review, not applicant judgment
+Footer: Evidence reconciliation · Not a fraud verdict
 
-Visual: Two source-labeled amounts without red warning labels or a risk score.
+Visual: cover layout. Blue box: “meaning”. Gold highlight: “source, basis”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 2
 
-Title: Keep the sources separate
+Title: Keep three sources separate
 
-Body: Self-reported income, a document amount and a provider result are different evidence sources. Preserve each source instead of overwriting them with one unexplained number.
+Body: Self-reported income, a document value and provider output need separate labels. Preserve the originals; replacing them with one unexplained amount makes the comparison harder to review.
 
 Footer: Reported · Document · Provider
 
-Visual: Three parallel evidence cards; use labels, not invented applicant values.
+Visual: evidence layout. Quiet page: use hierarchy, spacing and rules without a focal color annotation. Keep the complete useful copy.
 
 #### Slide 3
 
-Title: Gross and net aren't interchangeable
+Title: Ask: gross or net?
 
-Body: Bank deposits can reflect net income. Payroll information can include gross income. Comparing them directly can create a discrepancy that comes from definitions, not dishonesty.
+Body: Plaid's Bank Income describes net-income information from connected accounts. Payroll Income includes gross-income information. Confirm the product and field before treating either as the other's equivalent.
 
-Footer: Source: Plaid bank-income and payroll-income documentation
+Footer: Sources: Plaid Bank Income and Payroll Income
 
-Visual: Gross pay → deductions → net deposit. Link the two official sources in the caption or PDF source note.
+Visual: contrast layout. Blue circle: “gross”. Blue underline: “net-income”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 4
 
-Title: Match the period
+Title: A difference can start with definitions
 
-Body: A pay-period amount isn't a monthly amount. Check frequency and the conversion basis before comparing a document value with a monthly requirement.
+Body: Illustrative example: reported gross monthly pay is $5,000; net deposits total $4,100. Those figures don't measure the same thing. The $900 difference alone doesn't establish dishonesty.
 
-Footer: Period and frequency belong beside the value
+Footer: Illustrative only · Not a real applicant or demo result
 
-Visual: Pay-period label, frequency and monthly basis as separate fields; no universal formula for every income type.
+Visual: worked-example layout. Blue box: “definitions”. Gold highlight: “don't measure the same thing”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 5
 
-Title: Check coverage, too
+Title: Check the payment frequency
 
-Body: A connected account may not contain every deposit or income source. Check the evidence's coverage before treating an incomplete view as the applicant's total income.
+Body: Weekly, every two weeks and twice monthly are different periods. Read the document's frequency before annualizing regular pay; don't infer a monthly total from an unlabeled payment.
 
-Footer: An incomplete source isn't a complete financial picture
+Footer: Period and frequency belong beside the amount
 
-Visual: Source coverage boundary with an unresolved item, not fabricated bank-account details.
+Visual: reference layout. Blue underline: “twice monthly”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 6
 
-Title: Give the discrepancy an owner
+Title: Frequency changes the monthly equivalent
 
-Body: A reviewer checks the difference and uses approved evidence alternatives where policy permits. Any further-document message follows the human-approval path once screening has begun.
+Body: Illustrative gross pay: $2,400/period. Twice monthly: $2,400 × 24 ÷ 12 = $4,800/month. Every two weeks: $2,400 × 26 ÷ 12 = $5,200/month. Annualized, not monthly cash receipts.
 
-Footer: Review first · Approved communication
+Footer: Illustrative annualization · Not a screening threshold
 
-Visual: Discrepancy → manager review → approved next step. Don't draw an automatic rejection branch.
+Visual: worked-example layout. Blue underline: “Twice monthly”. Gold highlight: “Every two weeks”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 7
 
-Title: The demo uses test evidence
+Title: Check what the source covers
 
-Body: Maya's paystub is synthetic and the income result comes from Plaid Sandbox. This demonstrates evidence handling, not a real bank connection or verified consumer income.
+Body: One connected account may omit income deposited elsewhere. Note the accounts or periods covered and what's unresolved; incomplete coverage must not silently become the household's total income.
 
-Footer: Synthetic paystub · Plaid Sandbox
+Footer: Coverage limits need human review
 
-Visual: Fixture and Sandbox labels, no simulated bank login presented as real.
+Visual: boundary layout. Blue circle: “covers”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 8
 
-Title: Compare like with like
+Title: Check timing and unusual periods
 
-Body: Preserve source, definition, period and coverage. If the difference remains unresolved, keep it visible for human review. AI doesn't issue a rental decision or fraud label.
+Body: A paystub and bank history may cover different dates. Note bonuses, partial periods or changed pay separately; don't stretch one unusual payment into a recurring-income claim.
 
-Footer: Better evidence organization, not a hidden verdict
+Footer: Use the approved evidence interpretation process
 
-Visual: Four check labels feeding review, with human decision outside the comparison box.
+Visual: contrast layout. Gold highlight: “partial periods”. Use only these focal marks; preserve unmarked supporting copy.
+
+#### Slide 9
+
+Title: Write the explanation, not an accusation
+
+Body: Record which definitions differ, what remains missing and who reviews it. Further-document requests follow the approved communication path; an unresolved mismatch is not permission for an automatic outcome.
+
+Footer: Human review · No AI fraud or rental decision
+
+Visual: exception layout. Blue underline: “who reviews it”. Use only these focal marks; preserve unmarked supporting copy.
+
+#### Slide 10
+
+Title: Keep the demonstration boundary visible
+
+Body: The demo uses synthetic paystubs and Plaid Sandbox output. It demonstrates handling evidence, not verified consumer income. Production provider selection needs separate permission, eligibility and policy review.
+
+Footer: Synthetic documents · Plaid Sandbox
+
+Visual: boundary layout. Blue circle: “Sandbox”. Use only these focal marks; preserve unmarked supporting copy.
+
+#### Slide 11
+
+Title: Use this reconciliation note
+
+Body: Source. Gross/net basis. Pay frequency. Covered dates. Coverage limits. Conversion method. Unresolved difference. Reviewer and next step. Keep the original values attached so another person can check the explanation.
+
+Footer: Reusable worksheet · Compare like with like
+
+Visual: template layout. Blue underline: “original values”. Use only these focal marks; preserve unmarked supporting copy.
 
 ### Production notes
 
-Sources checked 2026-09-17: [Plaid bank income](https://plaid.com/docs/income/bank-income/) and [Plaid payroll income](https://plaid.com/docs/income/payroll-income/). These support the definitions, not a universal provider selection; current Plaid guidance directs new US integrations toward its applicable consumer-report products. Production selection requires a separate review of product eligibility, permissions and legal obligations.
+Rewritten 2026-09-17 following the user's balanced-text and reference-document direction. Page count follows value, not the old fixed brief. Public pages contain no internal build number. Follow [carousel-design-blueprint.md](carousel-design-blueprint.md) for hierarchy, spacing, annotation roles and the selected dark page. Do not force the longest copy into the old giant-type statement layout.
 
-This post does not prescribe screening criteria or a notice process. If a consumer report affects an unfavorable rental action, the business must handle its applicable obligations with authorized people. See [FTC landlord guidance](https://www.ftc.gov/business-guidance/resources/using-consumer-reports-what-landlords-need-know). Don't add an automated denial or claim that a single discrepancy determines the outcome.
+Provider definitions rechecked 2026-09-17: [Plaid Bank Income](https://plaid.com/docs/income/bank-income/) and [Plaid Payroll Income](https://plaid.com/docs/income/payroll-income/). The two numerical examples are constructed teaching examples, not stored fixture outputs, real applicants or recommended screening thresholds. The frequency calculation assumes regular pay over a year, not a guaranteed monthly cash receipt. Plaid directs new US integrations toward its applicable consumer-report products; production selection needs separate eligibility, permission and policy review. No automated adverse-action or fraud verdict. [FTC landlord guidance](https://www.ftc.gov/business-guidance/resources/using-consumer-reports-what-landlords-need-know).
+
+Only copy and design directions are current in this pass. The earlier first-carousel PDF and previews are superseded; they must not be published or treated as matching this rewrite. Render one new design proof before batching the other five.
 
 ## B5-10 — Five rows didn't mean five prospects
 
@@ -789,105 +909,133 @@ No asset or new Airtable view required. Source: mirror duplicate-row diagnosis a
 
 ## B5-11 — Signed doesn't mean move-in ready
 
-Format: carousel, eight slides. Purpose: define the operational boundary after signing.
+Format: carousel, 10 slides. Purpose: Assign evidence and authority to applicable readiness conditions instead of treating a signature event as permission for possession.
+
+Framework: Value-Stack: distinct readiness signoffs and a reusable gate. Reader: Operations leader or owner.
+
+Saveable asset: Post-signature readiness worksheet. The pages deliver the method and template themselves; the caption is supporting context, not a substitute for information missing from the slides.
 
 ### LinkedIn post
 
-A signed lease and permission to take possession are different milestones.
+A signature-complete event answers one question: has the signing transaction completed?
 
-A production process may still need all required signatures, confirmed funds, a ready unit and any policy-required checks before access is released.
+It doesn't answer whether required funds are confirmed, the home is ready or someone is authorized to release access.
 
-Those steps need their own owners and evidence. A signature callback shouldn't quietly stand in for all of them.
+This worksheet separates those questions into named signoffs. For each applicable condition, the team records its source of evidence, owner and blocker. The exact requirements and sequence come from the company's approved process and applicable obligations.
 
-My current demo stops after a confirmed sandbox signature and a welcome email. It doesn't clear payments, inspect the home, complete every production signer or issue real access.
+These are proposed production controls, not extra features secretly running in my demo. The current build stops after a confirmed DocuSign sandbox signature and welcome delivery.
 
-This carousel shows the additional controls a production design would need to define. The exact sequence belongs to the company's policy and applicable requirements, not a generic automation template.
+Use the worksheet to inspect a handover process—not as a universal legal checklist or permission to release possession.
 
 ### Carousel slides
 
 #### Slide 1
 
-Title: Signed doesn't mean move-in ready
+Title: Signing isn't your move-in checklist
 
-Body: Lease completion is one milestone. A production process needs separate evidence for the other conditions that must be met before the resident can take possession.
+Body: Use separate signoffs for allocation, signatures, funds, home readiness and access. A completed envelope confirms signing, not every condition your business requires before possession.
 
-Footer: Production considerations · Not current demo features
+Footer: Proposed production controls · Not demo features
 
-Visual: Signed milestone followed by explicitly proposed readiness checks.
+Visual: cover layout. Blue box: “move-in”. Gold highlight: “separate signoffs”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 2
 
-Title: Start with the recorded decision
+Title: Start from the authorized decision
 
-Body: The authorized person's rental decision must be clear. Document preparation and a criteria result don't replace that decision or its recorded conditions.
+Body: Locate the recorded rental decision and approved terms before preparing the lease. Document extraction or a criteria classification cannot stand in for an authorized person's approval.
 
-Footer: Decision owner and terms stay explicit
+Footer: Proposed workflow · Human rental authority
 
-Visual: Human approval record at the start of the post-decision lane.
+Visual: reference layout. Blue underline: “recorded rental decision”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 3
 
-Title: Confirm the allocation or hold
+Title: Confirm the home allocation
 
-Body: The business needs a policy for unit allocation and any holding period. Automation shouldn't promise exclusive availability unless the authorized system and policy support it.
+Body: Use the authoritative property record and approved hold policy. Don't promise exclusive availability from a draft application or duplicate lead; allocation needs its own supported event.
 
-Footer: Business policy controls the hold
+Footer: Proposed control · Hold policies vary
 
-Visual: Unit record and authorized allocation event; label as proposed production integration.
+Visual: boundary layout. Blue circle: “allocation”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 4
 
-Title: Check all required signatures
+Title: Confirm the required signing transaction
 
-Body: Completion must mean the signers required for that transaction have finished. One applicant's signature isn't evidence that every required party has executed the lease.
+Body: Check the signers required for this transaction and the provider's completion status. One signature or a sent email doesn't establish that every required party has finished.
 
-Footer: Demo signature ≠ every production signer
+Footer: Proposed control · Not a universal signer count
 
-Visual: Required-signers checklist without asserting a universal number of signers.
+Visual: contrast layout. Blue circle: “One signature”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 5
 
-Title: Confirm required funds separately
+Title: Get funds status from its source
 
-Body: Where funds are required before possession, use the approved accounting or payment record. A lease callback doesn't prove receipt, clearance or a reconciled balance.
+Body: Where payment is required before possession, use the approved accounting or payment record. Keep pending, received and cleared states distinct under policy; a signature event proves none of them.
 
-Footer: Payment status comes from its authorized source
+Footer: Proposed control · Accounting owns payment evidence
 
-Visual: Accounting confirmation as a separate input; no fake paid screenshot.
+Visual: roles layout. Blue box: “funds”. Blue underline: “accounting”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 6
 
-Title: Check readiness under company policy
+Title: Give home readiness an owner
 
-Body: Unit readiness, insurance and access arrangements may need confirmation. Assign the relevant checks to the right team; don't infer completion from a signed document.
+Body: Identify who confirms the unit is ready and where that signoff lives. An unfinished repair or missing inspection creates a blocker; a signed agreement must not hide it.
 
-Footer: Requirements vary by policy and location
+Footer: Proposed control · Readiness requirements vary
 
-Visual: Proposed operations checklist with an owner beside each applicable item.
+Visual: exception layout. Blue underline: “who confirms”. Gold highlight: “blocker”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 7
 
-Title: Release possession through an authorized step
+Title: Check other applicable conditions
 
-Body: Once applicable conditions are confirmed, an authorized employee or controlled process can release possession. Access shouldn't be triggered by signing alone without that authority.
+Body: Where company policy and applicable requirements call for insurance or other readiness evidence, name its source and reviewer. Don't let automation invent requirements or infer completion from silence.
 
-Footer: Authorized handoff, not automatic assumption
+Footer: Proposed control · Policy-specific, not universal
 
-Visual: Readiness gate leading to an authorized handoff; no live lock code.
+Visual: checklist layout. Quiet page: use hierarchy, spacing and rules without a focal color annotation. Keep the complete useful copy.
 
 #### Slide 8
 
-Title: Here is the demo boundary
+Title: Release access through an authorized step
 
-Body: The current build confirms a sandbox signature and welcome delivery. Payments, physical readiness and possession are production design topics, not completed features in this demo.
+Body: Confirm applicable readiness conditions before the authorized handover. Record who released access and when; a signing callback alone must not trigger keys or a real lock credential.
 
-Footer: Test signature → welcome · Physical move-in excluded
+Footer: Proposed control · No real access in the demo
 
-Visual: Bold boundary between verified demo endpoint and proposed later controls.
+Visual: payoff layout. Blue underline: “authorized handover”. Use only these focal marks; preserve unmarked supporting copy.
+
+#### Slide 9
+
+Title: Keep this demo's endpoint separate
+
+Body: The current build confirms a sandbox signature and welcome delivery. It doesn't settle funds, inspect the home, prove every production signer or release possession. Those need separate production design.
+
+Footer: Demo boundary · Test signing and welcome only
+
+Visual: boundary layout. Blue circle: “possession”. Use only these focal marks; preserve unmarked supporting copy.
+
+#### Slide 10
+
+Title: Use a readiness signoff record
+
+Body: Condition. Required evidence. Source system. Owner. Status. Blocker. Confirmed time. Handover authority. Complete the applicable rows with operations staff before automating any possession or access event.
+
+Footer: Reusable worksheet · Review company requirements first
+
+Visual: template layout. Blue underline: “Handover authority”. Gold highlight: “Blocker”. Use only these focal marks; preserve unmarked supporting copy.
 
 ### Production notes
 
-Use diagrams, not fabricated operational screenshots. Don't imply a welcome email certifies readiness or that a mock access value grants possession. The production blueprint supplies the proposed control pattern; the live demo supplies only the narrower endpoint.
+Rewritten 2026-09-17 following the user's balanced-text and reference-document direction. Page count follows value, not the old fixed brief. Public pages contain no internal build number. Follow [carousel-design-blueprint.md](carousel-design-blueprint.md) for hierarchy, spacing, annotation roles and the selected dark page. Do not force the longest copy into the old giant-type statement layout.
+
+Keep the proposed-production boundary on every page. These worksheets describe a production design, not deployed client integrations or additional implemented demo features. Applicable requirements, access, retention and authority belong to the company's authorized process. No universal integration, legal compliance or ROI claim.
+
+Only copy and design directions are current in this pass. The earlier first-carousel PDF and previews are superseded; they must not be published or treated as matching this rewrite. Render one new design proof before batching the other five.
 
 ## B5-12 — A blocked reply still needs a response
 
@@ -915,105 +1063,143 @@ No reenactment or separate recording. Source: guardrail refusal and fallback ent
 
 ## B5-13 — Fit the coordination around the existing business
 
-Format: carousel, eight slides. Purpose: explain the proposed production system without pretending the demo is deployed.
+Format: carousel, 11 slides. Purpose: Scope one supported event-to-task gap, define system authority and test normal and failure paths before rollout.
+
+Framework: Value-Stack: discovery questions, exception design and a pilot brief. Reader: Owner, executive or operations leader.
+
+Saveable asset: Existing-business automation fit worksheet. The pages deliver the method and template themselves; the caption is supporting context, not a substitute for information missing from the slides.
 
 ### LinkedIn post
 
-The production goal isn't “give the team another dashboard.”
+The first automation question isn't which new tool to buy.
 
-It's to connect the handoffs around the systems the company already uses, then return the next task or status to the right place wherever the integrations support it.
+It's which handoff the company's existing tools and team still have to complete manually.
 
-Property facts stay with their authorized source. Applications and evidence stay in approved systems. People keep decision authority. The coordination layer handles supported events, routing and visible exceptions.
+This fit worksheet starts with native capabilities, then maps record authority, permitted events, human decisions, writeback and failed work. It ends with a one-path pilot brief, not a promise to connect everything.
 
-This is a proposed production design, not an existing client integration. The local demo proves a narrower path with test services and stand-ins.
+That's the production direction behind my leasing blueprint. It's a proposal, not footage of live PMS integrations or a client rollout. The local demo proves a narrower synthetic flow with stand-ins and test services.
 
-I've written the production blueprint for discussing this fit. It starts with the business process; the actual connection choices would follow discovery of the company's tools, permissions and remaining gaps.
+A useful discovery process can also find that the native software already covers the gap. In that case, configure it before adding a custom layer.
 
 ### Carousel slides
 
 #### Slide 1
 
-Title: Fit the automation around the business
+Title: Map the gap before adding automation
 
-Body: A production design should connect the company's existing leasing work, not duplicate every tool or force employees to monitor a separate application for each handoff.
+Body: Use this fit worksheet to connect one unfinished leasing handoff around existing systems. Define where work starts, who acts next and what proves completion before choosing another tool.
 
 Footer: Proposed production design · Integration-dependent
 
-Visual: Existing systems around a coordination layer; no claim of a deployed client architecture.
+Visual: cover layout. Blue box: “gap”. Gold highlight: “one unfinished leasing handoff”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 2
 
-Title: Keep property facts authoritative
+Title: Check what your software already does
 
-Body: The approved PM or CRM source supplies unit facts and stable identities. Updates must follow its authority; the model doesn't invent availability or choose records.
+Body: Review the team's licensed features, templates and configured workflows. If the native system handles the gap, use it; a custom layer shouldn't duplicate a process that already works.
 
-Footer: Existing source → approved facts and identifiers
+Footer: Discovery question · No claim about every PMS
 
-Visual: Authoritative property source feeding a bounded factual-answer process.
+Visual: checklist layout. Blue underline: “licensed features”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 3
 
-Title: Use approved communication and calendars
+Title: Name the authority for each record
 
-Body: Supported email, messaging and calendar tools carry replies and appointments. Consent, account permissions and local-time rules determine which actions the automation may take.
+Body: Identify which system owns property facts, household identity, applications, signing and funds. Agree how changes flow back; a copied dashboard row must not become a competing source of truth.
 
-Footer: Existing channels where supported
+Footer: Proposed integration map · No demo stack required
 
-Visual: Communication and scheduling lanes connected to the same lead identity.
+Visual: roles layout. Blue box: “authority”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 4
 
-Title: Keep evidence in approved systems
+Title: Define the event that starts work
 
-Body: A secure application portal and eligible verification providers supply evidence. Access, retention and purpose need review before connecting sensitive applicant information to any automation.
+Body: For one handoff, name the business event and required fields. Confirm supported access and duplicate handling; an event without a trusted household reference shouldn't start an applicant action.
 
-Footer: Proposed integrations · Not real consumer data in the demo
+Footer: Proposed control · Validate interface access
 
-Visual: Application system and approved provider inputs, with restricted-access boundary.
+Visual: reference layout. Blue circle: “event”. Gold highlight: “trusted household reference”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 5
 
-Title: Coordinate events and exceptions
+Title: Use approved channels and calendars
 
-Body: The coordination layer tracks supported events, next steps and failures. Missing evidence or a failed action produces owned work, not a status that silently looks complete.
+Body: Keep staff in existing communication and scheduling tools where supported. Check contact permissions, account access and property-local time; don't assume a connection authorizes every message or booking.
 
-Footer: Event → next step or assigned exception
+Footer: Proposed integrations · Telegram is a demo stand-in
 
-Visual: One normal branch and one visible exception branch with ownership.
+Visual: evidence layout. Blue underline: “contact permissions”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 6
 
-Title: People retain decision authority
+Title: Keep sensitive evidence in approved systems
 
-Body: Authorized employees review the evidence and make rental decisions. AI can prepare bounded material, but it doesn't rank applicants or approve outcomes on their behalf.
+Body: Map where applications and documents live, who may access them and what data the automation needs. Confirm provider eligibility, retention and approved alternatives before connecting sensitive applicant information.
 
-Footer: Human review remains a distinct handoff
+Footer: Proposed design · No real consumer data in the demo
 
-Visual: Prepared evidence into human review; separate approval before controlled downstream actions.
+Visual: boundary layout. Quiet page: use hierarchy, spacing and rules without a focal color annotation. Keep the complete useful copy.
 
 #### Slide 7
 
-Title: Return work to the team's tools
+Title: Make the human handoff explicit
 
-Body: Where supported, tasks, statuses and exceptions appear in the existing operational system. Employees see who owns the next step without hunting across unconnected messages.
+Body: Name the rental decision-maker, screening-message approver and backup reviewer. Show where each action is recorded. AI can prepare bounded material; it doesn't inherit those people's authority.
 
-Footer: Requires supported writeback and agreed ownership
+Footer: Proposed control · AI never chooses tenants
 
-Visual: Coordination output returning to an existing task or record; label as proposed.
+Visual: payoff layout. Blue underline: “backup reviewer”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 8
 
-Title: Discover the gap. Pilot the fit.
+Title: Design the failed path before rollout
 
-Body: Check native features first, then permissions and integration limits. Pilot one useful path and measure remaining manual work before expanding the design across the portfolio.
+Body: Missing evidence, failed delivery and delayed confirmations need an owner, next action and follow-up time. Define escalation and reconciliation; a retry alone doesn't tell staff who is responsible.
 
-Footer: Demo proof is not a production rollout
+Footer: Proposed operations · Not a demonstrated uptime claim
 
-Visual: Discovery → scoped pilot → measured decision to expand or stop.
+Visual: exception layout. Blue box: “failed path”. Gold highlight: “owner, next action”. Use only these focal marks; preserve unmarked supporting copy.
+
+#### Slide 9
+
+Title: Return work to the team's system
+
+Body: Confirm supported writeback for tasks, statuses and exceptions. Test that staff see the owner and act from their existing tools; an API connection alone doesn't prove that experience.
+
+Footer: Proposed writeback · Subject to access and licensing
+
+Visual: contrast layout. Blue underline: “supported writeback”. Use only these focal marks; preserve unmarked supporting copy.
+
+#### Slide 10
+
+Title: Pilot one path, including failure
+
+Body: Measure manual touches and waiting time before and during the pilot. Test a normal event, a duplicate and an unavailable service. Expand only after staff can own recovery and review.
+
+Footer: Proposed pilot · No measured client result yet
+
+Visual: worked-example layout. Gold highlight: “normal event”. Blue underline: “own recovery”. Use only these focal marks; preserve unmarked supporting copy.
+
+#### Slide 11
+
+Title: Use this one-path pilot brief
+
+Body: Trigger. Source record. Allowed action. Human approval. Writeback destination. Completion evidence. Failure owner. Baseline measure. Fill these in for one handoff; stop if access or responsibility remains unresolved.
+
+Footer: Reusable fit worksheet · Existing tools come first
+
+Visual: template layout. Blue underline: “Completion evidence”. Gold highlight: “Failure owner”. Use only these focal marks; preserve unmarked supporting copy.
 
 ### Production notes
 
-Use a simplified teaching diagram drawn from `docs/production-leasing-tenant-screening-blueprint.md`. No finished production Excalidraw map is claimed. Keep the “proposed” label on every slide; don't substitute logos that suggest integrations have been built. The written blueprint exists, but compatibility, client permissions and pilot results do not.
+Rewritten 2026-09-17 following the user's balanced-text and reference-document direction. Page count follows value, not the old fixed brief. Public pages contain no internal build number. Follow [carousel-design-blueprint.md](carousel-design-blueprint.md) for hierarchy, spacing, annotation roles and the selected dark page. Do not force the longest copy into the old giant-type statement layout.
+
+Keep the proposed-production boundary on every page. These worksheets describe a production design, not deployed client integrations or additional implemented demo features. Applicable requirements, access, retention and authority belong to the company's authorized process. No universal integration, legal compliance or ROI claim.
+
+Only copy and design directions are current in this pass. The earlier first-carousel PDF and previews are superseded; they must not be published or treated as matching this rewrite. Render one new design proof before batching the other five.
 
 ## B5-14 — What the 69 checks tell me
 
@@ -1065,7 +1251,7 @@ One invitation only: a DM about a non-sensitive operational gap. Don't append a 
 
 ## Release checklist
 
-- All fifteen captions remain aligned with their evidence and scope. The six carousels contain 7, 8, 7, 8, 8 and 8 slides respectively.
+- All fifteen captions remain aligned with their evidence and scope. The current six carousels contain 10, 9, 9, 11, 10 and 11 slides respectively, 60 total. The user-authorized range is 7–11 pages based on value.
 - The full demo is one master recording. The short uses only its original footage and audio, with its own visible test disclosures.
 - Video captions are checked against the final recorded events. Primary and fallback short versions are alternatives, not two posts.
 - Carousel PDFs and video exports remain later production work. Inspect legibility, captions, disclosures and privacy before uploading.
@@ -1081,3 +1267,5 @@ This package follows `linkedin-content-plan.md`, `.agents/product-marketing.md` 
 The copy uses the existing offer-positioning matrix, a before/after/bridge structure for the demo, evidence-specific hooks and a final plain-language edit. Hook exploration and editorial QA are working notes, not extra posts or new claims.
 
 2026-09-17 — Completed fifteen posts, 46 exact carousel slides, twelve-shot full-demo narration and the single-short original-audio edit brief, including a narrower fallback. No recording, graphic design, exports, publishing or runtime changes performed.
+
+2026-09-17 — Rewrote all six carousels as practical reference documents: 10/9/9/11/10/11 pages, 60 total. Added checklists, two labeled income calculations and reusable worksheets. Balanced text replaces both the dense first proof and overly sparse revision. Non-carousel post scripts and video narration are unchanged. Existing PDF assets are superseded pending a new design proof; no new PDF or publication in this pass.

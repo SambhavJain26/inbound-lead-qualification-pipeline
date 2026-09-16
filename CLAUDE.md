@@ -266,3 +266,17 @@ Use `node carousel-kit/assess-carousel.cjs --current` for repeatable comparison.
 Count visible `innerText`, not `textContent`, which can merge words across breaks.
 Content-band span measures block height including gaps, not actual ink coverage
 or whitespace percentage. Technical fit does not establish design acceptance.
+
+## Carousel Reference-Document Rules
+
+The latest user direction is practical reader value, balanced explanatory copy
+and 7–11 pages based on distinct content. Carousels must deliver a usable method,
+checklist, worked example or worksheet, not only short opinions. Keep briefs,
+scripts and current slide totals aligned; use the existing positioning and proof
+boundaries, and preserve unrelated text/video scripts during carousel-only edits.
+Mix blue boxes, pen marks and gold highlights across a deck, not on every page.
+Quiet pages are valid; no mandatory device quota. Selected interior boxes are
+allowed, overriding the old cover-only reference rule. Follow the current design
+blueprint for teaching-page hierarchy and run check-carousel-copy.cjs for writing
+checks. Mark superseded assets explicitly; do not claim new visual QA before a
+matching source is rendered and inspected. One proof still precedes batch export.

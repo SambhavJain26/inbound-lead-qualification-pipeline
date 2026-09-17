@@ -84,3 +84,9 @@ B5-14 are retired from the active plan. The package now has thirteen posts: five
 carousels, six text posts and two videos. Keep retained IDs stable rather than
 renaming existing assets or matching scripts to contiguous post numbers. Removed
 drafts are recoverable from Git history. No generated PDF or PNG was removed.
+
+2026-09-17 targeted copy trim: B5-06/09/11 now carry about 13% less title/body
+copy combined, with unchanged 9/11/10-page counts, captions, titles, footers and
+annotation phrases. Calculations and worksheet fields remain complete. Use the
+latest canonical bodies when generating those three sources; no PDF was exported
+for this writing pass and both completed decks remain unchanged.

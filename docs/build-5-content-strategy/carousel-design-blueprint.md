@@ -34,9 +34,17 @@ an overloaded comparison, then update the plan and scripts together.
 ## 2. Copy balance and value test
 
 Teaching copy generally sits around 20–35 title/body words. Current pages range
-26–35; they retain practical checks instead of shrinking to the rejected 8–13-word
+24–35 after the targeted trim of the three unrendered decks; they retain practical
+checks instead of shrinking to the rejected 8–13-word
 statements. Word count excludes the footer. Don't treat the range as a legal limit
 or pad a useful page to reach it.
+
+Latest copy pass: B5-06/B5-09/B5-11 have lighter bodies, not fewer teaching pages.
+Main-copy averages are 26.8/28.2/27.7 words per page, versus 30.9/32.4/31.9 before
+the trim. Keep all worksheet fields, both labeled income examples, permission
+boundaries and proposed/demo distinctions. The calculation page is intentionally
+unchanged. Captions, titles, footers, focal phrases and both completed decks are
+unchanged. This is a writing review; new visual fit still needs rendered PDF QA.
 
 The final pages supply the actual field names or inspection test. They are not
 advertisements for an unavailable download. The income deck includes two labeled

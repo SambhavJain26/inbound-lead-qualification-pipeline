@@ -2115,3 +2115,27 @@ carousel captions and slide fields unchanged. Existing generated assets have no
 diff. Syntax and whitespace checks pass; durable ID rule mirrored in AGENTS/CLAUDE.
 No uploads, publishing, scheduling, account or runtime changes. Unrelated dirty
 work preserved; only task-owned documentation/checker changes and append entries staged.
+
+## 2026-09-17 — Light copy trim for the three remaining carousels
+
+User requested a little less slide text in the three remaining decks only.
+Trimmed B5-06 message permissions, B5-09 income reconciliation and B5-11
+post-signature readiness. Their page counts remain 9/11/10; the active campaign
+remains thirteen posts, five carousels and 49 carousel pages.
+
+Combined title/body copy fell from 953 to 828 words, a 13.1% reduction.
+Average title/body words per page changed from 30.9/32.4/31.9 to
+26.8/28.2/27.7. Captions, titles, footers and visual annotation phrases are
+unchanged. Both income examples stay labeled; the annualization calculation
+page is unchanged. Worksheet fields, individual screening-message approval,
+send-time checks, human authority and production/demo distinctions remain.
+
+Used General Copywriter, Social and Syntax Polish for targeted shortening and
+final editorial checks. Both completed decks and all eight non-carousel scripts
+are unchanged. The copy checker passes with no length warnings. No PDFs were
+generated, and this writing pass does not claim rendered visual acceptance.
+
+Updated canonical scripts, content-plan log, design guidance and carousel-kit
+README together. Existing repository rules cover this edit; no new durable rule
+or AGENTS/CLAUDE change is required. No runtime, account, upload or publishing
+changes. Unrelated dirty work preserved; only task-owned edits staged.

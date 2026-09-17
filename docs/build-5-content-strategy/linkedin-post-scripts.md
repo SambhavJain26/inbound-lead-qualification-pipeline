@@ -573,7 +573,7 @@ The demo uses Telegram as a messaging stand-in. This isn't a claim of live SMS, 
 
 Title: Write the rules before messages send
 
-Body: Use a message-permission matrix: what may send automatically, what needs a person's approval, and what must stop. Don't leave those boundaries to the model's confidence.
+Body: Use a message-permission matrix: automatic sends, human approvals and hard stops. Set those boundaries through policy, not the model's confidence.
 
 Footer: Communication controls · Demo pattern
 
@@ -583,7 +583,7 @@ Visual: cover layout. Blue box: “rules”. Gold highlight: “message-permissi
 
 Title: Classify by content and stage
 
-Body: Identify the current application stage and the message's purpose. A routine status phrase can become sensitive in screening; wording alone isn't enough to choose its permission path.
+Body: Check the application stage and message purpose. Routine wording can become sensitive during screening; wording alone doesn't determine the permission path.
 
 Footer: Tier A and Tier B describe messages, not people
 
@@ -593,7 +593,7 @@ Visual: roles layout. Blue underline: “content and stage”. Use only these fo
 
 Title: Tier A: approved factual answers
 
-Body: Allow grounded property answers only after checks. Use current approved facts, the right reference and recipient; block invented terms, negotiation and unsupported availability promises.
+Body: Use current approved facts for property answers. Check the right reference and recipient; block invented terms, negotiation and unsupported availability promises.
 
 Footer: Automatic does not mean unchecked
 
@@ -603,7 +603,7 @@ Visual: evidence layout. Blue underline: “approved facts”. Gold highlight: �
 
 Title: Tier A: routine coordination
 
-Body: Tour confirmations, reminders and application links can use the permitted automatic lane. Check the booked event and link destination; a scheduled send isn't proof that delivery succeeded.
+Body: Tour confirmations, reminders and application links can use the permitted automatic lane. Check the booking and destination; a scheduled send doesn't prove delivery.
 
 Footer: Telegram stands in for messaging in the demo
 
@@ -613,7 +613,7 @@ Visual: checklist layout. Blue circle: “delivery”. Use only these focal mark
 
 Title: Tier B: screening-stage messages
 
-Body: In this demo, applicant-facing screening messages need individual manager approval. That includes further-document requests and outcome-related wording; they aren't ordinary listing replies.
+Body: In this demo, applicant-facing screening messages need individual manager approval, including document requests and outcome-related wording. They aren't routine listing replies.
 
 Footer: Configured demo boundary · Not universal policy
 
@@ -623,7 +623,7 @@ Visual: boundary layout. Blue underline: “individual”. Gold highlight: “sc
 
 Title: Approval needs a named person
 
-Body: Record who approved which final draft and when. A generated message or criteria result supplies no sending authority. Changed wording must return through the required approval path.
+Body: Record who approved which final draft and when. Generated text or criteria results don't authorize sending. Changed wording returns through approval.
 
 Footer: Approval is a recorded event
 
@@ -633,7 +633,7 @@ Visual: reference layout. Blue underline: “which final draft”. Use only thes
 
 Title: Check the final message again
 
-Body: Before sending, validate the approved text against current facts and stage. If the manager edits it or the record changes, earlier checks must not authorize stale or unsupported wording.
+Body: Check approved text against current facts and stage before sending. After edits or record changes, earlier checks don't authorize stale or unsupported wording.
 
 Footer: Send-time check follows approval
 
@@ -643,7 +643,7 @@ Visual: contrast layout. Blue underline: “current facts”. Gold highlight: �
 
 Title: A blocked send needs a visible route
 
-Body: Log the failure and alert its owner. In conversation, use a permitted neutral fallback instead of silence. This demo never drafts or sends adverse-action notices.
+Body: Log the failure; alert its owner. In conversation, use a permitted neutral fallback, not silence. This demo never drafts or sends adverse-action notices.
 
 Footer: Legal notices stay outside this automation
 
@@ -653,7 +653,7 @@ Visual: exception layout. Blue circle: “silence”. Blue underline: “alert i
 
 Title: Use this permission worksheet
 
-Body: For each message type, record: stage, allowed facts, automatic or approved lane, approver, send-time check, delivery evidence and failure owner. Review the matrix before enabling outbound work.
+Body: Record stage, allowed facts, automatic or approved lane, approver, send-time check, delivery evidence and failure owner per message type. Review before enabling sends.
 
 Footer: Reusable matrix · Adapt with authorized staff
 
@@ -769,7 +769,7 @@ Use the checklist to prepare a human review. It doesn't supply a screening thres
 
 Title: Check the meaning before the number
 
-Body: Use this worksheet when income evidence differs. Preserve the source, basis, period and coverage before asking whether two amounts should match or which further review is needed.
+Body: When income differs, preserve source, basis, period and coverage first. Then ask whether the amounts should match and what needs further review.
 
 Footer: Evidence reconciliation · Not a fraud verdict
 
@@ -779,7 +779,7 @@ Visual: cover layout. Blue box: “meaning”. Gold highlight: “source, basis�
 
 Title: Keep three sources separate
 
-Body: Self-reported income, a document value and provider output need separate labels. Preserve the originals; replacing them with one unexplained amount makes the comparison harder to review.
+Body: Label self-reported income, document values and provider output separately. Preserve the originals; one unexplained amount makes differences harder to review.
 
 Footer: Reported · Document · Provider
 
@@ -789,7 +789,7 @@ Visual: evidence layout. Quiet page: use hierarchy, spacing and rules without a 
 
 Title: Ask: gross or net?
 
-Body: Plaid's Bank Income describes net-income information from connected accounts. Payroll Income includes gross-income information. Confirm the product and field before treating either as the other's equivalent.
+Body: Plaid Bank Income describes net-income information; Payroll Income includes gross-income information. Check the product and field before treating them as equivalent.
 
 Footer: Sources: Plaid Bank Income and Payroll Income
 
@@ -799,7 +799,7 @@ Visual: contrast layout. Blue circle: “gross”. Blue underline: “net-income
 
 Title: A difference can start with definitions
 
-Body: Illustrative example: reported gross monthly pay is $5,000; net deposits total $4,100. Those figures don't measure the same thing. The $900 difference alone doesn't establish dishonesty.
+Body: Illustrative: $5,000 reported gross monthly pay versus $4,100 in net deposits. They don't measure the same thing; the $900 difference alone doesn't establish dishonesty.
 
 Footer: Illustrative only · Not a real applicant or demo result
 
@@ -809,7 +809,7 @@ Visual: worked-example layout. Blue box: “definitions”. Gold highlight: “d
 
 Title: Check the payment frequency
 
-Body: Weekly, every two weeks and twice monthly are different periods. Read the document's frequency before annualizing regular pay; don't infer a monthly total from an unlabeled payment.
+Body: Weekly, every two weeks and twice monthly differ. Confirm frequency before annualizing regular pay; an unlabeled payment doesn't establish a monthly total.
 
 Footer: Period and frequency belong beside the amount
 
@@ -829,7 +829,7 @@ Visual: worked-example layout. Blue underline: “Twice monthly”. Gold highlig
 
 Title: Check what the source covers
 
-Body: One connected account may omit income deposited elsewhere. Note the accounts or periods covered and what's unresolved; incomplete coverage must not silently become the household's total income.
+Body: One connected account can omit income deposited elsewhere. Record covered accounts, periods and unresolved gaps; incomplete coverage isn't the household's total income.
 
 Footer: Coverage limits need human review
 
@@ -839,7 +839,7 @@ Visual: boundary layout. Blue circle: “covers”. Use only these focal marks; 
 
 Title: Check timing and unusual periods
 
-Body: A paystub and bank history may cover different dates. Note bonuses, partial periods or changed pay separately; don't stretch one unusual payment into a recurring-income claim.
+Body: Paystubs and bank history can cover different dates. Separate bonuses, partial periods and pay changes; one unusual payment doesn't establish recurring income.
 
 Footer: Use the approved evidence interpretation process
 
@@ -849,7 +849,7 @@ Visual: contrast layout. Gold highlight: “partial periods”. Use only these f
 
 Title: Write the explanation, not an accusation
 
-Body: Record which definitions differ, what remains missing and who reviews it. Further-document requests follow the approved communication path; an unresolved mismatch is not permission for an automatic outcome.
+Body: Record differing definitions, missing evidence and who reviews it. Document requests need approved communication; an unresolved mismatch doesn't authorize an automatic outcome.
 
 Footer: Human review · No AI fraud or rental decision
 
@@ -859,7 +859,7 @@ Visual: exception layout. Blue underline: “who reviews it”. Use only these f
 
 Title: Keep the demonstration boundary visible
 
-Body: The demo uses synthetic paystubs and Plaid Sandbox output. It demonstrates handling evidence, not verified consumer income. Production provider selection needs separate permission, eligibility and policy review.
+Body: Synthetic paystubs and Plaid Sandbox demonstrate evidence handling, not verified consumer income. Production provider selection still requires permission, eligibility and policy review.
 
 Footer: Synthetic documents · Plaid Sandbox
 
@@ -869,7 +869,7 @@ Visual: boundary layout. Blue circle: “Sandbox”. Use only these focal marks;
 
 Title: Use this reconciliation note
 
-Body: Source. Gross/net basis. Pay frequency. Covered dates. Coverage limits. Conversion method. Unresolved difference. Reviewer and next step. Keep the original values attached so another person can check the explanation.
+Body: Source. Gross/net basis. Pay frequency. Covered dates. Coverage limits. Conversion method. Unresolved difference. Reviewer and next step. Attach original values so others can check the explanation.
 
 Footer: Reusable worksheet · Compare like with like
 
@@ -933,7 +933,7 @@ Use the worksheet to inspect a handover process—not as a universal legal check
 
 Title: Signing isn't your move-in checklist
 
-Body: Use separate signoffs for allocation, signatures, funds, home readiness and access. A completed envelope confirms signing, not every condition your business requires before possession.
+Body: Use separate signoffs for allocation, signatures, funds, readiness and access. A completed envelope confirms signing, not every condition required before possession.
 
 Footer: Proposed production controls · Not demo features
 
@@ -943,7 +943,7 @@ Visual: cover layout. Blue box: “move-in”. Gold highlight: “separate signo
 
 Title: Start from the authorized decision
 
-Body: Locate the recorded rental decision and approved terms before preparing the lease. Document extraction or a criteria classification cannot stand in for an authorized person's approval.
+Body: Locate the recorded rental decision and approved terms before preparing a lease. Extraction and criteria results don't replace an authorized person's approval.
 
 Footer: Proposed workflow · Human rental authority
 
@@ -953,7 +953,7 @@ Visual: reference layout. Blue underline: “recorded rental decision”. Use on
 
 Title: Confirm the home allocation
 
-Body: Use the authoritative property record and approved hold policy. Don't promise exclusive availability from a draft application or duplicate lead; allocation needs its own supported event.
+Body: Check the authoritative property record and approved hold policy. Allocation needs its own supported event; draft applications or duplicate leads don't prove exclusive availability.
 
 Footer: Proposed control · Hold policies vary
 
@@ -963,7 +963,7 @@ Visual: boundary layout. Blue circle: “allocation”. Use only these focal mar
 
 Title: Confirm the required signing transaction
 
-Body: Check the signers required for this transaction and the provider's completion status. One signature or a sent email doesn't establish that every required party has finished.
+Body: Check required signers and the provider's completion status. One signature or a sent email doesn't prove every required party has finished.
 
 Footer: Proposed control · Not a universal signer count
 
@@ -973,7 +973,7 @@ Visual: contrast layout. Blue circle: “One signature”. Use only these focal 
 
 Title: Get funds status from its source
 
-Body: Where payment is required before possession, use the approved accounting or payment record. Keep pending, received and cleared states distinct under policy; a signature event proves none of them.
+Body: When funds are required before possession, check the approved accounting or payment record. Distinguish pending, received and cleared under policy; signing proves none.
 
 Footer: Proposed control · Accounting owns payment evidence
 
@@ -983,7 +983,7 @@ Visual: roles layout. Blue box: “funds”. Blue underline: “accounting”. U
 
 Title: Give home readiness an owner
 
-Body: Identify who confirms the unit is ready and where that signoff lives. An unfinished repair or missing inspection creates a blocker; a signed agreement must not hide it.
+Body: Name who confirms readiness and where the signoff lives. Unfinished repairs or missing inspections remain a blocker, even after the agreement is signed.
 
 Footer: Proposed control · Readiness requirements vary
 
@@ -993,7 +993,7 @@ Visual: exception layout. Blue underline: “who confirms”. Gold highlight: �
 
 Title: Check other applicable conditions
 
-Body: Where company policy and applicable requirements call for insurance or other readiness evidence, name its source and reviewer. Don't let automation invent requirements or infer completion from silence.
+Body: For insurance or other readiness evidence required by policy and applicable obligations, name its source and reviewer. Automation mustn't invent requirements or assume completion.
 
 Footer: Proposed control · Policy-specific, not universal
 
@@ -1003,7 +1003,7 @@ Visual: checklist layout. Quiet page: use hierarchy, spacing and rules without a
 
 Title: Release access through an authorized step
 
-Body: Confirm applicable readiness conditions before the authorized handover. Record who released access and when; a signing callback alone must not trigger keys or a real lock credential.
+Body: Confirm applicable readiness conditions before the authorized handover. Record who released access and when; a signing callback alone mustn't release keys or lock credentials.
 
 Footer: Proposed control · No real access in the demo
 
@@ -1013,7 +1013,7 @@ Visual: payoff layout. Blue underline: “authorized handover”. Use only these
 
 Title: Keep this demo's endpoint separate
 
-Body: The current build confirms a sandbox signature and welcome delivery. It doesn't settle funds, inspect the home, prove every production signer or release possession. Those need separate production design.
+Body: This build confirms a sandbox signature and welcome delivery, not funds, inspections, all production signers or possession. Those require separate production design.
 
 Footer: Demo boundary · Test signing and welcome only
 
@@ -1023,7 +1023,7 @@ Visual: boundary layout. Blue circle: “possession”. Use only these focal mar
 
 Title: Use a readiness signoff record
 
-Body: Condition. Required evidence. Source system. Owner. Status. Blocker. Confirmed time. Handover authority. Complete the applicable rows with operations staff before automating any possession or access event.
+Body: Condition. Required evidence. Source system. Owner. Status. Blocker. Confirmed time. Handover authority. Complete applicable rows with operations staff before automating access or possession.
 
 Footer: Reusable worksheet · Review company requirements first
 
@@ -1107,3 +1107,5 @@ The copy uses the existing offer-positioning matrix, a before/after/bridge struc
 2026-09-17 — Rewrote all six carousels as practical reference documents: 10/9/9/11/10/11 pages, 60 total. Added checklists, two labeled income calculations and reusable worksheets. Balanced text replaces both the dense first proof and overly sparse revision. Non-carousel post scripts and video narration are unchanged. Existing PDF assets are superseded pending a new design proof; no new PDF or publication in this pass.
 
 2026-09-17 — Removed B5-13's existing-business fit carousel and B5-14's verification-count text post from the active package at the user's request for thirteen posts. Five decks now total 49 pages; six text posts and the two-video/single-recording contract remain. Kept stable IDs and all retained captions, slide fields, text and narration unchanged. Removed drafts remain recoverable in Git history; generated B5-01/B5-04 assets are untouched.
+
+2026-09-17 — User requested a little less text in the three remaining decks. Trimmed B5-06/B5-09/B5-11 bodies while preserving titles, footers, captions, focal phrases, page counts and useful instructions. Main copy across their thirty pages fell from 953 to 828 words (13.1%); averages now 26.8/28.2/27.7 words per page. Both worked income examples remain labeled; the annualization calculation page is unchanged. Worksheet fields, individual approval, final-message checks and production/demo boundaries remain. Both completed decks and eight non-carousel scripts are unchanged. No PDF export or visual QA claimed in this pass.

@@ -9,7 +9,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -760,
+        -800,
         0
       ],
       "parameters": {
@@ -22,17 +22,31 @@
       "webhookId": "tour-request"
     },
     {
+      "id": "authenticate-tour-request",
+      "name": "Authenticate Tour Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const j=$input.first().json; if(j.headers?.['x-leasing-action-secret']!=='__INTERNAL_ACTION_SECRET__') throw new Error('Unauthorized internal action'); return $input.all();"
+      }
+    },
+    {
       "id": "load-lead-for-tour",
       "name": "Load Lead For Tour",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -540,
+        -400,
         0
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT l.*, u.unit_code, u.address\nFROM leads l JOIN units u ON u.id = l.unit_id\nWHERE l.ref_token = $1 LIMIT 1;",
+        "query": "SELECT l.*,u.unit_code,u.address FROM leads l JOIN units u ON u.id=l.unit_id WHERE l.ref_token=$1 AND l.status='prequalified' AND l.prequal_result='clear' AND l.tour_approval_state<>'pending' AND u.status='available' AND lower(l.prospect_email)=lower('__PROSPECT_EMAIL__') LIMIT 1;",
         "options": {
           "queryReplacement": "={{ [$json.body.ref_token] }}"
         }
@@ -42,8 +56,7 @@
           "id": "__POSTGRES_CREDENTIAL_ID__",
           "name": "Leasing Postgres"
         }
-      },
-      "alwaysOutputData": true
+      }
     },
     {
       "id": "load-tour-policy",
@@ -51,7 +64,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -320,
+        -200,
         0
       ],
       "parameters": {
@@ -72,12 +85,12 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -100,
+        0,
         0
       ],
       "parameters": {
         "method": "GET",
-        "url": "=https://api.cal.com/v2/slots?eventTypeId=__CALCOM_EVENT_TYPE_ID__&start={{ $now.format('yyyy-MM-dd') }}&end={{ $now.plus(14, 'days').format('yyyy-MM-dd') }}&timeZone=__TOUR_TIMEZONE__",
+        "url": "=https://api.cal.com/v2/slots?eventTypeId=__CALCOM_EVENT_TYPE_ID__&start={{ $now.format('yyyy-MM-dd') }}&end={{ $now.plus(14,'days').format('yyyy-MM-dd') }}&timeZone=__TOUR_TIMEZONE__",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -94,7 +107,8 @@
         "options": {
           "timeout": 20000
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "id": "match-slot-and-check-policy",
@@ -102,69 +116,21 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        120,
+        200,
         0
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "/**\n * Shared front-of-funnel logic.\n *\n * This file is the single source of truth for lead parsing, reference tokens,\n * Tier A guardrails, and the pre-qualification gate. The build scripts inline it\n * into n8n Code nodes, so it must stay dependency-free and must not use\n * backticks or template literals - those are consumed before reaching the node.\n *\n * Nothing here calls a model. Everything here is deterministic.\n */\n\n/* ------------------------------------------------------------------ tokens */\n\n/**\n * Reference token carried in every subject line. Replies are matched on this\n * first and on sender address only as a fallback - the model never decides\n * which lead a message belongs to.\n */\nfunction makeRefToken(prefix, seed) {\n  var n = seed === undefined ? Math.floor(Math.random() * 9000) + 1000 : seed;\n  return prefix + \"-\" + String(n).slice(0, 4);\n}\n\nfunction extractRefToken(text) {\n  if (!text) return null;\n  var match = String(text).match(/\\[([RA]-\\d{4})\\]/);\n  return match ? match[1] : null;\n}\n\nfunction subjectWithToken(subject, token) {\n  if (extractRefToken(subject)) return subject;\n  return subject + \" [\" + token + \"]\";\n}\n\n/* ------------------------------------------------------- lead email parsing */\n\n/**\n * Parses a listing-site lead notification.\n *\n * Zillow delivers these as email with an anonymised relay reply-to and no phone\n * number, so the parser must tolerate a missing phone rather than treat it as a\n * failure. Anything it cannot determine is left null and flagged, never guessed.\n */\nfunction parseLeadEmail(input) {\n  var subject = input.subject || \"\";\n  var body = input.body || \"\";\n  var replyTo = input.replyTo || input.from || \"\";\n\n  var result = {\n    prospect_name: null,\n    prospect_email: null,\n    prospect_phone: null,\n    unit_hint: null,\n    inquiry_text: null,\n    source: \"zillow_email\",\n    parse_warnings: [],\n  };\n\n  var nameMatch = body.match(/^\\s*Renter:\\s*(.+)$/m);\n  if (nameMatch) result.prospect_name = nameMatch[1].trim();\n  else result.parse_warnings.push(\"no renter name found\");\n\n  var propertyMatch = body.match(/^\\s*Property:\\s*(.+)$/m);\n  if (propertyMatch) result.unit_hint = propertyMatch[1].trim();\n  else {\n    var subjectUnit = subject.match(/:\\s*(.+)$/);\n    if (subjectUnit) result.unit_hint = subjectUnit[1].trim();\n    else result.parse_warnings.push(\"no property reference found\");\n  }\n\n  // The renter's own words, between the quotes after \"Message:\".\n  var messageMatch = body.match(/Message:\\s*\"([\\s\\S]*?)\"/);\n  if (messageMatch) result.inquiry_text = messageMatch[1].replace(/\\s+/g, \" \").trim();\n  else result.parse_warnings.push(\"no inquiry text found\");\n\n  var emailMatch = String(replyTo).match(/[\\w.+-]+@[\\w.-]+\\.\\w+/);\n  if (emailMatch) result.prospect_email = emailMatch[0];\n  else result.parse_warnings.push(\"no reply address found\");\n\n  var phoneMatch = body.match(/(\\+?1[\\s.-]?)?\\(?\\d{3}\\)?[\\s.-]\\d{3}[\\s.-]\\d{4}/);\n  if (phoneMatch) result.prospect_phone = phoneMatch[0].trim();\n\n  return result;\n}\n\n/* ------------------------------------------------- unit knowledge for the AI */\n\n/**\n * Flattens a unit row into the only facts the FAQ model is allowed to use.\n * If a fact is not in here, the correct answer is \"I don't have that\".\n */\nfunction buildUnitKnowledge(unit) {\n  if (!unit) return null;\n  var facts = unit.faq_facts || {};\n  var knowledge = {\n    unit_code: unit.unit_code,\n    address: unit.address,\n    bedrooms: unit.beds,\n    bathrooms: Number(unit.baths),\n    square_feet: unit.sqft,\n    monthly_rent: Number(unit.rent_amount),\n    security_deposit: Number(unit.deposit_amount),\n    available_from: unit.available_from,\n    lease_term_months: unit.lease_term_months,\n    pet_policy: unit.pet_policy,\n    pet_fee_monthly: unit.pet_fee_monthly === null ? null : Number(unit.pet_fee_monthly),\n    parking: unit.parking,\n    utilities: unit.utilities_included,\n    laundry: unit.laundry,\n  };\n  Object.keys(facts).forEach(function (key) {\n    knowledge[key] = facts[key];\n  });\n  return knowledge;\n}\n\n/**\n * Unit facts PLUS the figures the prospect themselves stated, for use as the\n * guardrail's allowlist during a conversation.\n *\n * The unsupported-figure rule exists to stop the model inventing a rent, a fee\n * or a deposit. It is not meant to stop it repeating a number the prospect just\n * supplied - and in a chat, confirming what someone told you (\"$5,000 a month,\n * got it\") is the natural thing to say. With only unit facts in the allowlist\n * every such reply is blocked, the prospect gets silence, and the conversation\n * stalls on the most ordinary turn there is.\n *\n * Only the recorded slot values are added, never arbitrary numbers scraped from\n * the message, so the check still catches anything the model made up.\n */\nfunction buildConversationKnowledge(unit, statedAnswers) {\n  var knowledge = buildUnitKnowledge(unit);\n  if (!knowledge) return null;\n  var answers = statedAnswers || {};\n\n  if (answers.stated_monthly_income !== null && answers.stated_monthly_income !== undefined) {\n    knowledge.prospect_stated_monthly_income = Number(answers.stated_monthly_income);\n  }\n  if (answers.vehicles !== null && answers.vehicles !== undefined) {\n    knowledge.prospect_stated_vehicles = Number(answers.vehicles);\n  }\n  if (answers.occupants !== null && answers.occupants !== undefined) {\n    knowledge.prospect_stated_occupants = Number(answers.occupants);\n  }\n  if (answers.pets !== null && answers.pets !== undefined && answers.pets !== \"\") {\n    knowledge.prospect_stated_pets = String(answers.pets);\n  }\n  if (answers.move_in_date !== null && answers.move_in_date !== undefined) {\n    knowledge.prospect_stated_move_in = String(answers.move_in_date);\n  }\n  return knowledge;\n}\n\n/**\n * Escapes text for Telegram's HTML parse mode.\n *\n * The Telegram node always sends a parse_mode, so message text is parsed for\n * entities whether you want it or not. Under the legacy Markdown default a\n * single underscore opens an italic run that never closes, and Telegram rejects\n * the whole message with \"can't parse entities\" and a byte offset - which is\n * exactly what an application link carrying ?ref_token= does. The node then\n * fails with a bare \"Bad request - please check your parameters\".\n *\n * So: send HTML parse mode and escape the three characters it cares about.\n * Underscores, asterisks and brackets are then all literal, and a URL with a\n * query string is safe.\n */\nfunction escapeTelegramHtml(text) {\n  if (text === null || text === undefined) return \"\";\n  return String(text)\n    .split(\"&\").join(\"&amp;\")\n    .split(\"<\").join(\"&lt;\")\n    .split(\">\").join(\"&gt;\");\n}\n\n/* ------------------------------------------------------------------- tours */\n\n/**\n * Turns a naive datetime into a real instant, read as PROPERTY-LOCAL time.\n *\n * The model returns \"2026-09-15T14:00\" when someone says \"Tuesday at 2pm\", and\n * they mean 2pm at the property. `new Date()` on a bare string with no zone\n * reads it in the runtime's zone - UTC in a container - so a request for 2pm\n * silently became 9:30am and the renter was booked five hours out. Nothing\n * errors; you only notice by reading the booked time.\n *\n * Anything already carrying a Z or a +/-HH:MM offset is left exactly alone.\n */\nfunction naiveLocalToUtcIso(naive, timeZone) {\n  if (!naive) return null;\n  var text = String(naive).trim();\n  if (/(Z|[+-]\\d{2}:?\\d{2})$/.test(text)) return new Date(text).toISOString();\n\n  var guess = new Date(text + \"Z\");\n  if (isNaN(guess.getTime())) return null;\n\n  // How far ahead of UTC that zone is at that instant, DST included.\n  var dtf = new Intl.DateTimeFormat(\"en-US\", {\n    timeZone: timeZone || \"UTC\", hour12: false,\n    year: \"numeric\", month: \"2-digit\", day: \"2-digit\",\n    hour: \"2-digit\", minute: \"2-digit\", second: \"2-digit\",\n  });\n  var parts = {};\n  dtf.formatToParts(guess).forEach(function (p) { parts[p.type] = p.value; });\n  var asUtc = Date.UTC(\n    Number(parts.year), Number(parts.month) - 1, Number(parts.day),\n    Number(parts.hour) % 24, Number(parts.minute), Number(parts.second)\n  );\n  var offset = asUtc - guess.getTime();\n  return new Date(guess.getTime() - offset).toISOString();\n}\n\n/**\n * Picks the real Cal.com slot closest to what the prospect asked for.\n *\n * The model turns \"Saturday morning\" into an ISO datetime; it never chooses the\n * booking. This does, deterministically, against the slots Cal.com actually\n * returned - so the assistant can only ever book a time that genuinely exists.\n *\n * `slots` is a flat array of ISO strings. Returns the nearest slot within\n * `toleranceHours`, plus the next few alternatives to offer if nothing is close.\n */\nfunction matchTourSlot(wantedIso, slots, toleranceHours) {\n  var tolerance = (toleranceHours === undefined ? 4 : toleranceHours) * 3600000;\n  var available = (slots || []).slice().sort();\n  var result = { matched: null, delta_minutes: null, alternatives: available.slice(0, 3) };\n  if (!wantedIso || !available.length) return result;\n\n  var wanted = new Date(wantedIso).getTime();\n  if (isNaN(wanted)) return result;\n\n  var best = null;\n  var bestDelta = Infinity;\n  for (var i = 0; i < available.length; i++) {\n    var delta = Math.abs(new Date(available[i]).getTime() - wanted);\n    if (delta < bestDelta) { bestDelta = delta; best = available[i]; }\n  }\n\n  // Alternatives are the slots nearest what they asked for, not simply the\n  // earliest ones - \"how about Tuesday?\" should not be answered with Monday 9am.\n  result.alternatives = available\n    .slice()\n    .sort(function (a, b) {\n      return Math.abs(new Date(a).getTime() - wanted) - Math.abs(new Date(b).getTime() - wanted);\n    })\n    .slice(0, 3)\n    .sort();\n\n  if (best !== null && bestDelta <= tolerance) {\n    result.matched = best;\n    result.delta_minutes = Math.round(bestDelta / 60000);\n  }\n  return result;\n}\n\n/**\n * Is this slot inside the manager's published tour policy, or an exception?\n *\n * Exceptions are held for a tap rather than refused. Returning reasons rather\n * than a bare boolean means the manager's card can say WHY it was held, which\n * is the difference between a useful notification and an interruption.\n *\n * `hourOverride` exists because a Code node cannot rely on the container's\n * timezone; the caller passes the local hour and weekday it computed.\n */\nfunction classifyTourRequest(slotIso, policy, nowIso, hourOverride, weekdayOverride) {\n  var reasons = [];\n  var config = policy || {};\n  var earliest = Number(config.earliest_hour === undefined ? 9 : config.earliest_hour);\n  var latest = Number(config.latest_hour === undefined ? 18 : config.latest_hour);\n  var minNotice = Number(config.min_notice_hours === undefined ? 12 : config.min_notice_hours);\n  var allowWeekends = config.allow_weekends === undefined ? true : Boolean(config.allow_weekends);\n\n  var slot = new Date(slotIso);\n  var now = new Date(nowIso || new Date().toISOString());\n  var hour = hourOverride === undefined || hourOverride === null ? slot.getUTCHours() : Number(hourOverride);\n  var weekday = weekdayOverride === undefined || weekdayOverride === null\n    ? slot.getUTCDay()\n    : Number(weekdayOverride);\n\n  if (hour < earliest || hour >= latest) {\n    reasons.push(\"outside self-guided hours (\" + earliest + \":00-\" + latest + \":00)\");\n  }\n  if (!allowWeekends && (weekday === 0 || weekday === 6)) {\n    reasons.push(\"weekend\");\n  }\n  var noticeHours = (slot.getTime() - now.getTime()) / 3600000;\n  if (noticeHours < minNotice) {\n    reasons.push(\"less than \" + minNotice + \"h notice (\" + Math.max(0, Math.round(noticeHours)) + \"h)\");\n  }\n\n  return {\n    is_exception: reasons.length > 0,\n    reasons: reasons,\n    notice_hours: Math.round(noticeHours),\n  };\n}\n\n/* -------------------------------------------------------------- guardrails */\n\n/**\n * Tier A guardrail. Runs on every message before it leaves, and again at send\n * time, because a manager may have edited the wording after it was drafted.\n *\n * Blocks: protected-class content, legal or lease commitments, rent negotiation,\n * availability promises, and invented numbers that are not in the unit facts.\n */\nvar PROTECTED_CLASS_PATTERNS = [\n  { pattern: /\\b(kids?|children|child|family friendly|families|school district)\\b/i, label: \"familial status\" },\n  { pattern: /\\b(disab|wheelchair|handicap|mental health|service animal policy)\\b/i, label: \"disability\" },\n  { pattern: /\\b(race|ethnic|nationality|immigration|citizen|visa status)\\b/i, label: \"national origin / race\" },\n  { pattern: /\\b(church|mosque|temple|synagogue|religio)\\b/i, label: \"religion\" },\n  { pattern: /\\b(marital status|married|single people|couples only)\\b/i, label: \"marital status\" },\n  { pattern: /\\b(section 8|voucher|housing assistance|welfare)\\b/i, label: \"source of income\" },\n  { pattern: /\\b(good neighborhood for|safe area for|type of people)\\b/i, label: \"steering\" },\n];\n\nvar COMMITMENT_PATTERNS = [\n  { pattern: /\\b(guarantee|guaranteed|we promise|you will be approved|pre-?approved)\\b/i, label: \"approval commitment\" },\n  { pattern: /\\b(hold (it|the unit) for you|reserved for you|it'?s yours)\\b/i, label: \"availability commitment\" },\n  { pattern: /\\b(we can lower|discount the rent|negotiate the rent|reduce the rent)\\b/i, label: \"rent negotiation\" },\n  { pattern: /\\b(legally|by law|you are entitled|your rights under)\\b/i, label: \"legal statement\" },\n  { pattern: /\\b(denied|rejected|you do not qualify|we cannot rent to you)\\b/i, label: \"adverse decision language\" },\n];\n\nfunction guardrailCheck(text, knowledge) {\n  var findings = [];\n  var body = String(text || \"\");\n\n  PROTECTED_CLASS_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"protected_class\", detail: rule.label });\n    }\n  });\n\n  COMMITMENT_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"commitment\", detail: rule.label });\n    }\n  });\n\n  // Any dollar figure in the message must appear in the unit facts. Catches the\n  // model inventing a rent, fee, or deposit.\n  if (knowledge) {\n    var allowed = [];\n    Object.keys(knowledge).forEach(function (key) {\n      var value = knowledge[key];\n      if (typeof value === \"number\") allowed.push(Math.round(value));\n      if (typeof value === \"string\") {\n        var found = value.match(/\\d[\\d,]*(\\.\\d+)?/g) || [];\n        found.forEach(function (n) { allowed.push(Math.round(Number(n.replace(/,/g, \"\")))); });\n      }\n    });\n\n    var quoted = body.match(/\\$\\s?\\d[\\d,]*(\\.\\d+)?/g) || [];\n    quoted.forEach(function (raw) {\n      var amount = Math.round(Number(raw.replace(/[$,\\s]/g, \"\")));\n      if (allowed.indexOf(amount) === -1) {\n        findings.push({\n          severity: \"block\",\n          category: \"unsupported_figure\",\n          detail: raw.trim() + \" is not in the unit facts\",\n        });\n      }\n    });\n  }\n\n  var blocking = findings.filter(function (f) { return f.severity === \"block\"; });\n  return {\n    passed: blocking.length === 0,\n    findings: findings,\n    checked_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- pre-qualification */\n\n/**\n * Scheduling triage only. This is NOT a rental decision and its output must\n * never be phrased to a prospect as a denial.\n *\n * Deliberately narrow: move-in timing, self-reported income against the\n * published multiple, pet policy, and occupancy. Nothing else is considered and\n * nothing here is verified.\n */\nfunction prequalGate(answers, unit, config) {\n  var reasons = [];\n  var missing = [];\n  var incomeMultiple = config && config.income_multiple ? Number(config.income_multiple) : 3;\n\n  if (!answers || answers.move_in_date === null || answers.move_in_date === undefined) {\n    missing.push(\"move_in_date\");\n  } else {\n    var availableFrom = new Date(unit.available_from);\n    var wanted = new Date(answers.move_in_date);\n    var daysAfter = (wanted - availableFrom) / 86400000;\n\n    if (daysAfter < -14) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"wants \" + answers.move_in_date + \", unit is available from \" + unit.available_from,\n      });\n    } else if (daysAfter > 60) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"move-in is more than 60 days after the unit is available\",\n      });\n    } else {\n      reasons.push({ criterion: \"move_in_timing\", met: true, detail: answers.move_in_date });\n    }\n  }\n\n  if (answers && (answers.stated_monthly_income === null || answers.stated_monthly_income === undefined)) {\n    missing.push(\"stated_monthly_income\");\n  } else if (answers) {\n    // Self-reported and unverified. Verification happens after an application.\n    var rent = Number(unit.rent_amount);\n    var stated = Number(answers.stated_monthly_income);\n    var ratio = stated / rent;\n    reasons.push({\n      criterion: \"stated_income\",\n      met: ratio >= incomeMultiple,\n      detail: \"$\" + stated + \"/mo stated against $\" + rent + \" rent = \" + ratio.toFixed(2) + \"x (unverified)\",\n    });\n  }\n\n  if (answers && answers.pets && String(answers.pets).toLowerCase() !== \"none\") {\n    var weightMatch = String(answers.pets).match(/(\\d+)\\s?(lb|pound)/i);\n    var overLimit = weightMatch && Number(weightMatch[1]) > 50;\n    reasons.push({\n      criterion: \"pets\",\n      met: !overLimit,\n      detail: overLimit ? \"stated pet is over the 50 lb limit\" : String(answers.pets),\n    });\n  }\n\n  var failed = reasons.filter(function (r) { return r.met === false; });\n  var result = missing.length ? \"incomplete\" : failed.length ? \"not_clear\" : \"clear\";\n\n  return {\n    result: result,\n    reasons: reasons,\n    missing: missing,\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- AI output shape */\n\n/**\n * Unwraps structured output from the OpenAI node.\n *\n * The payload arrives wrapped differently depending on node version, whether\n * simplify is on, and whether a JSON schema was applied - sometimes a parsed\n * object, sometimes a JSON string under `output`, sometimes nested one level\n * deeper. Probing for a known key is more robust than assuming a shape.\n *\n * @param {*} data       the item's json\n * @param {string} anchor a key that must exist on the real payload\n */\nfunction unwrapAiPayload(data, anchor) {\n  var value = data;\n\n  for (var depth = 0; depth < 6; depth++) {\n    if (value === null || value === undefined) break;\n\n    if (typeof value === \"string\") {\n      var trimmed = value.trim();\n      if (trimmed.charAt(0) !== \"{\" && trimmed.charAt(0) !== \"[\") break;\n      try {\n        value = JSON.parse(trimmed);\n      } catch (error) {\n        break;\n      }\n      continue;\n    }\n\n    if (Array.isArray(value)) {\n      value = value[0];\n      continue;\n    }\n\n    if (typeof value === \"object\") {\n      if (Object.prototype.hasOwnProperty.call(value, anchor)) return value;\n\n      var next =\n        value.output !== undefined ? value.output :\n        value.message !== undefined ? value.message :\n        value.content !== undefined ? value.content :\n        value.text !== undefined ? value.text :\n        value.json !== undefined ? value.json : undefined;\n\n      if (next === undefined) break;\n      value = next;\n      continue;\n    }\n\n    break;\n  }\n\n  return value;\n}\n\n/* ------------------------------------------------------------- lock code */\n\n/**\n * Self-guided tour entry code.\n *\n * MOCK. A real deployment issues this through a smart-lock platform\n * (Rently, Tour24, ButterflyMX) bound to the booking window. Here it is\n * generated locally and logged, and every record it touches is marked\n * source: \"mock\".\n */\nfunction generateLockCode() {\n  var code = String(Math.floor(Math.random() * 900000) + 100000);\n  return { code: code, source: \"mock\", issued_at: new Date().toISOString() };\n}\n\n// Deterministic slot selection. Everything the renter gets from here is a\n// real Cal.com slot; nothing is invented and nothing is approximated beyond\n// the stated tolerance.\nconst lead = $('Load Lead For Tour').first().json;\nconst policy = $('Load Tour Policy').first().json;\nconst request = $('Tour Requested (Internal)').first().json.body || {};\nconst raw = $input.first().json || {};\n\n// Cal.com returns { data: { 'YYYY-MM-DD': [{ start }] } }. Flatten it.\nconst byDay = (raw.data && typeof raw.data === 'object') ? raw.data : {};\nconst slots = [];\nfor (const day of Object.keys(byDay)) {\n  const entries = byDay[day];\n  if (!Array.isArray(entries)) continue;\n  for (const entry of entries) {\n    const start = typeof entry === 'string' ? entry : (entry && entry.start);\n    if (start) slots.push(start);\n  }\n}\n\n// The model returns a naive datetime meaning the PROPERTY's local time. Read\n// as UTC it books hours out with no error anywhere, so pin the zone first.\nconst wanted = naiveLocalToUtcIso(request.preferred_iso, '__TOUR_TIMEZONE__');\nconst match = matchTourSlot(wanted, slots, 4);\nconst lock = generateLockCode();\n\n// Local hour and weekday, computed here because a Code node cannot rely on\n// the container's timezone being the property's timezone.\nfunction localParts(iso) {\n  const fmt = new Intl.DateTimeFormat('en-US', {\n    timeZone: '__TOUR_TIMEZONE__', hour: 'numeric', hour12: false, weekday: 'short',\n  });\n  const parts = fmt.formatToParts(new Date(iso));\n  const hour = Number((parts.find((p) => p.type === 'hour') || {}).value);\n  const names = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };\n  const weekday = names[(parts.find((p) => p.type === 'weekday') || {}).value];\n  return { hour: hour === 24 ? 0 : hour, weekday: weekday };\n}\n\nfunction pretty(iso) {\n  return new Intl.DateTimeFormat('en-US', {\n    timeZone: '__TOUR_TIMEZONE__', weekday: 'long', month: 'long', day: 'numeric',\n    hour: 'numeric', minute: '2-digit',\n  }).format(new Date(iso));\n}\n\nlet action = 'offer';\nlet classification = { is_exception: false, reasons: [] };\n\nif (match.matched) {\n  const parts = localParts(match.matched);\n  classification = classifyTourRequest(\n    match.matched, policy, new Date().toISOString(), parts.hour, parts.weekday\n  );\n  action = classification.is_exception ? 'hold' : 'book';\n}\n\n// Wording is fixed. The model is not involved in any message from here on.\nlet prospectText = '';\nif (action === 'book') {\n  prospectText = 'Booking you in for ' + pretty(match.matched) + '. One moment.';\n} else if (action === 'hold') {\n  prospectText = 'I have put a hold on ' + pretty(match.matched) + '. That one needs a quick ' +\n    'check with the team - I will confirm shortly.';\n} else if (match.alternatives.length) {\n  prospectText = 'I could not find that exact time. The nearest I have are:\\n\\n' +\n    match.alternatives.map(function (s) { return '- ' + pretty(s); }).join('\\n') +\n    '\\n\\nAny of those work? You can also pick your own time here:\\n' +\n    '__CALCOM_BOOKING_URL__?metadata[ref_token]=' + lead.ref_token;\n} else {\n  prospectText = 'I do not have any tour slots open at the moment. You can check for new ' +\n    'times here:\\n__CALCOM_BOOKING_URL__?metadata[ref_token]=' + lead.ref_token;\n}\n\nreturn [{\n  json: {\n    ref_token: lead.ref_token,\n    telegram_chat_id: lead.telegram_chat_id,\n    prospect_name: lead.prospect_name,\n    lock_code: lock.code,\n    unit_code: lead.unit_code,\n    address: lead.address,\n    requested_iso: wanted,\n    slot_iso: match.matched,\n    slot_pretty: match.matched ? pretty(match.matched) : null,\n    delta_minutes: match.delta_minutes,\n    alternatives: match.alternatives,\n    slots_available: slots.length,\n    action: action,\n    should_book: action === 'book',\n    should_hold: action === 'hold',\n    exception_reasons: classification.reasons,\n    reasons_text: escapeTelegramHtml(classification.reasons.join('; ')),\n    prospect_text: escapeTelegramHtml(prospectText),\n  },\n}];"
+        "jsCode": "/**\n * Shared front-of-funnel logic.\n *\n * This file is the single source of truth for lead parsing, reference tokens,\n * Tier A guardrails, and the pre-qualification gate. The build scripts inline it\n * into n8n Code nodes, so it must stay dependency-free and must not use\n * backticks or template literals - those are consumed before reaching the node.\n *\n * Nothing here calls a model. Everything here is deterministic.\n */\n\n/* ------------------------------------------------------------------ tokens */\n\n/**\n * Reference token carried in every subject line. Replies are matched on this\n * first and on sender address only as a fallback - the model never decides\n * which lead a message belongs to.\n */\nfunction makeRefToken(prefix, seed) {\n  var n = seed === undefined ? Math.floor(Math.random() * 9000) + 1000 : seed;\n  return prefix + \"-\" + String(n).slice(0, 4);\n}\n\nfunction extractRefToken(text) {\n  if (!text) return null;\n  var match = String(text).match(/\\[([RA]-\\d{4})\\]/);\n  return match ? match[1] : null;\n}\n\nfunction subjectWithToken(subject, token) {\n  if (extractRefToken(subject)) return subject;\n  return subject + \" [\" + token + \"]\";\n}\n\n/* ------------------------------------------------------- lead email parsing */\n\n/**\n * Parses a listing-site lead notification.\n *\n * Zillow delivers these as email with an anonymised relay reply-to and no phone\n * number, so the parser must tolerate a missing phone rather than treat it as a\n * failure. Anything it cannot determine is left null and flagged, never guessed.\n */\nfunction parseLeadEmail(input) {\n  var subject = input.subject || \"\";\n  var body = input.body || \"\";\n  var replyTo = input.replyTo || input.from || \"\";\n\n  var result = {\n    prospect_name: null,\n    prospect_email: null,\n    prospect_phone: null,\n    unit_hint: null,\n    inquiry_text: null,\n    source: \"zillow_email\",\n    parse_warnings: [],\n  };\n\n  var nameMatch = body.match(/^\\s*Renter:\\s*(.+)$/m);\n  if (nameMatch) result.prospect_name = nameMatch[1].trim();\n  else result.parse_warnings.push(\"no renter name found\");\n\n  var propertyMatch = body.match(/^\\s*Property:\\s*(.+)$/m);\n  if (propertyMatch) result.unit_hint = propertyMatch[1].trim();\n  else {\n    var subjectUnit = subject.match(/:\\s*(.+)$/);\n    if (subjectUnit) result.unit_hint = subjectUnit[1].trim();\n    else result.parse_warnings.push(\"no property reference found\");\n  }\n\n  // The renter's own words, between the quotes after \"Message:\".\n  var messageMatch = body.match(/Message:\\s*\"([\\s\\S]*?)\"/);\n  if (messageMatch) result.inquiry_text = messageMatch[1].replace(/\\s+/g, \" \").trim();\n  else result.parse_warnings.push(\"no inquiry text found\");\n\n  var emailMatch = String(replyTo).match(/[\\w.+-]+@[\\w.-]+\\.\\w+/);\n  if (emailMatch) result.prospect_email = emailMatch[0];\n  else result.parse_warnings.push(\"no reply address found\");\n\n  var phoneMatch = body.match(/(\\+?1[\\s.-]?)?\\(?\\d{3}\\)?[\\s.-]\\d{3}[\\s.-]\\d{4}/);\n  if (phoneMatch) result.prospect_phone = phoneMatch[0].trim();\n\n  return result;\n}\n\n/* ------------------------------------------------- unit knowledge for the AI */\n\n/**\n * Flattens a unit row into the only facts the FAQ model is allowed to use.\n * If a fact is not in here, the correct answer is \"I don't have that\".\n */\nfunction buildUnitKnowledge(unit) {\n  if (!unit) return null;\n  var facts = unit.faq_facts || {};\n  var knowledge = {\n    unit_code: unit.unit_code,\n    address: unit.address,\n    bedrooms: unit.beds,\n    bathrooms: Number(unit.baths),\n    square_feet: unit.sqft,\n    monthly_rent: Number(unit.rent_amount),\n    security_deposit: Number(unit.deposit_amount),\n    available_from: unit.available_from,\n    lease_term_months: unit.lease_term_months,\n    pet_policy: unit.pet_policy,\n    pet_fee_monthly: unit.pet_fee_monthly === null ? null : Number(unit.pet_fee_monthly),\n    parking: unit.parking,\n    utilities: unit.utilities_included,\n    laundry: unit.laundry,\n  };\n  Object.keys(facts).forEach(function (key) {\n    knowledge[key] = facts[key];\n  });\n  return knowledge;\n}\n\n/**\n * Unit facts PLUS the figures the prospect themselves stated, for use as the\n * guardrail's allowlist during a conversation.\n *\n * The unsupported-figure rule exists to stop the model inventing a rent, a fee\n * or a deposit. It is not meant to stop it repeating a number the prospect just\n * supplied - and in a chat, confirming what someone told you (\"$5,000 a month,\n * got it\") is the natural thing to say. With only unit facts in the allowlist\n * every such reply is blocked, the prospect gets silence, and the conversation\n * stalls on the most ordinary turn there is.\n *\n * Only the recorded slot values are added, never arbitrary numbers scraped from\n * the message, so the check still catches anything the model made up.\n */\nfunction buildConversationKnowledge(unit, statedAnswers) {\n  var knowledge = buildUnitKnowledge(unit);\n  if (!knowledge) return null;\n  var answers = statedAnswers || {};\n\n  if (answers.stated_monthly_income !== null && answers.stated_monthly_income !== undefined) {\n    knowledge.prospect_stated_monthly_income = Number(answers.stated_monthly_income);\n  }\n  if (answers.vehicles !== null && answers.vehicles !== undefined) {\n    knowledge.prospect_stated_vehicles = Number(answers.vehicles);\n  }\n  if (answers.occupants !== null && answers.occupants !== undefined) {\n    knowledge.prospect_stated_occupants = Number(answers.occupants);\n  }\n  if (answers.pets !== null && answers.pets !== undefined && answers.pets !== \"\") {\n    knowledge.prospect_stated_pets = String(answers.pets);\n  }\n  if (answers.move_in_date !== null && answers.move_in_date !== undefined) {\n    knowledge.prospect_stated_move_in = String(answers.move_in_date);\n  }\n  return knowledge;\n}\n\n/**\n * Escapes text for Telegram's HTML parse mode.\n *\n * The Telegram node always sends a parse_mode, so message text is parsed for\n * entities whether you want it or not. Under the legacy Markdown default a\n * single underscore opens an italic run that never closes, and Telegram rejects\n * the whole message with \"can't parse entities\" and a byte offset - which is\n * exactly what an application link carrying ?ref_token= does. The node then\n * fails with a bare \"Bad request - please check your parameters\".\n *\n * So: send HTML parse mode and escape the three characters it cares about.\n * Underscores, asterisks and brackets are then all literal, and a URL with a\n * query string is safe.\n */\nfunction escapeTelegramHtml(text) {\n  if (text === null || text === undefined) return \"\";\n  return String(text)\n    .split(\"&\").join(\"&amp;\")\n    .split(\"<\").join(\"&lt;\")\n    .split(\">\").join(\"&gt;\");\n}\n\n/* ------------------------------------------------------------------- tours */\n\n/**\n * Turns a naive datetime into a real instant, read as PROPERTY-LOCAL time.\n *\n * The model returns \"2026-09-15T14:00\" when someone says \"Tuesday at 2pm\", and\n * they mean 2pm at the property. `new Date()` on a bare string with no zone\n * reads it in the runtime's zone - UTC in a container - so a request for 2pm\n * silently became 9:30am and the renter was booked five hours out. Nothing\n * errors; you only notice by reading the booked time.\n *\n * Anything already carrying a Z or a +/-HH:MM offset is left exactly alone.\n */\nfunction naiveLocalToUtcIso(naive, timeZone) {\n  if (!naive) return null;\n  var text = String(naive).trim();\n  if (/(Z|[+-]\\d{2}:?\\d{2})$/.test(text)) return new Date(text).toISOString();\n\n  var guess = new Date(text + \"Z\");\n  if (isNaN(guess.getTime())) return null;\n\n  // How far ahead of UTC that zone is at that instant, DST included.\n  var dtf = new Intl.DateTimeFormat(\"en-US\", {\n    timeZone: timeZone || \"UTC\", hour12: false,\n    year: \"numeric\", month: \"2-digit\", day: \"2-digit\",\n    hour: \"2-digit\", minute: \"2-digit\", second: \"2-digit\",\n  });\n  var parts = {};\n  dtf.formatToParts(guess).forEach(function (p) { parts[p.type] = p.value; });\n  var asUtc = Date.UTC(\n    Number(parts.year), Number(parts.month) - 1, Number(parts.day),\n    Number(parts.hour) % 24, Number(parts.minute), Number(parts.second)\n  );\n  var offset = asUtc - guess.getTime();\n  return new Date(guess.getTime() - offset).toISOString();\n}\n\n/**\n * Picks the real Cal.com slot closest to what the prospect asked for.\n *\n * The model turns \"Saturday morning\" into an ISO datetime; it never chooses the\n * booking. This does, deterministically, against the slots Cal.com actually\n * returned - so the assistant can only ever book a time that genuinely exists.\n *\n * `slots` is a flat array of ISO strings. Returns the nearest slot within\n * `toleranceHours`, plus the next few alternatives to offer if nothing is close.\n */\nfunction matchTourSlot(wantedIso, slots, toleranceHours) {\n  var tolerance = (toleranceHours === undefined ? 4 : toleranceHours) * 3600000;\n  var available = (slots || []).slice().sort();\n  var result = { matched: null, delta_minutes: null, alternatives: available.slice(0, 3) };\n  if (!wantedIso || !available.length) return result;\n\n  var wanted = new Date(wantedIso).getTime();\n  if (isNaN(wanted)) return result;\n\n  var best = null;\n  var bestDelta = Infinity;\n  for (var i = 0; i < available.length; i++) {\n    var delta = Math.abs(new Date(available[i]).getTime() - wanted);\n    if (delta < bestDelta) { bestDelta = delta; best = available[i]; }\n  }\n\n  // Alternatives are the slots nearest what they asked for, not simply the\n  // earliest ones - \"how about Tuesday?\" should not be answered with Monday 9am.\n  result.alternatives = available\n    .slice()\n    .sort(function (a, b) {\n      return Math.abs(new Date(a).getTime() - wanted) - Math.abs(new Date(b).getTime() - wanted);\n    })\n    .slice(0, 3)\n    .sort();\n\n  if (best !== null && bestDelta <= tolerance) {\n    result.matched = best;\n    result.delta_minutes = Math.round(bestDelta / 60000);\n  }\n  return result;\n}\n\n/**\n * Is this slot inside the manager's published tour policy, or an exception?\n *\n * Exceptions are held for a tap rather than refused. Returning reasons rather\n * than a bare boolean means the manager's card can say WHY it was held, which\n * is the difference between a useful notification and an interruption.\n *\n * `hourOverride` exists because a Code node cannot rely on the container's\n * timezone; the caller passes the local hour and weekday it computed.\n */\nfunction classifyTourRequest(slotIso, policy, nowIso, hourOverride, weekdayOverride) {\n  var reasons = [];\n  var config = policy || {};\n  var earliest = Number(config.earliest_hour === undefined ? 9 : config.earliest_hour);\n  var latest = Number(config.latest_hour === undefined ? 18 : config.latest_hour);\n  var minNotice = Number(config.min_notice_hours === undefined ? 12 : config.min_notice_hours);\n  var allowWeekends = config.allow_weekends === undefined ? true : Boolean(config.allow_weekends);\n\n  var slot = new Date(slotIso);\n  var now = new Date(nowIso || new Date().toISOString());\n  var hour = hourOverride === undefined || hourOverride === null ? slot.getUTCHours() : Number(hourOverride);\n  var weekday = weekdayOverride === undefined || weekdayOverride === null\n    ? slot.getUTCDay()\n    : Number(weekdayOverride);\n\n  if (hour < earliest || hour >= latest) {\n    reasons.push(\"outside self-guided hours (\" + earliest + \":00-\" + latest + \":00)\");\n  }\n  if (!allowWeekends && (weekday === 0 || weekday === 6)) {\n    reasons.push(\"weekend\");\n  }\n  var noticeHours = (slot.getTime() - now.getTime()) / 3600000;\n  if (noticeHours < minNotice) {\n    reasons.push(\"less than \" + minNotice + \"h notice (\" + Math.max(0, Math.round(noticeHours)) + \"h)\");\n  }\n\n  return {\n    is_exception: reasons.length > 0,\n    reasons: reasons,\n    notice_hours: Math.round(noticeHours),\n  };\n}\n\n/* -------------------------------------------------------------- guardrails */\n\n/**\n * Tier A guardrail. Runs on every message before it leaves, and again at send\n * time, because a manager may have edited the wording after it was drafted.\n *\n * Blocks: protected-class content, legal or lease commitments, rent negotiation,\n * availability promises, and invented numbers that are not in the unit facts.\n */\nvar PROTECTED_CLASS_PATTERNS = [\n  { pattern: /\\b(kids?|children|child|family friendly|families|school district)\\b/i, label: \"familial status\" },\n  { pattern: /\\b(disab|wheelchair|handicap|mental health|service animal policy)\\b/i, label: \"disability\" },\n  { pattern: /\\b(race|ethnic|nationality|immigration|citizen|visa status)\\b/i, label: \"national origin / race\" },\n  { pattern: /\\b(church|mosque|temple|synagogue|religio)\\b/i, label: \"religion\" },\n  { pattern: /\\b(marital status|married|single people|couples only)\\b/i, label: \"marital status\" },\n  { pattern: /\\b(section 8|voucher|housing assistance|welfare)\\b/i, label: \"source of income\" },\n  { pattern: /\\b(good neighborhood for|safe area for|type of people)\\b/i, label: \"steering\" },\n];\n\nvar COMMITMENT_PATTERNS = [\n  { pattern: /\\b(guarantee|guaranteed|we promise|you will be approved|pre-?approved)\\b/i, label: \"approval commitment\" },\n  { pattern: /\\b(hold (it|the unit) for you|reserved for you|it'?s yours)\\b/i, label: \"availability commitment\" },\n  { pattern: /\\b(we can lower|discount the rent|negotiate the rent|reduce the rent)\\b/i, label: \"rent negotiation\" },\n  { pattern: /\\b(legally|by law|you are entitled|your rights under)\\b/i, label: \"legal statement\" },\n  { pattern: /\\b(denied|rejected|you do not qualify|we cannot rent to you)\\b/i, label: \"adverse decision language\" },\n];\n\nfunction guardrailCheck(text, knowledge) {\n  var findings = [];\n  var body = String(text || \"\");\n\n  PROTECTED_CLASS_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"protected_class\", detail: rule.label });\n    }\n  });\n\n  COMMITMENT_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"commitment\", detail: rule.label });\n    }\n  });\n\n  // Any dollar figure in the message must appear in the unit facts. Catches the\n  // model inventing a rent, fee, or deposit.\n  if (knowledge) {\n    var allowed = [];\n    Object.keys(knowledge).forEach(function (key) {\n      var value = knowledge[key];\n      if (typeof value === \"number\") allowed.push(Math.round(value));\n      if (typeof value === \"string\") {\n        var found = value.match(/\\d[\\d,]*(\\.\\d+)?/g) || [];\n        found.forEach(function (n) { allowed.push(Math.round(Number(n.replace(/,/g, \"\")))); });\n      }\n    });\n\n    var quoted = body.match(/\\$\\s?\\d[\\d,]*(\\.\\d+)?/g) || [];\n    quoted.forEach(function (raw) {\n      var amount = Math.round(Number(raw.replace(/[$,\\s]/g, \"\")));\n      if (allowed.indexOf(amount) === -1) {\n        findings.push({\n          severity: \"block\",\n          category: \"unsupported_figure\",\n          detail: raw.trim() + \" is not in the unit facts\",\n        });\n      }\n    });\n  }\n\n  var blocking = findings.filter(function (f) { return f.severity === \"block\"; });\n  return {\n    passed: blocking.length === 0,\n    findings: findings,\n    checked_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- pre-qualification */\n\n/**\n * Scheduling triage only. This is NOT a rental decision and its output must\n * never be phrased to a prospect as a denial.\n *\n * Deliberately narrow: move-in timing, self-reported income against the\n * published multiple, pet policy, and occupancy. Nothing else is considered and\n * nothing here is verified.\n */\nfunction prequalGate(answers, unit, config) {\n  var reasons = [];\n  var missing = [];\n  var incomeMultiple = config && config.income_multiple ? Number(config.income_multiple) : 3;\n\n  if (!answers || answers.move_in_date === null || answers.move_in_date === undefined) {\n    missing.push(\"move_in_date\");\n  } else {\n    var availableFrom = new Date(unit.available_from);\n    var wanted = new Date(answers.move_in_date);\n    var daysAfter = (wanted - availableFrom) / 86400000;\n\n    if (daysAfter < -14) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"wants \" + answers.move_in_date + \", unit is available from \" + unit.available_from,\n      });\n    } else if (daysAfter > 60) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"move-in is more than 60 days after the unit is available\",\n      });\n    } else {\n      reasons.push({ criterion: \"move_in_timing\", met: true, detail: answers.move_in_date });\n    }\n  }\n\n  if (answers && (answers.stated_monthly_income === null || answers.stated_monthly_income === undefined)) {\n    missing.push(\"stated_monthly_income\");\n  } else if (answers) {\n    // Self-reported and unverified. Verification happens after an application.\n    var rent = Number(unit.rent_amount);\n    var stated = Number(answers.stated_monthly_income);\n    var ratio = stated / rent;\n    reasons.push({\n      criterion: \"stated_income\",\n      met: ratio >= incomeMultiple,\n      detail: \"$\" + stated + \"/mo stated against $\" + rent + \" rent = \" + ratio.toFixed(2) + \"x (unverified)\",\n    });\n  }\n\n  if (answers && answers.pets && String(answers.pets).toLowerCase() !== \"none\") {\n    var weightMatch = String(answers.pets).match(/(\\d+)\\s?(lb|pound)/i);\n    var overLimit = weightMatch && Number(weightMatch[1]) > 50;\n    reasons.push({\n      criterion: \"pets\",\n      met: !overLimit,\n      detail: overLimit ? \"stated pet is over the 50 lb limit\" : String(answers.pets),\n    });\n  }\n\n  var failed = reasons.filter(function (r) { return r.met === false; });\n  var result = missing.length ? \"incomplete\" : failed.length ? \"not_clear\" : \"clear\";\n\n  return {\n    result: result,\n    reasons: reasons,\n    missing: missing,\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- AI output shape */\n\n/**\n * Unwraps structured output from the OpenAI node.\n *\n * The payload arrives wrapped differently depending on node version, whether\n * simplify is on, and whether a JSON schema was applied - sometimes a parsed\n * object, sometimes a JSON string under `output`, sometimes nested one level\n * deeper. Probing for a known key is more robust than assuming a shape.\n *\n * @param {*} data       the item's json\n * @param {string} anchor a key that must exist on the real payload\n */\nfunction unwrapAiPayload(data, anchor) {\n  var value = data;\n\n  for (var depth = 0; depth < 6; depth++) {\n    if (value === null || value === undefined) break;\n\n    if (typeof value === \"string\") {\n      var trimmed = value.trim();\n      if (trimmed.charAt(0) !== \"{\" && trimmed.charAt(0) !== \"[\") break;\n      try {\n        value = JSON.parse(trimmed);\n      } catch (error) {\n        break;\n      }\n      continue;\n    }\n\n    if (Array.isArray(value)) {\n      value = value[0];\n      continue;\n    }\n\n    if (typeof value === \"object\") {\n      if (Object.prototype.hasOwnProperty.call(value, anchor)) return value;\n\n      var next =\n        value.output !== undefined ? value.output :\n        value.message !== undefined ? value.message :\n        value.content !== undefined ? value.content :\n        value.text !== undefined ? value.text :\n        value.json !== undefined ? value.json : undefined;\n\n      if (next === undefined) break;\n      value = next;\n      continue;\n    }\n\n    break;\n  }\n\n  return value;\n}\n\n/* ------------------------------------------------------------- lock code */\n\n/**\n * Self-guided tour entry code.\n *\n * MOCK. A real deployment issues this through a smart-lock platform\n * (Rently, Tour24, ButterflyMX) bound to the booking window. Here it is\n * generated locally and logged, and every record it touches is marked\n * source: \"mock\".\n */\nfunction generateLockCode() {\n  var code = String(Math.floor(Math.random() * 900000) + 100000);\n  return { code: code, source: \"mock\", issued_at: new Date().toISOString() };\n}\nconst lead=$('Load Lead For Tour').first().json;\nconst request=$('Tour Requested (Internal)').first().json.body;\nconst raw=$input.first().json.data||{};\nconst slots=Object.values(raw).flat().map(s=>typeof s==='string'?s:s.start).filter(Boolean);\nconst wanted=naiveLocalToUtcIso(request.preferred_iso,'__TOUR_TIMEZONE__');\nconst selection=matchTourSlot(wanted,slots,0.01);\nconst pretty=s=>new Intl.DateTimeFormat('en-US',{timeZone:'__TOUR_TIMEZONE__',weekday:'long',month:'long',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(s));\nconst parts=selection.matched?new Intl.DateTimeFormat('en-US',{timeZone:'__TOUR_TIMEZONE__',hour:'numeric',hour12:false,weekday:'short'}).formatToParts(new Date(selection.matched)):[];\nconst hour=Number(parts.find(p=>p.type==='hour')?.value)%24;\nconst day={Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6}[parts.find(p=>p.type==='weekday')?.value];\nconst policy=selection.matched?classifyTourRequest(selection.matched,$('Load Tour Policy').first().json,new Date().toISOString(),hour,day):{reasons:[]};\nconst reasons=['Every tour requires manager approval'].concat(policy.reasons);\nconst text=selection.matched?'Your request for '+pretty(selection.matched)+' has gone to the manager. Nothing is booked and no entry code has been released. We will confirm after approval.':\n selection.alternatives.length?'That exact time is unavailable. These real alternatives are open:\\n'+selection.alternatives.map(s=>'- '+pretty(s)).join('\\n')+'\\nWhich works for you? It will still need manager approval.':'No tour slots are currently open. The team will follow up; no booking was made.';\nreturn [{json:{...lead,slot_iso:selection.matched,slot_pretty:selection.matched?pretty(selection.matched):null,has_slot:Boolean(selection.matched),\n request_id:'tr-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7),prospect_text:escapeTelegramHtml(text),\n manager_text:escapeTelegramHtml('Tour approval needed\\n'+lead.prospect_name+' · '+lead.ref_token+' · '+lead.unit_code+'\\nRequested: '+(selection.matched?pretty(selection.matched):'No slot')+'\\n'+reasons.join('; ')+'\\nNothing is booked. Approve or choose Not that time. You may type Approve tour without using Reply.')}}];"
       }
     },
     {
-      "id": "tell-prospect-what-is-happening",
-      "name": "Tell Prospect What Is Happening",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        340,
-        0
-      ],
-      "parameters": {
-        "chatId": "={{ $json.telegram_chat_id }}",
-        "text": "={{ $json.prospect_text }}",
-        "additionalFields": {
-          "appendAttribution": false,
-          "parse_mode": "HTML"
-        }
-      },
-      "credentials": {
-        "telegramApi": {
-          "id": "__TELEGRAM_PROSPECT_CREDENTIAL_ID__",
-          "name": "Leasing Telegram (prospect bot)"
-        }
-      }
-    },
-    {
-      "id": "log-prospect-telegram-message",
-      "name": "Log Prospect Telegram Message",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        1440,
-        200
-      ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "INSERT INTO message_log\n  (ref_token, direction, channel, tier, from_addr, to_addr, body, message_id)\nSELECT l.ref_token, 'outbound', 'telegram', 'A', 'leasing-assistant', $1, $2, $3\n  FROM leads l\n WHERE l.telegram_chat_id = NULLIF($1::text,'')::bigint\n ORDER BY l.id DESC LIMIT 1\nON CONFLICT (message_id) DO NOTHING;",
-        "options": {
-          "queryReplacement": "={{ [String($json.result?.chat?.id ?? ''), ($json.result?.text ?? ''), 'tg-out-' + ($json.result?.chat?.id ?? 'x') + '-' + ($json.result?.message_id ?? Date.now())] }}"
-        }
-      },
-      "credentials": {
-        "postgres": {
-          "id": "__POSTGRES_CREDENTIAL_ID__",
-          "name": "Leasing Postgres"
-        }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "id": "book-without-asking",
-      "name": "Book Without Asking?",
+      "id": "exact-requested-slot-exists",
+      "name": "Exact Requested Slot Exists?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        560,
+        400,
         0
       ],
       "parameters": {
@@ -177,170 +143,8 @@
           },
           "conditions": [
             {
-              "id": "match-slot-and-check-policy-it",
-              "leftValue": "={{ $('Match Slot And Check Policy').item.json.should_book }}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "cal-com-create-booking",
-      "name": "Cal.com: Create Booking",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        780,
-        -140
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.cal.com/v2/bookings",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "Bearer __CALCOM_API_KEY__"
-            },
-            {
-              "name": "cal-api-version",
-              "value": "2024-08-13"
-            }
-          ]
-        },
-        "sendBody": true,
-        "contentType": "json",
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({\n  start: $('Match Slot And Check Policy').item.json.slot_iso,\n  eventTypeId: Number('__CALCOM_EVENT_TYPE_ID__'),\n  attendee: {\n    name: $json.prospect_name || 'Prospective resident',\n    email: '__PROSPECT_EMAIL__',\n    timeZone: '__TOUR_TIMEZONE__',\n    language: 'en'\n  },\n  metadata: { ref_token: $json.ref_token }\n}) }}",
-        "options": {
-          "timeout": 20000
-        }
-      }
-    },
-    {
-      "id": "record-direct-booking",
-      "name": "Record Direct Booking",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        1000,
-        -220
-      ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "UPDATE leads SET\n  calcom_booking_uid = $2,\n  tour_starts_at = $3::timestamptz,\n  lock_code = $4,\n  lock_code_source = 'mock',\n  tour_approval_state = 'none',\n  pending_tour_starts_at = NULL,\n  status = 'tour_booked'\nWHERE ref_token = $1 RETURNING *;",
-        "options": {
-          "queryReplacement": "={{ [$('Match Slot And Check Policy').item.json.ref_token, ($json.data?.uid ?? ''), $('Match Slot And Check Policy').item.json.slot_iso, $('Match Slot And Check Policy').item.json.lock_code] }}"
-        }
-      },
-      "credentials": {
-        "postgres": {
-          "id": "__POSTGRES_CREDENTIAL_ID__",
-          "name": "Leasing Postgres"
-        }
-      }
-    },
-    {
-      "id": "confirm-tour-booked",
-      "name": "Confirm Tour Booked",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        1220,
-        -220
-      ],
-      "parameters": {
-        "chatId": "={{ $('Match Slot And Check Policy').item.json.telegram_chat_id }}",
-        "text": "=Your self-guided tour of {{ $('Match Slot And Check Policy').item.json.address }} is confirmed for {{ $('Match Slot And Check Policy').item.json.slot_pretty }}.\n\nEntry code: {{ $('Match Slot And Check Policy').item.json.lock_code }}\n\nThe code works during your booked slot only. Let yourself in, take your time, and pull the door closed when you leave.",
-        "additionalFields": {
-          "appendAttribution": false,
-          "parse_mode": "HTML"
-        }
-      },
-      "credentials": {
-        "telegramApi": {
-          "id": "__TELEGRAM_PROSPECT_CREDENTIAL_ID__",
-          "name": "Leasing Telegram (prospect bot)"
-        }
-      }
-    },
-    {
-      "id": "record-approved-booking",
-      "name": "Record Approved Booking",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        340,
-        360
-      ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "UPDATE leads SET\n  calcom_booking_uid = $2,\n  tour_starts_at = $3::timestamptz,\n  lock_code = $4,\n  lock_code_source = 'mock',\n  tour_approval_state = 'approved',\n  pending_tour_starts_at = NULL,\n  status = 'tour_booked'\nWHERE ref_token = $1 RETURNING *;",
-        "options": {
-          "queryReplacement": "={{ [$('Read Tour Decision').item.json.ref_token, ($json.data?.uid ?? ''), $('Read Tour Decision').item.json.slot_iso, $('Read Tour Decision').item.json.lock_code] }}"
-        }
-      },
-      "credentials": {
-        "postgres": {
-          "id": "__POSTGRES_CREDENTIAL_ID__",
-          "name": "Leasing Postgres"
-        }
-      }
-    },
-    {
-      "id": "confirm-approved-tour",
-      "name": "Confirm Approved Tour",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        560,
-        360
-      ],
-      "parameters": {
-        "chatId": "={{ $('Read Tour Decision').item.json.telegram_chat_id }}",
-        "text": "=Good news - your tour of {{ $('Read Tour Decision').item.json.address }} is confirmed for {{ $('Read Tour Decision').item.json.slot_pretty }}.\n\nEntry code: {{ $('Read Tour Decision').item.json.lock_code }}\n\nThe code works during your booked slot only.",
-        "additionalFields": {
-          "appendAttribution": false,
-          "parse_mode": "HTML"
-        }
-      },
-      "credentials": {
-        "telegramApi": {
-          "id": "__TELEGRAM_PROSPECT_CREDENTIAL_ID__",
-          "name": "Leasing Telegram (prospect bot)"
-        }
-      }
-    },
-    {
-      "id": "hold-for-manager",
-      "name": "Hold For Manager?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        780,
-        140
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "match-slot-and-check-policy-it",
-              "leftValue": "={{ $('Match Slot And Check Policy').item.json.should_hold }}",
+              "id": "json-has-slot",
+              "leftValue": "={{ $json.has_slot }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -360,14 +164,14 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1000,
-        60
+        600,
+        -100
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE leads SET\n  pending_tour_starts_at = $2::timestamptz,\n  tour_approval_state = 'pending'\nWHERE ref_token = $1 RETURNING *;",
+        "query": "UPDATE leads SET pending_tour_starts_at=$2::timestamptz,tour_approval_state='pending',conversation_state=conversation_state||jsonb_build_object('pending_tour_action_id',$3::text) WHERE ref_token=$1 AND status='prequalified' AND tour_approval_state<>'pending' RETURNING *;",
         "options": {
-          "queryReplacement": "={{ [$('Match Slot And Check Policy').item.json.ref_token, $('Match Slot And Check Policy').item.json.slot_iso] }}"
+          "queryReplacement": "={{ [$json.ref_token,$json.slot_iso,$json.request_id] }}"
         }
       },
       "credentials": {
@@ -378,17 +182,41 @@
       }
     },
     {
+      "id": "tell-prospect-approval-pending",
+      "name": "Tell Prospect: Approval Pending",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        -100
+      ],
+      "parameters": {
+        "chatId": "={{ $('Match Slot And Check Policy').first().json.telegram_chat_id }}",
+        "text": "={{ $('Match Slot And Check Policy').first().json.prospect_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_PROSPECT_CREDENTIAL_ID__",
+          "name": "Leasing Telegram (prospect bot)"
+        }
+      }
+    },
+    {
       "id": "ask-manager-approve-this-tour",
       "name": "Ask Manager: Approve This Tour",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1220,
-        60
+        1000,
+        -100
       ],
       "parameters": {
         "chatId": "=__TELEGRAM_CHAT_ID__",
-        "text": "=Tour request outside the usual policy.\n\n{{ $('Match Slot And Check Policy').item.json.prospect_name }} ({{ $('Match Slot And Check Policy').item.json.ref_token }})\nUnit: {{ $('Match Slot And Check Policy').item.json.unit_code }}\nRequested: {{ $('Match Slot And Check Policy').item.json.slot_pretty }}\n\nHeld because: {{ $('Match Slot And Check Policy').item.json.reasons_text }}\n\nNothing is booked and they have not been given a time. Your call.",
+        "text": "={{ $('Match Slot And Check Policy').first().json.manager_text }}",
         "replyMarkup": "inlineKeyboard",
         "inlineKeyboard": {
           "rows": [
@@ -398,13 +226,13 @@
                   {
                     "text": "Approve tour",
                     "additionalFields": {
-                      "callback_data": "=tba:{{ $('Match Slot And Check Policy').item.json.ref_token }}"
+                      "callback_data": "=tba:{{ $('Match Slot And Check Policy').first().json.ref_token }}:{{ $('Match Slot And Check Policy').first().json.request_id }}"
                     }
                   },
                   {
                     "text": "Not that time",
                     "additionalFields": {
-                      "callback_data": "=tbd:{{ $('Match Slot And Check Policy').item.json.ref_token }}"
+                      "callback_data": "=tbd:{{ $('Match Slot And Check Policy').first().json.ref_token }}:{{ $('Match Slot And Check Policy').first().json.request_id }}"
                     }
                   }
                 ]
@@ -422,8 +250,31 @@
           "id": "__TELEGRAM_CREDENTIAL_ID__",
           "name": "Leasing Telegram (manager bot)"
         }
+      }
+    },
+    {
+      "id": "offer-real-alternative-times",
+      "name": "Offer Real Alternative Times",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        600,
+        180
+      ],
+      "parameters": {
+        "chatId": "={{ $json.telegram_chat_id }}",
+        "text": "={{ $json.prospect_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
       },
-      "onError": "continueRegularOutput"
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_PROSPECT_CREDENTIAL_ID__",
+          "name": "Leasing Telegram (prospect bot)"
+        }
+      }
     },
     {
       "id": "tour-decision-internal",
@@ -431,8 +282,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -760,
-        460
+        -800,
+        600
       ],
       "parameters": {
         "httpMethod": "POST",
@@ -444,19 +295,33 @@
       "webhookId": "tour-decision"
     },
     {
-      "id": "load-lead-for-decision",
-      "name": "Load Lead For Decision",
+      "id": "authenticate-tour-decision",
+      "name": "Authenticate Tour Decision",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        600
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const j=$input.first().json; if(j.headers?.['x-leasing-action-secret']!=='__INTERNAL_ACTION_SECRET__') throw new Error('Unauthorized internal action'); return $input.all();"
+      }
+    },
+    {
+      "id": "claim-pending-tour-decision",
+      "name": "Claim Pending Tour Decision",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -540,
-        460
+        -400,
+        600
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT l.*, u.unit_code, u.address\nFROM leads l JOIN units u ON u.id = l.unit_id\nWHERE l.ref_token = $1 AND l.tour_approval_state = 'pending' LIMIT 1;",
+        "query": "UPDATE leads SET tour_approval_state=CASE WHEN $2::boolean THEN 'approved' ELSE 'declined' END,conversation_state=conversation_state||jsonb_build_object('tour_decided_by',$3::text,'tour_decided_at',now(),'tour_decision_action_id',$4::text) WHERE ref_token=$1 AND tour_approval_state='pending' AND conversation_state->>'pending_tour_action_id'=$5 AND status='prequalified' RETURNING *, (SELECT unit_code FROM units WHERE id=leads.unit_id) AS unit_code,(SELECT address FROM units WHERE id=leads.unit_id) AS address;",
         "options": {
-          "queryReplacement": "={{ [$json.body.ref_token] }}"
+          "queryReplacement": "={{ [$json.body.ref_token,$json.body.approved,$json.body.actor,$json.body.action_id,$json.body.request_id ?? ''] }}"
         }
       },
       "credentials": {
@@ -473,12 +338,70 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -320,
-        460
+        -200,
+        600
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "/**\n * Shared front-of-funnel logic.\n *\n * This file is the single source of truth for lead parsing, reference tokens,\n * Tier A guardrails, and the pre-qualification gate. The build scripts inline it\n * into n8n Code nodes, so it must stay dependency-free and must not use\n * backticks or template literals - those are consumed before reaching the node.\n *\n * Nothing here calls a model. Everything here is deterministic.\n */\n\n/* ------------------------------------------------------------------ tokens */\n\n/**\n * Reference token carried in every subject line. Replies are matched on this\n * first and on sender address only as a fallback - the model never decides\n * which lead a message belongs to.\n */\nfunction makeRefToken(prefix, seed) {\n  var n = seed === undefined ? Math.floor(Math.random() * 9000) + 1000 : seed;\n  return prefix + \"-\" + String(n).slice(0, 4);\n}\n\nfunction extractRefToken(text) {\n  if (!text) return null;\n  var match = String(text).match(/\\[([RA]-\\d{4})\\]/);\n  return match ? match[1] : null;\n}\n\nfunction subjectWithToken(subject, token) {\n  if (extractRefToken(subject)) return subject;\n  return subject + \" [\" + token + \"]\";\n}\n\n/* ------------------------------------------------------- lead email parsing */\n\n/**\n * Parses a listing-site lead notification.\n *\n * Zillow delivers these as email with an anonymised relay reply-to and no phone\n * number, so the parser must tolerate a missing phone rather than treat it as a\n * failure. Anything it cannot determine is left null and flagged, never guessed.\n */\nfunction parseLeadEmail(input) {\n  var subject = input.subject || \"\";\n  var body = input.body || \"\";\n  var replyTo = input.replyTo || input.from || \"\";\n\n  var result = {\n    prospect_name: null,\n    prospect_email: null,\n    prospect_phone: null,\n    unit_hint: null,\n    inquiry_text: null,\n    source: \"zillow_email\",\n    parse_warnings: [],\n  };\n\n  var nameMatch = body.match(/^\\s*Renter:\\s*(.+)$/m);\n  if (nameMatch) result.prospect_name = nameMatch[1].trim();\n  else result.parse_warnings.push(\"no renter name found\");\n\n  var propertyMatch = body.match(/^\\s*Property:\\s*(.+)$/m);\n  if (propertyMatch) result.unit_hint = propertyMatch[1].trim();\n  else {\n    var subjectUnit = subject.match(/:\\s*(.+)$/);\n    if (subjectUnit) result.unit_hint = subjectUnit[1].trim();\n    else result.parse_warnings.push(\"no property reference found\");\n  }\n\n  // The renter's own words, between the quotes after \"Message:\".\n  var messageMatch = body.match(/Message:\\s*\"([\\s\\S]*?)\"/);\n  if (messageMatch) result.inquiry_text = messageMatch[1].replace(/\\s+/g, \" \").trim();\n  else result.parse_warnings.push(\"no inquiry text found\");\n\n  var emailMatch = String(replyTo).match(/[\\w.+-]+@[\\w.-]+\\.\\w+/);\n  if (emailMatch) result.prospect_email = emailMatch[0];\n  else result.parse_warnings.push(\"no reply address found\");\n\n  var phoneMatch = body.match(/(\\+?1[\\s.-]?)?\\(?\\d{3}\\)?[\\s.-]\\d{3}[\\s.-]\\d{4}/);\n  if (phoneMatch) result.prospect_phone = phoneMatch[0].trim();\n\n  return result;\n}\n\n/* ------------------------------------------------- unit knowledge for the AI */\n\n/**\n * Flattens a unit row into the only facts the FAQ model is allowed to use.\n * If a fact is not in here, the correct answer is \"I don't have that\".\n */\nfunction buildUnitKnowledge(unit) {\n  if (!unit) return null;\n  var facts = unit.faq_facts || {};\n  var knowledge = {\n    unit_code: unit.unit_code,\n    address: unit.address,\n    bedrooms: unit.beds,\n    bathrooms: Number(unit.baths),\n    square_feet: unit.sqft,\n    monthly_rent: Number(unit.rent_amount),\n    security_deposit: Number(unit.deposit_amount),\n    available_from: unit.available_from,\n    lease_term_months: unit.lease_term_months,\n    pet_policy: unit.pet_policy,\n    pet_fee_monthly: unit.pet_fee_monthly === null ? null : Number(unit.pet_fee_monthly),\n    parking: unit.parking,\n    utilities: unit.utilities_included,\n    laundry: unit.laundry,\n  };\n  Object.keys(facts).forEach(function (key) {\n    knowledge[key] = facts[key];\n  });\n  return knowledge;\n}\n\n/**\n * Unit facts PLUS the figures the prospect themselves stated, for use as the\n * guardrail's allowlist during a conversation.\n *\n * The unsupported-figure rule exists to stop the model inventing a rent, a fee\n * or a deposit. It is not meant to stop it repeating a number the prospect just\n * supplied - and in a chat, confirming what someone told you (\"$5,000 a month,\n * got it\") is the natural thing to say. With only unit facts in the allowlist\n * every such reply is blocked, the prospect gets silence, and the conversation\n * stalls on the most ordinary turn there is.\n *\n * Only the recorded slot values are added, never arbitrary numbers scraped from\n * the message, so the check still catches anything the model made up.\n */\nfunction buildConversationKnowledge(unit, statedAnswers) {\n  var knowledge = buildUnitKnowledge(unit);\n  if (!knowledge) return null;\n  var answers = statedAnswers || {};\n\n  if (answers.stated_monthly_income !== null && answers.stated_monthly_income !== undefined) {\n    knowledge.prospect_stated_monthly_income = Number(answers.stated_monthly_income);\n  }\n  if (answers.vehicles !== null && answers.vehicles !== undefined) {\n    knowledge.prospect_stated_vehicles = Number(answers.vehicles);\n  }\n  if (answers.occupants !== null && answers.occupants !== undefined) {\n    knowledge.prospect_stated_occupants = Number(answers.occupants);\n  }\n  if (answers.pets !== null && answers.pets !== undefined && answers.pets !== \"\") {\n    knowledge.prospect_stated_pets = String(answers.pets);\n  }\n  if (answers.move_in_date !== null && answers.move_in_date !== undefined) {\n    knowledge.prospect_stated_move_in = String(answers.move_in_date);\n  }\n  return knowledge;\n}\n\n/**\n * Escapes text for Telegram's HTML parse mode.\n *\n * The Telegram node always sends a parse_mode, so message text is parsed for\n * entities whether you want it or not. Under the legacy Markdown default a\n * single underscore opens an italic run that never closes, and Telegram rejects\n * the whole message with \"can't parse entities\" and a byte offset - which is\n * exactly what an application link carrying ?ref_token= does. The node then\n * fails with a bare \"Bad request - please check your parameters\".\n *\n * So: send HTML parse mode and escape the three characters it cares about.\n * Underscores, asterisks and brackets are then all literal, and a URL with a\n * query string is safe.\n */\nfunction escapeTelegramHtml(text) {\n  if (text === null || text === undefined) return \"\";\n  return String(text)\n    .split(\"&\").join(\"&amp;\")\n    .split(\"<\").join(\"&lt;\")\n    .split(\">\").join(\"&gt;\");\n}\n\n/* ------------------------------------------------------------------- tours */\n\n/**\n * Turns a naive datetime into a real instant, read as PROPERTY-LOCAL time.\n *\n * The model returns \"2026-09-15T14:00\" when someone says \"Tuesday at 2pm\", and\n * they mean 2pm at the property. `new Date()` on a bare string with no zone\n * reads it in the runtime's zone - UTC in a container - so a request for 2pm\n * silently became 9:30am and the renter was booked five hours out. Nothing\n * errors; you only notice by reading the booked time.\n *\n * Anything already carrying a Z or a +/-HH:MM offset is left exactly alone.\n */\nfunction naiveLocalToUtcIso(naive, timeZone) {\n  if (!naive) return null;\n  var text = String(naive).trim();\n  if (/(Z|[+-]\\d{2}:?\\d{2})$/.test(text)) return new Date(text).toISOString();\n\n  var guess = new Date(text + \"Z\");\n  if (isNaN(guess.getTime())) return null;\n\n  // How far ahead of UTC that zone is at that instant, DST included.\n  var dtf = new Intl.DateTimeFormat(\"en-US\", {\n    timeZone: timeZone || \"UTC\", hour12: false,\n    year: \"numeric\", month: \"2-digit\", day: \"2-digit\",\n    hour: \"2-digit\", minute: \"2-digit\", second: \"2-digit\",\n  });\n  var parts = {};\n  dtf.formatToParts(guess).forEach(function (p) { parts[p.type] = p.value; });\n  var asUtc = Date.UTC(\n    Number(parts.year), Number(parts.month) - 1, Number(parts.day),\n    Number(parts.hour) % 24, Number(parts.minute), Number(parts.second)\n  );\n  var offset = asUtc - guess.getTime();\n  return new Date(guess.getTime() - offset).toISOString();\n}\n\n/**\n * Picks the real Cal.com slot closest to what the prospect asked for.\n *\n * The model turns \"Saturday morning\" into an ISO datetime; it never chooses the\n * booking. This does, deterministically, against the slots Cal.com actually\n * returned - so the assistant can only ever book a time that genuinely exists.\n *\n * `slots` is a flat array of ISO strings. Returns the nearest slot within\n * `toleranceHours`, plus the next few alternatives to offer if nothing is close.\n */\nfunction matchTourSlot(wantedIso, slots, toleranceHours) {\n  var tolerance = (toleranceHours === undefined ? 4 : toleranceHours) * 3600000;\n  var available = (slots || []).slice().sort();\n  var result = { matched: null, delta_minutes: null, alternatives: available.slice(0, 3) };\n  if (!wantedIso || !available.length) return result;\n\n  var wanted = new Date(wantedIso).getTime();\n  if (isNaN(wanted)) return result;\n\n  var best = null;\n  var bestDelta = Infinity;\n  for (var i = 0; i < available.length; i++) {\n    var delta = Math.abs(new Date(available[i]).getTime() - wanted);\n    if (delta < bestDelta) { bestDelta = delta; best = available[i]; }\n  }\n\n  // Alternatives are the slots nearest what they asked for, not simply the\n  // earliest ones - \"how about Tuesday?\" should not be answered with Monday 9am.\n  result.alternatives = available\n    .slice()\n    .sort(function (a, b) {\n      return Math.abs(new Date(a).getTime() - wanted) - Math.abs(new Date(b).getTime() - wanted);\n    })\n    .slice(0, 3)\n    .sort();\n\n  if (best !== null && bestDelta <= tolerance) {\n    result.matched = best;\n    result.delta_minutes = Math.round(bestDelta / 60000);\n  }\n  return result;\n}\n\n/**\n * Is this slot inside the manager's published tour policy, or an exception?\n *\n * Exceptions are held for a tap rather than refused. Returning reasons rather\n * than a bare boolean means the manager's card can say WHY it was held, which\n * is the difference between a useful notification and an interruption.\n *\n * `hourOverride` exists because a Code node cannot rely on the container's\n * timezone; the caller passes the local hour and weekday it computed.\n */\nfunction classifyTourRequest(slotIso, policy, nowIso, hourOverride, weekdayOverride) {\n  var reasons = [];\n  var config = policy || {};\n  var earliest = Number(config.earliest_hour === undefined ? 9 : config.earliest_hour);\n  var latest = Number(config.latest_hour === undefined ? 18 : config.latest_hour);\n  var minNotice = Number(config.min_notice_hours === undefined ? 12 : config.min_notice_hours);\n  var allowWeekends = config.allow_weekends === undefined ? true : Boolean(config.allow_weekends);\n\n  var slot = new Date(slotIso);\n  var now = new Date(nowIso || new Date().toISOString());\n  var hour = hourOverride === undefined || hourOverride === null ? slot.getUTCHours() : Number(hourOverride);\n  var weekday = weekdayOverride === undefined || weekdayOverride === null\n    ? slot.getUTCDay()\n    : Number(weekdayOverride);\n\n  if (hour < earliest || hour >= latest) {\n    reasons.push(\"outside self-guided hours (\" + earliest + \":00-\" + latest + \":00)\");\n  }\n  if (!allowWeekends && (weekday === 0 || weekday === 6)) {\n    reasons.push(\"weekend\");\n  }\n  var noticeHours = (slot.getTime() - now.getTime()) / 3600000;\n  if (noticeHours < minNotice) {\n    reasons.push(\"less than \" + minNotice + \"h notice (\" + Math.max(0, Math.round(noticeHours)) + \"h)\");\n  }\n\n  return {\n    is_exception: reasons.length > 0,\n    reasons: reasons,\n    notice_hours: Math.round(noticeHours),\n  };\n}\n\n/* -------------------------------------------------------------- guardrails */\n\n/**\n * Tier A guardrail. Runs on every message before it leaves, and again at send\n * time, because a manager may have edited the wording after it was drafted.\n *\n * Blocks: protected-class content, legal or lease commitments, rent negotiation,\n * availability promises, and invented numbers that are not in the unit facts.\n */\nvar PROTECTED_CLASS_PATTERNS = [\n  { pattern: /\\b(kids?|children|child|family friendly|families|school district)\\b/i, label: \"familial status\" },\n  { pattern: /\\b(disab|wheelchair|handicap|mental health|service animal policy)\\b/i, label: \"disability\" },\n  { pattern: /\\b(race|ethnic|nationality|immigration|citizen|visa status)\\b/i, label: \"national origin / race\" },\n  { pattern: /\\b(church|mosque|temple|synagogue|religio)\\b/i, label: \"religion\" },\n  { pattern: /\\b(marital status|married|single people|couples only)\\b/i, label: \"marital status\" },\n  { pattern: /\\b(section 8|voucher|housing assistance|welfare)\\b/i, label: \"source of income\" },\n  { pattern: /\\b(good neighborhood for|safe area for|type of people)\\b/i, label: \"steering\" },\n];\n\nvar COMMITMENT_PATTERNS = [\n  { pattern: /\\b(guarantee|guaranteed|we promise|you will be approved|pre-?approved)\\b/i, label: \"approval commitment\" },\n  { pattern: /\\b(hold (it|the unit) for you|reserved for you|it'?s yours)\\b/i, label: \"availability commitment\" },\n  { pattern: /\\b(we can lower|discount the rent|negotiate the rent|reduce the rent)\\b/i, label: \"rent negotiation\" },\n  { pattern: /\\b(legally|by law|you are entitled|your rights under)\\b/i, label: \"legal statement\" },\n  { pattern: /\\b(denied|rejected|you do not qualify|we cannot rent to you)\\b/i, label: \"adverse decision language\" },\n];\n\nfunction guardrailCheck(text, knowledge) {\n  var findings = [];\n  var body = String(text || \"\");\n\n  PROTECTED_CLASS_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"protected_class\", detail: rule.label });\n    }\n  });\n\n  COMMITMENT_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"commitment\", detail: rule.label });\n    }\n  });\n\n  // Any dollar figure in the message must appear in the unit facts. Catches the\n  // model inventing a rent, fee, or deposit.\n  if (knowledge) {\n    var allowed = [];\n    Object.keys(knowledge).forEach(function (key) {\n      var value = knowledge[key];\n      if (typeof value === \"number\") allowed.push(Math.round(value));\n      if (typeof value === \"string\") {\n        var found = value.match(/\\d[\\d,]*(\\.\\d+)?/g) || [];\n        found.forEach(function (n) { allowed.push(Math.round(Number(n.replace(/,/g, \"\")))); });\n      }\n    });\n\n    var quoted = body.match(/\\$\\s?\\d[\\d,]*(\\.\\d+)?/g) || [];\n    quoted.forEach(function (raw) {\n      var amount = Math.round(Number(raw.replace(/[$,\\s]/g, \"\")));\n      if (allowed.indexOf(amount) === -1) {\n        findings.push({\n          severity: \"block\",\n          category: \"unsupported_figure\",\n          detail: raw.trim() + \" is not in the unit facts\",\n        });\n      }\n    });\n  }\n\n  var blocking = findings.filter(function (f) { return f.severity === \"block\"; });\n  return {\n    passed: blocking.length === 0,\n    findings: findings,\n    checked_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- pre-qualification */\n\n/**\n * Scheduling triage only. This is NOT a rental decision and its output must\n * never be phrased to a prospect as a denial.\n *\n * Deliberately narrow: move-in timing, self-reported income against the\n * published multiple, pet policy, and occupancy. Nothing else is considered and\n * nothing here is verified.\n */\nfunction prequalGate(answers, unit, config) {\n  var reasons = [];\n  var missing = [];\n  var incomeMultiple = config && config.income_multiple ? Number(config.income_multiple) : 3;\n\n  if (!answers || answers.move_in_date === null || answers.move_in_date === undefined) {\n    missing.push(\"move_in_date\");\n  } else {\n    var availableFrom = new Date(unit.available_from);\n    var wanted = new Date(answers.move_in_date);\n    var daysAfter = (wanted - availableFrom) / 86400000;\n\n    if (daysAfter < -14) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"wants \" + answers.move_in_date + \", unit is available from \" + unit.available_from,\n      });\n    } else if (daysAfter > 60) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"move-in is more than 60 days after the unit is available\",\n      });\n    } else {\n      reasons.push({ criterion: \"move_in_timing\", met: true, detail: answers.move_in_date });\n    }\n  }\n\n  if (answers && (answers.stated_monthly_income === null || answers.stated_monthly_income === undefined)) {\n    missing.push(\"stated_monthly_income\");\n  } else if (answers) {\n    // Self-reported and unverified. Verification happens after an application.\n    var rent = Number(unit.rent_amount);\n    var stated = Number(answers.stated_monthly_income);\n    var ratio = stated / rent;\n    reasons.push({\n      criterion: \"stated_income\",\n      met: ratio >= incomeMultiple,\n      detail: \"$\" + stated + \"/mo stated against $\" + rent + \" rent = \" + ratio.toFixed(2) + \"x (unverified)\",\n    });\n  }\n\n  if (answers && answers.pets && String(answers.pets).toLowerCase() !== \"none\") {\n    var weightMatch = String(answers.pets).match(/(\\d+)\\s?(lb|pound)/i);\n    var overLimit = weightMatch && Number(weightMatch[1]) > 50;\n    reasons.push({\n      criterion: \"pets\",\n      met: !overLimit,\n      detail: overLimit ? \"stated pet is over the 50 lb limit\" : String(answers.pets),\n    });\n  }\n\n  var failed = reasons.filter(function (r) { return r.met === false; });\n  var result = missing.length ? \"incomplete\" : failed.length ? \"not_clear\" : \"clear\";\n\n  return {\n    result: result,\n    reasons: reasons,\n    missing: missing,\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- AI output shape */\n\n/**\n * Unwraps structured output from the OpenAI node.\n *\n * The payload arrives wrapped differently depending on node version, whether\n * simplify is on, and whether a JSON schema was applied - sometimes a parsed\n * object, sometimes a JSON string under `output`, sometimes nested one level\n * deeper. Probing for a known key is more robust than assuming a shape.\n *\n * @param {*} data       the item's json\n * @param {string} anchor a key that must exist on the real payload\n */\nfunction unwrapAiPayload(data, anchor) {\n  var value = data;\n\n  for (var depth = 0; depth < 6; depth++) {\n    if (value === null || value === undefined) break;\n\n    if (typeof value === \"string\") {\n      var trimmed = value.trim();\n      if (trimmed.charAt(0) !== \"{\" && trimmed.charAt(0) !== \"[\") break;\n      try {\n        value = JSON.parse(trimmed);\n      } catch (error) {\n        break;\n      }\n      continue;\n    }\n\n    if (Array.isArray(value)) {\n      value = value[0];\n      continue;\n    }\n\n    if (typeof value === \"object\") {\n      if (Object.prototype.hasOwnProperty.call(value, anchor)) return value;\n\n      var next =\n        value.output !== undefined ? value.output :\n        value.message !== undefined ? value.message :\n        value.content !== undefined ? value.content :\n        value.text !== undefined ? value.text :\n        value.json !== undefined ? value.json : undefined;\n\n      if (next === undefined) break;\n      value = next;\n      continue;\n    }\n\n    break;\n  }\n\n  return value;\n}\n\n/* ------------------------------------------------------------- lock code */\n\n/**\n * Self-guided tour entry code.\n *\n * MOCK. A real deployment issues this through a smart-lock platform\n * (Rently, Tour24, ButterflyMX) bound to the booking window. Here it is\n * generated locally and logged, and every record it touches is marked\n * source: \"mock\".\n */\nfunction generateLockCode() {\n  var code = String(Math.floor(Math.random() * 900000) + 100000);\n  return { code: code, source: \"mock\", issued_at: new Date().toISOString() };\n}\n\n// The manager tapped. Deterministic: the slot was decided when it was held,\n// and nothing about it can change here.\nconst lead = $('Load Lead For Decision').first().json;\nconst body = $('Tour Decision (Internal)').first().json.body || {};\nconst approved = body.approved === true || body.approved === 'true';\n\nif (!lead || !lead.ref_token) {\n  throw new Error('No lead for tour decision: ' + JSON.stringify(body).slice(0, 200));\n}\n\nfunction pretty(iso) {\n  return new Intl.DateTimeFormat('en-US', {\n    timeZone: '__TOUR_TIMEZONE__', weekday: 'long', month: 'long', day: 'numeric',\n    hour: 'numeric', minute: '2-digit',\n  }).format(new Date(iso));\n}\n\nconst slotIso = lead.pending_tour_starts_at;\nconst lock = generateLockCode();\nconst declineText = 'That time is not available after all, sorry. You can pick another ' +\n  'here and it will be confirmed straight away:\\n' +\n  '__CALCOM_BOOKING_URL__?metadata[ref_token]=' + lead.ref_token;\n\nreturn [{\n  json: {\n    ref_token: lead.ref_token,\n    telegram_chat_id: lead.telegram_chat_id,\n    prospect_name: lead.prospect_name,\n    slot_iso: slotIso,\n    slot_pretty: slotIso ? pretty(slotIso) : null,\n    lock_code: lock.code,\n    address: lead.address,\n    approved: approved,\n    decline_text: escapeTelegramHtml(declineText),\n  },\n}];"
+        "jsCode": "/**\n * Shared front-of-funnel logic.\n *\n * This file is the single source of truth for lead parsing, reference tokens,\n * Tier A guardrails, and the pre-qualification gate. The build scripts inline it\n * into n8n Code nodes, so it must stay dependency-free and must not use\n * backticks or template literals - those are consumed before reaching the node.\n *\n * Nothing here calls a model. Everything here is deterministic.\n */\n\n/* ------------------------------------------------------------------ tokens */\n\n/**\n * Reference token carried in every subject line. Replies are matched on this\n * first and on sender address only as a fallback - the model never decides\n * which lead a message belongs to.\n */\nfunction makeRefToken(prefix, seed) {\n  var n = seed === undefined ? Math.floor(Math.random() * 9000) + 1000 : seed;\n  return prefix + \"-\" + String(n).slice(0, 4);\n}\n\nfunction extractRefToken(text) {\n  if (!text) return null;\n  var match = String(text).match(/\\[([RA]-\\d{4})\\]/);\n  return match ? match[1] : null;\n}\n\nfunction subjectWithToken(subject, token) {\n  if (extractRefToken(subject)) return subject;\n  return subject + \" [\" + token + \"]\";\n}\n\n/* ------------------------------------------------------- lead email parsing */\n\n/**\n * Parses a listing-site lead notification.\n *\n * Zillow delivers these as email with an anonymised relay reply-to and no phone\n * number, so the parser must tolerate a missing phone rather than treat it as a\n * failure. Anything it cannot determine is left null and flagged, never guessed.\n */\nfunction parseLeadEmail(input) {\n  var subject = input.subject || \"\";\n  var body = input.body || \"\";\n  var replyTo = input.replyTo || input.from || \"\";\n\n  var result = {\n    prospect_name: null,\n    prospect_email: null,\n    prospect_phone: null,\n    unit_hint: null,\n    inquiry_text: null,\n    source: \"zillow_email\",\n    parse_warnings: [],\n  };\n\n  var nameMatch = body.match(/^\\s*Renter:\\s*(.+)$/m);\n  if (nameMatch) result.prospect_name = nameMatch[1].trim();\n  else result.parse_warnings.push(\"no renter name found\");\n\n  var propertyMatch = body.match(/^\\s*Property:\\s*(.+)$/m);\n  if (propertyMatch) result.unit_hint = propertyMatch[1].trim();\n  else {\n    var subjectUnit = subject.match(/:\\s*(.+)$/);\n    if (subjectUnit) result.unit_hint = subjectUnit[1].trim();\n    else result.parse_warnings.push(\"no property reference found\");\n  }\n\n  // The renter's own words, between the quotes after \"Message:\".\n  var messageMatch = body.match(/Message:\\s*\"([\\s\\S]*?)\"/);\n  if (messageMatch) result.inquiry_text = messageMatch[1].replace(/\\s+/g, \" \").trim();\n  else result.parse_warnings.push(\"no inquiry text found\");\n\n  var emailMatch = String(replyTo).match(/[\\w.+-]+@[\\w.-]+\\.\\w+/);\n  if (emailMatch) result.prospect_email = emailMatch[0];\n  else result.parse_warnings.push(\"no reply address found\");\n\n  var phoneMatch = body.match(/(\\+?1[\\s.-]?)?\\(?\\d{3}\\)?[\\s.-]\\d{3}[\\s.-]\\d{4}/);\n  if (phoneMatch) result.prospect_phone = phoneMatch[0].trim();\n\n  return result;\n}\n\n/* ------------------------------------------------- unit knowledge for the AI */\n\n/**\n * Flattens a unit row into the only facts the FAQ model is allowed to use.\n * If a fact is not in here, the correct answer is \"I don't have that\".\n */\nfunction buildUnitKnowledge(unit) {\n  if (!unit) return null;\n  var facts = unit.faq_facts || {};\n  var knowledge = {\n    unit_code: unit.unit_code,\n    address: unit.address,\n    bedrooms: unit.beds,\n    bathrooms: Number(unit.baths),\n    square_feet: unit.sqft,\n    monthly_rent: Number(unit.rent_amount),\n    security_deposit: Number(unit.deposit_amount),\n    available_from: unit.available_from,\n    lease_term_months: unit.lease_term_months,\n    pet_policy: unit.pet_policy,\n    pet_fee_monthly: unit.pet_fee_monthly === null ? null : Number(unit.pet_fee_monthly),\n    parking: unit.parking,\n    utilities: unit.utilities_included,\n    laundry: unit.laundry,\n  };\n  Object.keys(facts).forEach(function (key) {\n    knowledge[key] = facts[key];\n  });\n  return knowledge;\n}\n\n/**\n * Unit facts PLUS the figures the prospect themselves stated, for use as the\n * guardrail's allowlist during a conversation.\n *\n * The unsupported-figure rule exists to stop the model inventing a rent, a fee\n * or a deposit. It is not meant to stop it repeating a number the prospect just\n * supplied - and in a chat, confirming what someone told you (\"$5,000 a month,\n * got it\") is the natural thing to say. With only unit facts in the allowlist\n * every such reply is blocked, the prospect gets silence, and the conversation\n * stalls on the most ordinary turn there is.\n *\n * Only the recorded slot values are added, never arbitrary numbers scraped from\n * the message, so the check still catches anything the model made up.\n */\nfunction buildConversationKnowledge(unit, statedAnswers) {\n  var knowledge = buildUnitKnowledge(unit);\n  if (!knowledge) return null;\n  var answers = statedAnswers || {};\n\n  if (answers.stated_monthly_income !== null && answers.stated_monthly_income !== undefined) {\n    knowledge.prospect_stated_monthly_income = Number(answers.stated_monthly_income);\n  }\n  if (answers.vehicles !== null && answers.vehicles !== undefined) {\n    knowledge.prospect_stated_vehicles = Number(answers.vehicles);\n  }\n  if (answers.occupants !== null && answers.occupants !== undefined) {\n    knowledge.prospect_stated_occupants = Number(answers.occupants);\n  }\n  if (answers.pets !== null && answers.pets !== undefined && answers.pets !== \"\") {\n    knowledge.prospect_stated_pets = String(answers.pets);\n  }\n  if (answers.move_in_date !== null && answers.move_in_date !== undefined) {\n    knowledge.prospect_stated_move_in = String(answers.move_in_date);\n  }\n  return knowledge;\n}\n\n/**\n * Escapes text for Telegram's HTML parse mode.\n *\n * The Telegram node always sends a parse_mode, so message text is parsed for\n * entities whether you want it or not. Under the legacy Markdown default a\n * single underscore opens an italic run that never closes, and Telegram rejects\n * the whole message with \"can't parse entities\" and a byte offset - which is\n * exactly what an application link carrying ?ref_token= does. The node then\n * fails with a bare \"Bad request - please check your parameters\".\n *\n * So: send HTML parse mode and escape the three characters it cares about.\n * Underscores, asterisks and brackets are then all literal, and a URL with a\n * query string is safe.\n */\nfunction escapeTelegramHtml(text) {\n  if (text === null || text === undefined) return \"\";\n  return String(text)\n    .split(\"&\").join(\"&amp;\")\n    .split(\"<\").join(\"&lt;\")\n    .split(\">\").join(\"&gt;\");\n}\n\n/* ------------------------------------------------------------------- tours */\n\n/**\n * Turns a naive datetime into a real instant, read as PROPERTY-LOCAL time.\n *\n * The model returns \"2026-09-15T14:00\" when someone says \"Tuesday at 2pm\", and\n * they mean 2pm at the property. `new Date()` on a bare string with no zone\n * reads it in the runtime's zone - UTC in a container - so a request for 2pm\n * silently became 9:30am and the renter was booked five hours out. Nothing\n * errors; you only notice by reading the booked time.\n *\n * Anything already carrying a Z or a +/-HH:MM offset is left exactly alone.\n */\nfunction naiveLocalToUtcIso(naive, timeZone) {\n  if (!naive) return null;\n  var text = String(naive).trim();\n  if (/(Z|[+-]\\d{2}:?\\d{2})$/.test(text)) return new Date(text).toISOString();\n\n  var guess = new Date(text + \"Z\");\n  if (isNaN(guess.getTime())) return null;\n\n  // How far ahead of UTC that zone is at that instant, DST included.\n  var dtf = new Intl.DateTimeFormat(\"en-US\", {\n    timeZone: timeZone || \"UTC\", hour12: false,\n    year: \"numeric\", month: \"2-digit\", day: \"2-digit\",\n    hour: \"2-digit\", minute: \"2-digit\", second: \"2-digit\",\n  });\n  var parts = {};\n  dtf.formatToParts(guess).forEach(function (p) { parts[p.type] = p.value; });\n  var asUtc = Date.UTC(\n    Number(parts.year), Number(parts.month) - 1, Number(parts.day),\n    Number(parts.hour) % 24, Number(parts.minute), Number(parts.second)\n  );\n  var offset = asUtc - guess.getTime();\n  return new Date(guess.getTime() - offset).toISOString();\n}\n\n/**\n * Picks the real Cal.com slot closest to what the prospect asked for.\n *\n * The model turns \"Saturday morning\" into an ISO datetime; it never chooses the\n * booking. This does, deterministically, against the slots Cal.com actually\n * returned - so the assistant can only ever book a time that genuinely exists.\n *\n * `slots` is a flat array of ISO strings. Returns the nearest slot within\n * `toleranceHours`, plus the next few alternatives to offer if nothing is close.\n */\nfunction matchTourSlot(wantedIso, slots, toleranceHours) {\n  var tolerance = (toleranceHours === undefined ? 4 : toleranceHours) * 3600000;\n  var available = (slots || []).slice().sort();\n  var result = { matched: null, delta_minutes: null, alternatives: available.slice(0, 3) };\n  if (!wantedIso || !available.length) return result;\n\n  var wanted = new Date(wantedIso).getTime();\n  if (isNaN(wanted)) return result;\n\n  var best = null;\n  var bestDelta = Infinity;\n  for (var i = 0; i < available.length; i++) {\n    var delta = Math.abs(new Date(available[i]).getTime() - wanted);\n    if (delta < bestDelta) { bestDelta = delta; best = available[i]; }\n  }\n\n  // Alternatives are the slots nearest what they asked for, not simply the\n  // earliest ones - \"how about Tuesday?\" should not be answered with Monday 9am.\n  result.alternatives = available\n    .slice()\n    .sort(function (a, b) {\n      return Math.abs(new Date(a).getTime() - wanted) - Math.abs(new Date(b).getTime() - wanted);\n    })\n    .slice(0, 3)\n    .sort();\n\n  if (best !== null && bestDelta <= tolerance) {\n    result.matched = best;\n    result.delta_minutes = Math.round(bestDelta / 60000);\n  }\n  return result;\n}\n\n/**\n * Is this slot inside the manager's published tour policy, or an exception?\n *\n * Exceptions are held for a tap rather than refused. Returning reasons rather\n * than a bare boolean means the manager's card can say WHY it was held, which\n * is the difference between a useful notification and an interruption.\n *\n * `hourOverride` exists because a Code node cannot rely on the container's\n * timezone; the caller passes the local hour and weekday it computed.\n */\nfunction classifyTourRequest(slotIso, policy, nowIso, hourOverride, weekdayOverride) {\n  var reasons = [];\n  var config = policy || {};\n  var earliest = Number(config.earliest_hour === undefined ? 9 : config.earliest_hour);\n  var latest = Number(config.latest_hour === undefined ? 18 : config.latest_hour);\n  var minNotice = Number(config.min_notice_hours === undefined ? 12 : config.min_notice_hours);\n  var allowWeekends = config.allow_weekends === undefined ? true : Boolean(config.allow_weekends);\n\n  var slot = new Date(slotIso);\n  var now = new Date(nowIso || new Date().toISOString());\n  var hour = hourOverride === undefined || hourOverride === null ? slot.getUTCHours() : Number(hourOverride);\n  var weekday = weekdayOverride === undefined || weekdayOverride === null\n    ? slot.getUTCDay()\n    : Number(weekdayOverride);\n\n  if (hour < earliest || hour >= latest) {\n    reasons.push(\"outside self-guided hours (\" + earliest + \":00-\" + latest + \":00)\");\n  }\n  if (!allowWeekends && (weekday === 0 || weekday === 6)) {\n    reasons.push(\"weekend\");\n  }\n  var noticeHours = (slot.getTime() - now.getTime()) / 3600000;\n  if (noticeHours < minNotice) {\n    reasons.push(\"less than \" + minNotice + \"h notice (\" + Math.max(0, Math.round(noticeHours)) + \"h)\");\n  }\n\n  return {\n    is_exception: reasons.length > 0,\n    reasons: reasons,\n    notice_hours: Math.round(noticeHours),\n  };\n}\n\n/* -------------------------------------------------------------- guardrails */\n\n/**\n * Tier A guardrail. Runs on every message before it leaves, and again at send\n * time, because a manager may have edited the wording after it was drafted.\n *\n * Blocks: protected-class content, legal or lease commitments, rent negotiation,\n * availability promises, and invented numbers that are not in the unit facts.\n */\nvar PROTECTED_CLASS_PATTERNS = [\n  { pattern: /\\b(kids?|children|child|family friendly|families|school district)\\b/i, label: \"familial status\" },\n  { pattern: /\\b(disab|wheelchair|handicap|mental health|service animal policy)\\b/i, label: \"disability\" },\n  { pattern: /\\b(race|ethnic|nationality|immigration|citizen|visa status)\\b/i, label: \"national origin / race\" },\n  { pattern: /\\b(church|mosque|temple|synagogue|religio)\\b/i, label: \"religion\" },\n  { pattern: /\\b(marital status|married|single people|couples only)\\b/i, label: \"marital status\" },\n  { pattern: /\\b(section 8|voucher|housing assistance|welfare)\\b/i, label: \"source of income\" },\n  { pattern: /\\b(good neighborhood for|safe area for|type of people)\\b/i, label: \"steering\" },\n];\n\nvar COMMITMENT_PATTERNS = [\n  { pattern: /\\b(guarantee|guaranteed|we promise|you will be approved|pre-?approved)\\b/i, label: \"approval commitment\" },\n  { pattern: /\\b(hold (it|the unit) for you|reserved for you|it'?s yours)\\b/i, label: \"availability commitment\" },\n  { pattern: /\\b(we can lower|discount the rent|negotiate the rent|reduce the rent)\\b/i, label: \"rent negotiation\" },\n  { pattern: /\\b(legally|by law|you are entitled|your rights under)\\b/i, label: \"legal statement\" },\n  { pattern: /\\b(denied|rejected|you do not qualify|we cannot rent to you)\\b/i, label: \"adverse decision language\" },\n];\n\nfunction guardrailCheck(text, knowledge) {\n  var findings = [];\n  var body = String(text || \"\");\n\n  PROTECTED_CLASS_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"protected_class\", detail: rule.label });\n    }\n  });\n\n  COMMITMENT_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"commitment\", detail: rule.label });\n    }\n  });\n\n  // Any dollar figure in the message must appear in the unit facts. Catches the\n  // model inventing a rent, fee, or deposit.\n  if (knowledge) {\n    var allowed = [];\n    Object.keys(knowledge).forEach(function (key) {\n      var value = knowledge[key];\n      if (typeof value === \"number\") allowed.push(Math.round(value));\n      if (typeof value === \"string\") {\n        var found = value.match(/\\d[\\d,]*(\\.\\d+)?/g) || [];\n        found.forEach(function (n) { allowed.push(Math.round(Number(n.replace(/,/g, \"\")))); });\n      }\n    });\n\n    var quoted = body.match(/\\$\\s?\\d[\\d,]*(\\.\\d+)?/g) || [];\n    quoted.forEach(function (raw) {\n      var amount = Math.round(Number(raw.replace(/[$,\\s]/g, \"\")));\n      if (allowed.indexOf(amount) === -1) {\n        findings.push({\n          severity: \"block\",\n          category: \"unsupported_figure\",\n          detail: raw.trim() + \" is not in the unit facts\",\n        });\n      }\n    });\n  }\n\n  var blocking = findings.filter(function (f) { return f.severity === \"block\"; });\n  return {\n    passed: blocking.length === 0,\n    findings: findings,\n    checked_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- pre-qualification */\n\n/**\n * Scheduling triage only. This is NOT a rental decision and its output must\n * never be phrased to a prospect as a denial.\n *\n * Deliberately narrow: move-in timing, self-reported income against the\n * published multiple, pet policy, and occupancy. Nothing else is considered and\n * nothing here is verified.\n */\nfunction prequalGate(answers, unit, config) {\n  var reasons = [];\n  var missing = [];\n  var incomeMultiple = config && config.income_multiple ? Number(config.income_multiple) : 3;\n\n  if (!answers || answers.move_in_date === null || answers.move_in_date === undefined) {\n    missing.push(\"move_in_date\");\n  } else {\n    var availableFrom = new Date(unit.available_from);\n    var wanted = new Date(answers.move_in_date);\n    var daysAfter = (wanted - availableFrom) / 86400000;\n\n    if (daysAfter < -14) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"wants \" + answers.move_in_date + \", unit is available from \" + unit.available_from,\n      });\n    } else if (daysAfter > 60) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"move-in is more than 60 days after the unit is available\",\n      });\n    } else {\n      reasons.push({ criterion: \"move_in_timing\", met: true, detail: answers.move_in_date });\n    }\n  }\n\n  if (answers && (answers.stated_monthly_income === null || answers.stated_monthly_income === undefined)) {\n    missing.push(\"stated_monthly_income\");\n  } else if (answers) {\n    // Self-reported and unverified. Verification happens after an application.\n    var rent = Number(unit.rent_amount);\n    var stated = Number(answers.stated_monthly_income);\n    var ratio = stated / rent;\n    reasons.push({\n      criterion: \"stated_income\",\n      met: ratio >= incomeMultiple,\n      detail: \"$\" + stated + \"/mo stated against $\" + rent + \" rent = \" + ratio.toFixed(2) + \"x (unverified)\",\n    });\n  }\n\n  if (answers && answers.pets && String(answers.pets).toLowerCase() !== \"none\") {\n    var weightMatch = String(answers.pets).match(/(\\d+)\\s?(lb|pound)/i);\n    var overLimit = weightMatch && Number(weightMatch[1]) > 50;\n    reasons.push({\n      criterion: \"pets\",\n      met: !overLimit,\n      detail: overLimit ? \"stated pet is over the 50 lb limit\" : String(answers.pets),\n    });\n  }\n\n  var failed = reasons.filter(function (r) { return r.met === false; });\n  var result = missing.length ? \"incomplete\" : failed.length ? \"not_clear\" : \"clear\";\n\n  return {\n    result: result,\n    reasons: reasons,\n    missing: missing,\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- AI output shape */\n\n/**\n * Unwraps structured output from the OpenAI node.\n *\n * The payload arrives wrapped differently depending on node version, whether\n * simplify is on, and whether a JSON schema was applied - sometimes a parsed\n * object, sometimes a JSON string under `output`, sometimes nested one level\n * deeper. Probing for a known key is more robust than assuming a shape.\n *\n * @param {*} data       the item's json\n * @param {string} anchor a key that must exist on the real payload\n */\nfunction unwrapAiPayload(data, anchor) {\n  var value = data;\n\n  for (var depth = 0; depth < 6; depth++) {\n    if (value === null || value === undefined) break;\n\n    if (typeof value === \"string\") {\n      var trimmed = value.trim();\n      if (trimmed.charAt(0) !== \"{\" && trimmed.charAt(0) !== \"[\") break;\n      try {\n        value = JSON.parse(trimmed);\n      } catch (error) {\n        break;\n      }\n      continue;\n    }\n\n    if (Array.isArray(value)) {\n      value = value[0];\n      continue;\n    }\n\n    if (typeof value === \"object\") {\n      if (Object.prototype.hasOwnProperty.call(value, anchor)) return value;\n\n      var next =\n        value.output !== undefined ? value.output :\n        value.message !== undefined ? value.message :\n        value.content !== undefined ? value.content :\n        value.text !== undefined ? value.text :\n        value.json !== undefined ? value.json : undefined;\n\n      if (next === undefined) break;\n      value = next;\n      continue;\n    }\n\n    break;\n  }\n\n  return value;\n}\n\n/* ------------------------------------------------------------- lock code */\n\n/**\n * Self-guided tour entry code.\n *\n * MOCK. A real deployment issues this through a smart-lock platform\n * (Rently, Tour24, ButterflyMX) bound to the booking window. Here it is\n * generated locally and logged, and every record it touches is marked\n * source: \"mock\".\n */\nfunction generateLockCode() {\n  var code = String(Math.floor(Math.random() * 900000) + 100000);\n  return { code: code, source: \"mock\", issued_at: new Date().toISOString() };\n}\nconst lead=$input.first().json;\nif(!lead.ref_token)return [{json:{valid:false,manager_text:'This tour request is already actioned, stale or missing. No second booking was made.'}}];\nconst body=$('Tour Decision (Internal)').first().json.body;\nconst pretty=s=>new Intl.DateTimeFormat('en-US',{timeZone:'__TOUR_TIMEZONE__',weekday:'long',month:'long',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(s));\nconst lock=body.approved===true?generateLockCode():{code:null,source:'mock'};\nreturn [{json:{...lead,valid:true,approved:body.approved===true,actor:body.actor,lock_code:lock.code,slot_iso:lead.pending_tour_starts_at,slot_pretty:pretty(lead.pending_tour_starts_at),\n decline_text:'The manager could not confirm that tour time. Please send another preferred date and time; it will also need approval.'}}];"
+      }
+    },
+    {
+      "id": "tour-decision-claimed",
+      "name": "Tour Decision Claimed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        600
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "json-valid",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "notify-manager-stale-tour-action",
+      "name": "Notify Manager: Stale Tour Action",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        200,
+        850
+      ],
+      "parameters": {
+        "chatId": "=__TELEGRAM_CHAT_ID__",
+        "text": "={{ $json.manager_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram (manager bot)"
+        }
       }
     },
     {
@@ -487,8 +410,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -100,
-        460
+        200,
+        600
       ],
       "parameters": {
         "conditions": {
@@ -521,8 +444,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        120,
-        360
+        800,
+        600
       ],
       "parameters": {
         "method": "POST",
@@ -543,26 +466,27 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({\n  start: $('Read Tour Decision').item.json.slot_iso,\n  eventTypeId: Number('__CALCOM_EVENT_TYPE_ID__'),\n  attendee: {\n    name: $json.prospect_name || 'Prospective resident',\n    email: '__PROSPECT_EMAIL__',\n    timeZone: '__TOUR_TIMEZONE__',\n    language: 'en'\n  },\n  metadata: { ref_token: $json.ref_token }\n}) }}",
+        "jsonBody": "={{ JSON.stringify({start:$json.slot_iso,eventTypeId:Number('__CALCOM_EVENT_TYPE_ID__'),attendee:{name:$json.prospect_name,email:$json.prospect_email,timeZone:'__TOUR_TIMEZONE__',language:'en'},metadata:{ref_token:$json.ref_token} }) }}",
         "options": {
           "timeout": 20000
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
-      "id": "mark-tour-declined",
-      "name": "Mark Tour Declined",
+      "id": "record-approved-booking",
+      "name": "Record Approved Booking",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        120,
-        580
+        1000,
+        600
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE leads SET tour_approval_state = 'declined', pending_tour_starts_at = NULL\nWHERE ref_token = $1 RETURNING *;",
+        "query": "UPDATE leads SET calcom_booking_uid=$2,tour_starts_at=$3::timestamptz,lock_code=$4,lock_code_source='mock',pending_tour_starts_at=NULL,status='tour_booked' WHERE ref_token=$1 AND tour_approval_state='approved' AND calcom_booking_uid IS NULL RETURNING *;",
         "options": {
-          "queryReplacement": "={{ [$('Read Tour Decision').item.json.ref_token] }}"
+          "queryReplacement": "={{ [$('Read Tour Decision').first().json.ref_token,$json.data.uid,$('Read Tour Decision').first().json.slot_iso,$('Read Tour Decision').first().json.lock_code] }}"
         }
       },
       "credentials": {
@@ -573,17 +497,31 @@
       }
     },
     {
-      "id": "tell-prospect-another-time",
-      "name": "Tell Prospect: Another Time",
+      "id": "compose-approved-tour-confirmation",
+      "name": "Compose Approved Tour Confirmation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        600
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "/**\n * Shared front-of-funnel logic.\n *\n * This file is the single source of truth for lead parsing, reference tokens,\n * Tier A guardrails, and the pre-qualification gate. The build scripts inline it\n * into n8n Code nodes, so it must stay dependency-free and must not use\n * backticks or template literals - those are consumed before reaching the node.\n *\n * Nothing here calls a model. Everything here is deterministic.\n */\n\n/* ------------------------------------------------------------------ tokens */\n\n/**\n * Reference token carried in every subject line. Replies are matched on this\n * first and on sender address only as a fallback - the model never decides\n * which lead a message belongs to.\n */\nfunction makeRefToken(prefix, seed) {\n  var n = seed === undefined ? Math.floor(Math.random() * 9000) + 1000 : seed;\n  return prefix + \"-\" + String(n).slice(0, 4);\n}\n\nfunction extractRefToken(text) {\n  if (!text) return null;\n  var match = String(text).match(/\\[([RA]-\\d{4})\\]/);\n  return match ? match[1] : null;\n}\n\nfunction subjectWithToken(subject, token) {\n  if (extractRefToken(subject)) return subject;\n  return subject + \" [\" + token + \"]\";\n}\n\n/* ------------------------------------------------------- lead email parsing */\n\n/**\n * Parses a listing-site lead notification.\n *\n * Zillow delivers these as email with an anonymised relay reply-to and no phone\n * number, so the parser must tolerate a missing phone rather than treat it as a\n * failure. Anything it cannot determine is left null and flagged, never guessed.\n */\nfunction parseLeadEmail(input) {\n  var subject = input.subject || \"\";\n  var body = input.body || \"\";\n  var replyTo = input.replyTo || input.from || \"\";\n\n  var result = {\n    prospect_name: null,\n    prospect_email: null,\n    prospect_phone: null,\n    unit_hint: null,\n    inquiry_text: null,\n    source: \"zillow_email\",\n    parse_warnings: [],\n  };\n\n  var nameMatch = body.match(/^\\s*Renter:\\s*(.+)$/m);\n  if (nameMatch) result.prospect_name = nameMatch[1].trim();\n  else result.parse_warnings.push(\"no renter name found\");\n\n  var propertyMatch = body.match(/^\\s*Property:\\s*(.+)$/m);\n  if (propertyMatch) result.unit_hint = propertyMatch[1].trim();\n  else {\n    var subjectUnit = subject.match(/:\\s*(.+)$/);\n    if (subjectUnit) result.unit_hint = subjectUnit[1].trim();\n    else result.parse_warnings.push(\"no property reference found\");\n  }\n\n  // The renter's own words, between the quotes after \"Message:\".\n  var messageMatch = body.match(/Message:\\s*\"([\\s\\S]*?)\"/);\n  if (messageMatch) result.inquiry_text = messageMatch[1].replace(/\\s+/g, \" \").trim();\n  else result.parse_warnings.push(\"no inquiry text found\");\n\n  var emailMatch = String(replyTo).match(/[\\w.+-]+@[\\w.-]+\\.\\w+/);\n  if (emailMatch) result.prospect_email = emailMatch[0];\n  else result.parse_warnings.push(\"no reply address found\");\n\n  var phoneMatch = body.match(/(\\+?1[\\s.-]?)?\\(?\\d{3}\\)?[\\s.-]\\d{3}[\\s.-]\\d{4}/);\n  if (phoneMatch) result.prospect_phone = phoneMatch[0].trim();\n\n  return result;\n}\n\n/* ------------------------------------------------- unit knowledge for the AI */\n\n/**\n * Flattens a unit row into the only facts the FAQ model is allowed to use.\n * If a fact is not in here, the correct answer is \"I don't have that\".\n */\nfunction buildUnitKnowledge(unit) {\n  if (!unit) return null;\n  var facts = unit.faq_facts || {};\n  var knowledge = {\n    unit_code: unit.unit_code,\n    address: unit.address,\n    bedrooms: unit.beds,\n    bathrooms: Number(unit.baths),\n    square_feet: unit.sqft,\n    monthly_rent: Number(unit.rent_amount),\n    security_deposit: Number(unit.deposit_amount),\n    available_from: unit.available_from,\n    lease_term_months: unit.lease_term_months,\n    pet_policy: unit.pet_policy,\n    pet_fee_monthly: unit.pet_fee_monthly === null ? null : Number(unit.pet_fee_monthly),\n    parking: unit.parking,\n    utilities: unit.utilities_included,\n    laundry: unit.laundry,\n  };\n  Object.keys(facts).forEach(function (key) {\n    knowledge[key] = facts[key];\n  });\n  return knowledge;\n}\n\n/**\n * Unit facts PLUS the figures the prospect themselves stated, for use as the\n * guardrail's allowlist during a conversation.\n *\n * The unsupported-figure rule exists to stop the model inventing a rent, a fee\n * or a deposit. It is not meant to stop it repeating a number the prospect just\n * supplied - and in a chat, confirming what someone told you (\"$5,000 a month,\n * got it\") is the natural thing to say. With only unit facts in the allowlist\n * every such reply is blocked, the prospect gets silence, and the conversation\n * stalls on the most ordinary turn there is.\n *\n * Only the recorded slot values are added, never arbitrary numbers scraped from\n * the message, so the check still catches anything the model made up.\n */\nfunction buildConversationKnowledge(unit, statedAnswers) {\n  var knowledge = buildUnitKnowledge(unit);\n  if (!knowledge) return null;\n  var answers = statedAnswers || {};\n\n  if (answers.stated_monthly_income !== null && answers.stated_monthly_income !== undefined) {\n    knowledge.prospect_stated_monthly_income = Number(answers.stated_monthly_income);\n  }\n  if (answers.vehicles !== null && answers.vehicles !== undefined) {\n    knowledge.prospect_stated_vehicles = Number(answers.vehicles);\n  }\n  if (answers.occupants !== null && answers.occupants !== undefined) {\n    knowledge.prospect_stated_occupants = Number(answers.occupants);\n  }\n  if (answers.pets !== null && answers.pets !== undefined && answers.pets !== \"\") {\n    knowledge.prospect_stated_pets = String(answers.pets);\n  }\n  if (answers.move_in_date !== null && answers.move_in_date !== undefined) {\n    knowledge.prospect_stated_move_in = String(answers.move_in_date);\n  }\n  return knowledge;\n}\n\n/**\n * Escapes text for Telegram's HTML parse mode.\n *\n * The Telegram node always sends a parse_mode, so message text is parsed for\n * entities whether you want it or not. Under the legacy Markdown default a\n * single underscore opens an italic run that never closes, and Telegram rejects\n * the whole message with \"can't parse entities\" and a byte offset - which is\n * exactly what an application link carrying ?ref_token= does. The node then\n * fails with a bare \"Bad request - please check your parameters\".\n *\n * So: send HTML parse mode and escape the three characters it cares about.\n * Underscores, asterisks and brackets are then all literal, and a URL with a\n * query string is safe.\n */\nfunction escapeTelegramHtml(text) {\n  if (text === null || text === undefined) return \"\";\n  return String(text)\n    .split(\"&\").join(\"&amp;\")\n    .split(\"<\").join(\"&lt;\")\n    .split(\">\").join(\"&gt;\");\n}\n\n/* ------------------------------------------------------------------- tours */\n\n/**\n * Turns a naive datetime into a real instant, read as PROPERTY-LOCAL time.\n *\n * The model returns \"2026-09-15T14:00\" when someone says \"Tuesday at 2pm\", and\n * they mean 2pm at the property. `new Date()` on a bare string with no zone\n * reads it in the runtime's zone - UTC in a container - so a request for 2pm\n * silently became 9:30am and the renter was booked five hours out. Nothing\n * errors; you only notice by reading the booked time.\n *\n * Anything already carrying a Z or a +/-HH:MM offset is left exactly alone.\n */\nfunction naiveLocalToUtcIso(naive, timeZone) {\n  if (!naive) return null;\n  var text = String(naive).trim();\n  if (/(Z|[+-]\\d{2}:?\\d{2})$/.test(text)) return new Date(text).toISOString();\n\n  var guess = new Date(text + \"Z\");\n  if (isNaN(guess.getTime())) return null;\n\n  // How far ahead of UTC that zone is at that instant, DST included.\n  var dtf = new Intl.DateTimeFormat(\"en-US\", {\n    timeZone: timeZone || \"UTC\", hour12: false,\n    year: \"numeric\", month: \"2-digit\", day: \"2-digit\",\n    hour: \"2-digit\", minute: \"2-digit\", second: \"2-digit\",\n  });\n  var parts = {};\n  dtf.formatToParts(guess).forEach(function (p) { parts[p.type] = p.value; });\n  var asUtc = Date.UTC(\n    Number(parts.year), Number(parts.month) - 1, Number(parts.day),\n    Number(parts.hour) % 24, Number(parts.minute), Number(parts.second)\n  );\n  var offset = asUtc - guess.getTime();\n  return new Date(guess.getTime() - offset).toISOString();\n}\n\n/**\n * Picks the real Cal.com slot closest to what the prospect asked for.\n *\n * The model turns \"Saturday morning\" into an ISO datetime; it never chooses the\n * booking. This does, deterministically, against the slots Cal.com actually\n * returned - so the assistant can only ever book a time that genuinely exists.\n *\n * `slots` is a flat array of ISO strings. Returns the nearest slot within\n * `toleranceHours`, plus the next few alternatives to offer if nothing is close.\n */\nfunction matchTourSlot(wantedIso, slots, toleranceHours) {\n  var tolerance = (toleranceHours === undefined ? 4 : toleranceHours) * 3600000;\n  var available = (slots || []).slice().sort();\n  var result = { matched: null, delta_minutes: null, alternatives: available.slice(0, 3) };\n  if (!wantedIso || !available.length) return result;\n\n  var wanted = new Date(wantedIso).getTime();\n  if (isNaN(wanted)) return result;\n\n  var best = null;\n  var bestDelta = Infinity;\n  for (var i = 0; i < available.length; i++) {\n    var delta = Math.abs(new Date(available[i]).getTime() - wanted);\n    if (delta < bestDelta) { bestDelta = delta; best = available[i]; }\n  }\n\n  // Alternatives are the slots nearest what they asked for, not simply the\n  // earliest ones - \"how about Tuesday?\" should not be answered with Monday 9am.\n  result.alternatives = available\n    .slice()\n    .sort(function (a, b) {\n      return Math.abs(new Date(a).getTime() - wanted) - Math.abs(new Date(b).getTime() - wanted);\n    })\n    .slice(0, 3)\n    .sort();\n\n  if (best !== null && bestDelta <= tolerance) {\n    result.matched = best;\n    result.delta_minutes = Math.round(bestDelta / 60000);\n  }\n  return result;\n}\n\n/**\n * Is this slot inside the manager's published tour policy, or an exception?\n *\n * Exceptions are held for a tap rather than refused. Returning reasons rather\n * than a bare boolean means the manager's card can say WHY it was held, which\n * is the difference between a useful notification and an interruption.\n *\n * `hourOverride` exists because a Code node cannot rely on the container's\n * timezone; the caller passes the local hour and weekday it computed.\n */\nfunction classifyTourRequest(slotIso, policy, nowIso, hourOverride, weekdayOverride) {\n  var reasons = [];\n  var config = policy || {};\n  var earliest = Number(config.earliest_hour === undefined ? 9 : config.earliest_hour);\n  var latest = Number(config.latest_hour === undefined ? 18 : config.latest_hour);\n  var minNotice = Number(config.min_notice_hours === undefined ? 12 : config.min_notice_hours);\n  var allowWeekends = config.allow_weekends === undefined ? true : Boolean(config.allow_weekends);\n\n  var slot = new Date(slotIso);\n  var now = new Date(nowIso || new Date().toISOString());\n  var hour = hourOverride === undefined || hourOverride === null ? slot.getUTCHours() : Number(hourOverride);\n  var weekday = weekdayOverride === undefined || weekdayOverride === null\n    ? slot.getUTCDay()\n    : Number(weekdayOverride);\n\n  if (hour < earliest || hour >= latest) {\n    reasons.push(\"outside self-guided hours (\" + earliest + \":00-\" + latest + \":00)\");\n  }\n  if (!allowWeekends && (weekday === 0 || weekday === 6)) {\n    reasons.push(\"weekend\");\n  }\n  var noticeHours = (slot.getTime() - now.getTime()) / 3600000;\n  if (noticeHours < minNotice) {\n    reasons.push(\"less than \" + minNotice + \"h notice (\" + Math.max(0, Math.round(noticeHours)) + \"h)\");\n  }\n\n  return {\n    is_exception: reasons.length > 0,\n    reasons: reasons,\n    notice_hours: Math.round(noticeHours),\n  };\n}\n\n/* -------------------------------------------------------------- guardrails */\n\n/**\n * Tier A guardrail. Runs on every message before it leaves, and again at send\n * time, because a manager may have edited the wording after it was drafted.\n *\n * Blocks: protected-class content, legal or lease commitments, rent negotiation,\n * availability promises, and invented numbers that are not in the unit facts.\n */\nvar PROTECTED_CLASS_PATTERNS = [\n  { pattern: /\\b(kids?|children|child|family friendly|families|school district)\\b/i, label: \"familial status\" },\n  { pattern: /\\b(disab|wheelchair|handicap|mental health|service animal policy)\\b/i, label: \"disability\" },\n  { pattern: /\\b(race|ethnic|nationality|immigration|citizen|visa status)\\b/i, label: \"national origin / race\" },\n  { pattern: /\\b(church|mosque|temple|synagogue|religio)\\b/i, label: \"religion\" },\n  { pattern: /\\b(marital status|married|single people|couples only)\\b/i, label: \"marital status\" },\n  { pattern: /\\b(section 8|voucher|housing assistance|welfare)\\b/i, label: \"source of income\" },\n  { pattern: /\\b(good neighborhood for|safe area for|type of people)\\b/i, label: \"steering\" },\n];\n\nvar COMMITMENT_PATTERNS = [\n  { pattern: /\\b(guarantee|guaranteed|we promise|you will be approved|pre-?approved)\\b/i, label: \"approval commitment\" },\n  { pattern: /\\b(hold (it|the unit) for you|reserved for you|it'?s yours)\\b/i, label: \"availability commitment\" },\n  { pattern: /\\b(we can lower|discount the rent|negotiate the rent|reduce the rent)\\b/i, label: \"rent negotiation\" },\n  { pattern: /\\b(legally|by law|you are entitled|your rights under)\\b/i, label: \"legal statement\" },\n  { pattern: /\\b(denied|rejected|you do not qualify|we cannot rent to you)\\b/i, label: \"adverse decision language\" },\n];\n\nfunction guardrailCheck(text, knowledge) {\n  var findings = [];\n  var body = String(text || \"\");\n\n  PROTECTED_CLASS_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"protected_class\", detail: rule.label });\n    }\n  });\n\n  COMMITMENT_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"commitment\", detail: rule.label });\n    }\n  });\n\n  // Any dollar figure in the message must appear in the unit facts. Catches the\n  // model inventing a rent, fee, or deposit.\n  if (knowledge) {\n    var allowed = [];\n    Object.keys(knowledge).forEach(function (key) {\n      var value = knowledge[key];\n      if (typeof value === \"number\") allowed.push(Math.round(value));\n      if (typeof value === \"string\") {\n        var found = value.match(/\\d[\\d,]*(\\.\\d+)?/g) || [];\n        found.forEach(function (n) { allowed.push(Math.round(Number(n.replace(/,/g, \"\")))); });\n      }\n    });\n\n    var quoted = body.match(/\\$\\s?\\d[\\d,]*(\\.\\d+)?/g) || [];\n    quoted.forEach(function (raw) {\n      var amount = Math.round(Number(raw.replace(/[$,\\s]/g, \"\")));\n      if (allowed.indexOf(amount) === -1) {\n        findings.push({\n          severity: \"block\",\n          category: \"unsupported_figure\",\n          detail: raw.trim() + \" is not in the unit facts\",\n        });\n      }\n    });\n  }\n\n  var blocking = findings.filter(function (f) { return f.severity === \"block\"; });\n  return {\n    passed: blocking.length === 0,\n    findings: findings,\n    checked_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- pre-qualification */\n\n/**\n * Scheduling triage only. This is NOT a rental decision and its output must\n * never be phrased to a prospect as a denial.\n *\n * Deliberately narrow: move-in timing, self-reported income against the\n * published multiple, pet policy, and occupancy. Nothing else is considered and\n * nothing here is verified.\n */\nfunction prequalGate(answers, unit, config) {\n  var reasons = [];\n  var missing = [];\n  var incomeMultiple = config && config.income_multiple ? Number(config.income_multiple) : 3;\n\n  if (!answers || answers.move_in_date === null || answers.move_in_date === undefined) {\n    missing.push(\"move_in_date\");\n  } else {\n    var availableFrom = new Date(unit.available_from);\n    var wanted = new Date(answers.move_in_date);\n    var daysAfter = (wanted - availableFrom) / 86400000;\n\n    if (daysAfter < -14) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"wants \" + answers.move_in_date + \", unit is available from \" + unit.available_from,\n      });\n    } else if (daysAfter > 60) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"move-in is more than 60 days after the unit is available\",\n      });\n    } else {\n      reasons.push({ criterion: \"move_in_timing\", met: true, detail: answers.move_in_date });\n    }\n  }\n\n  if (answers && (answers.stated_monthly_income === null || answers.stated_monthly_income === undefined)) {\n    missing.push(\"stated_monthly_income\");\n  } else if (answers) {\n    // Self-reported and unverified. Verification happens after an application.\n    var rent = Number(unit.rent_amount);\n    var stated = Number(answers.stated_monthly_income);\n    var ratio = stated / rent;\n    reasons.push({\n      criterion: \"stated_income\",\n      met: ratio >= incomeMultiple,\n      detail: \"$\" + stated + \"/mo stated against $\" + rent + \" rent = \" + ratio.toFixed(2) + \"x (unverified)\",\n    });\n  }\n\n  if (answers && answers.pets && String(answers.pets).toLowerCase() !== \"none\") {\n    var weightMatch = String(answers.pets).match(/(\\d+)\\s?(lb|pound)/i);\n    var overLimit = weightMatch && Number(weightMatch[1]) > 50;\n    reasons.push({\n      criterion: \"pets\",\n      met: !overLimit,\n      detail: overLimit ? \"stated pet is over the 50 lb limit\" : String(answers.pets),\n    });\n  }\n\n  var failed = reasons.filter(function (r) { return r.met === false; });\n  var result = missing.length ? \"incomplete\" : failed.length ? \"not_clear\" : \"clear\";\n\n  return {\n    result: result,\n    reasons: reasons,\n    missing: missing,\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- AI output shape */\n\n/**\n * Unwraps structured output from the OpenAI node.\n *\n * The payload arrives wrapped differently depending on node version, whether\n * simplify is on, and whether a JSON schema was applied - sometimes a parsed\n * object, sometimes a JSON string under `output`, sometimes nested one level\n * deeper. Probing for a known key is more robust than assuming a shape.\n *\n * @param {*} data       the item's json\n * @param {string} anchor a key that must exist on the real payload\n */\nfunction unwrapAiPayload(data, anchor) {\n  var value = data;\n\n  for (var depth = 0; depth < 6; depth++) {\n    if (value === null || value === undefined) break;\n\n    if (typeof value === \"string\") {\n      var trimmed = value.trim();\n      if (trimmed.charAt(0) !== \"{\" && trimmed.charAt(0) !== \"[\") break;\n      try {\n        value = JSON.parse(trimmed);\n      } catch (error) {\n        break;\n      }\n      continue;\n    }\n\n    if (Array.isArray(value)) {\n      value = value[0];\n      continue;\n    }\n\n    if (typeof value === \"object\") {\n      if (Object.prototype.hasOwnProperty.call(value, anchor)) return value;\n\n      var next =\n        value.output !== undefined ? value.output :\n        value.message !== undefined ? value.message :\n        value.content !== undefined ? value.content :\n        value.text !== undefined ? value.text :\n        value.json !== undefined ? value.json : undefined;\n\n      if (next === undefined) break;\n      value = next;\n      continue;\n    }\n\n    break;\n  }\n\n  return value;\n}\n\n/* ------------------------------------------------------------- lock code */\n\n/**\n * Self-guided tour entry code.\n *\n * MOCK. A real deployment issues this through a smart-lock platform\n * (Rently, Tour24, ButterflyMX) bound to the booking window. Here it is\n * generated locally and logged, and every record it touches is marked\n * source: \"mock\".\n */\nfunction generateLockCode() {\n  var code = String(Math.floor(Math.random() * 900000) + 100000);\n  return { code: code, source: \"mock\", issued_at: new Date().toISOString() };\n}\nconst l=$('Read Tour Decision').first().json;return [{json:{...l,prospect_text:escapeTelegramHtml('Your tour of '+l.address+' is confirmed for '+l.slot_pretty+'.\\n\\nDemo entry code (MOCK): '+l.lock_code+'\\nThis synthetic code does not operate a real lock.'),manager_text:escapeTelegramHtml('Tour booked after your approval: '+l.prospect_name+' · '+l.ref_token+' · '+l.slot_pretty+'\\nResident confirmation delivered next. You can later type Tour completed for '+l.prospect_name+' or use the completion button.')}}];"
+      }
+    },
+    {
+      "id": "confirm-approved-tour",
+      "name": "Confirm Approved Tour",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        340,
-        580
+        1400,
+        600
       ],
       "parameters": {
-        "chatId": "={{ $('Read Tour Decision').item.json.telegram_chat_id }}",
-        "text": "={{ $('Read Tour Decision').item.json.decline_text }}",
+        "chatId": "={{ $json.telegram_chat_id }}",
+        "text": "={{ $json.prospect_text }}",
         "additionalFields": {
           "appendAttribution": false,
           "parse_mode": "HTML"
@@ -597,19 +535,204 @@
       }
     },
     {
-      "id": "mirror-read-pipeline-direct-tour",
-      "name": "Mirror: Read Pipeline Direct Tour",
+      "id": "notify-manager-tour-booked",
+      "name": "Notify Manager: Tour Booked",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1600,
+        600
+      ],
+      "parameters": {
+        "chatId": "=__TELEGRAM_CHAT_ID__",
+        "text": "={{ $('Compose Approved Tour Confirmation').first().json.manager_text }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Confirm tour completed (demo)",
+                    "additionalFields": {
+                      "callback_data": "=tcm:{{ $('Read Tour Decision').first().json.ref_token }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram (manager bot)"
+        }
+      }
+    },
+    {
+      "id": "tell-prospect-another-time",
+      "name": "Tell Prospect: Another Time",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        600,
+        780
+      ],
+      "parameters": {
+        "chatId": "={{ $json.telegram_chat_id }}",
+        "text": "={{ $json.decline_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_PROSPECT_CREDENTIAL_ID__",
+          "name": "Leasing Telegram (prospect bot)"
+        }
+      }
+    },
+    {
+      "id": "confirm-tour-declined-to-manager",
+      "name": "Confirm Tour Declined To Manager",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        780
+      ],
+      "parameters": {
+        "chatId": "=__TELEGRAM_CHAT_ID__",
+        "text": "=Tour time not confirmed for {{ $('Read Tour Decision').first().json.ref_token }}. No booking or code was issued; the resident was asked for another time.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram (manager bot)"
+        }
+      }
+    },
+    {
+      "id": "alert-manager-booking-failed",
+      "name": "Alert Manager: Booking Failed",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1000,
+        1020
+      ],
+      "parameters": {
+        "chatId": "=__TELEGRAM_CHAT_ID__",
+        "text": "=Cal.com booking failed or its result is uncertain for {{ $('Read Tour Decision').first().json.ref_token }}. No entry code was sent. Check the calendar before retrying; this request is blocked from automatic retry.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram (manager bot)"
+        }
+      }
+    },
+    {
+      "id": "tell-prospect-booking-needs-followup",
+      "name": "Tell Prospect: Booking Needs Followup",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        1020
+      ],
+      "parameters": {
+        "chatId": "={{ $('Read Tour Decision').first().json.telegram_chat_id }}",
+        "text": "The team approved the request, but the calendar could not confirm it. A colleague will check and follow up. No entry code has been released.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_PROSPECT_CREDENTIAL_ID__",
+          "name": "Leasing Telegram (prospect bot)"
+        }
+      }
+    },
+    {
+      "id": "alert-manager-slot-lookup-failed",
+      "name": "Alert Manager: Slot Lookup Failed",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "chatId": "=__TELEGRAM_CHAT_ID__",
+        "text": "=Calendar availability lookup failed for {{ $('Load Lead For Tour').first().json.ref_token }}. No booking or access code was created. Please follow up.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram (manager bot)"
+        }
+      }
+    },
+    {
+      "id": "tell-prospect-calendar-needs-followup",
+      "name": "Tell Prospect: Calendar Needs Followup",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        300
+      ],
+      "parameters": {
+        "chatId": "={{ $('Load Lead For Tour').first().json.telegram_chat_id }}",
+        "text": "The calendar is not responding. A colleague will check and follow up; nothing has been booked.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_PROSPECT_CREDENTIAL_ID__",
+          "name": "Leasing Telegram (prospect bot)"
+        }
+      }
+    },
+    {
+      "id": "log-prospect-telegram-message",
+      "name": "Log Prospect Telegram Message",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        4200,
+        2000,
         0
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
+        "query": "INSERT INTO message_log(ref_token,direction,channel,tier,from_addr,to_addr,body,message_id) SELECT ref_token,'outbound','telegram','A','leasing-team',$1::text,$2,$3 FROM leads WHERE telegram_chat_id=$1::text::bigint ORDER BY id DESC LIMIT 1 ON CONFLICT(message_id) DO NOTHING;",
         "options": {
-          "queryReplacement": "={{ [$json.ref_token] }}"
+          "queryReplacement": "={{ [String($json.result.chat.id),$json.result.text,'tg-out-'+$json.result.chat.id+'-'+$json.result.message_id] }}"
         }
       },
       "credentials": {
@@ -617,53 +740,7 @@
           "id": "__POSTGRES_CREDENTIAL_ID__",
           "name": "Leasing Postgres"
         }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "id": "mirror-map-pipeline-direct-tour",
-      "name": "Mirror: Map Pipeline Direct Tour",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        4420,
-        0
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
       }
-    },
-    {
-      "id": "mirror-upsert-airtable-direct-tour",
-      "name": "Mirror: Upsert Airtable Direct Tour",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        4640,
-        0
-      ],
-      "parameters": {
-        "method": "PATCH",
-        "url": "=https://api.airtable.com/v0/__AIRTABLE_BASE_ID__/Leads",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "airtableTokenApi",
-        "sendBody": true,
-        "contentType": "json",
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({performUpsert:{fieldsToMergeOn:['Ref Token']},typecast:true,records:[{fields:$json.fields}]}) }}",
-        "options": {
-          "timeout": 10000
-        }
-      },
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "__AIRTABLE_CREDENTIAL_ID__",
-          "name": "Leasing Airtable (display mirror)"
-        }
-      },
-      "onError": "continueRegularOutput",
-      "retryOnFail": false
     },
     {
       "id": "mirror-read-pipeline-approved-tour",
@@ -676,7 +753,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
+        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income, l.tour_approval_state,\n EXISTS(SELECT 1 FROM message_log m WHERE m.message_id='mail-welcome-'||a.ref_token AND m.guardrail_result->>'delivery'='sent') AS welcome_sent,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,'none',EXISTS(SELECT 1 FROM message_log m WHERE m.message_id='mail-welcome-'||a.ref_token AND m.guardrail_result->>'delivery'='sent'),a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
         "options": {
           "queryReplacement": "={{ [$json.ref_token] }}"
         }
@@ -700,7 +777,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
+        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':row.tour_approval_state==='pending'?'Manager tour approval':status==='Leased'&&row.welcome_sent===false?'Manager welcome approval':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
       }
     },
     {
@@ -733,10 +810,90 @@
       },
       "onError": "continueRegularOutput",
       "retryOnFail": false
+    },
+    {
+      "id": "mirror-read-pipeline-pending-tour",
+      "name": "Mirror: Read Pipeline Pending Tour",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4200,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income, l.tour_approval_state,\n EXISTS(SELECT 1 FROM message_log m WHERE m.message_id='mail-welcome-'||a.ref_token AND m.guardrail_result->>'delivery'='sent') AS welcome_sent,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,'none',EXISTS(SELECT 1 FROM message_log m WHERE m.message_id='mail-welcome-'||a.ref_token AND m.guardrail_result->>'delivery'='sent'),a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
+        "options": {
+          "queryReplacement": "={{ [$json.ref_token] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "mirror-map-pipeline-pending-tour",
+      "name": "Mirror: Map Pipeline Pending Tour",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4420,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':row.tour_approval_state==='pending'?'Manager tour approval':status==='Leased'&&row.welcome_sent===false?'Manager welcome approval':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
+      }
+    },
+    {
+      "id": "mirror-upsert-airtable-pending-tour",
+      "name": "Mirror: Upsert Airtable Pending Tour",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4640,
+        0
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/__AIRTABLE_BASE_ID__/Leads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({performUpsert:{fieldsToMergeOn:['Ref Token']},typecast:true,records:[{fields:$json.fields}]}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "__AIRTABLE_CREDENTIAL_ID__",
+          "name": "Leasing Airtable (display mirror)"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
     }
   ],
   "connections": {
     "Tour Requested (Internal)": {
+      "main": [
+        [
+          {
+            "node": "Authenticate Tour Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authenticate Tour Request": {
       "main": [
         [
           {
@@ -777,6 +934,35 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Alert Manager: Slot Lookup Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Manager: Slot Lookup Failed": {
+      "main": [
+        [
+          {
+            "node": "Tell Prospect: Calendar Needs Followup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tell Prospect: Calendar Needs Followup": {
+      "main": [
+        [
+          {
+            "node": "Log Prospect Telegram Message",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -784,86 +970,14 @@
       "main": [
         [
           {
-            "node": "Tell Prospect What Is Happening",
+            "node": "Exact Requested Slot Exists?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Tell Prospect What Is Happening": {
-      "main": [
-        [
-          {
-            "node": "Log Prospect Telegram Message",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Book Without Asking?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Book Without Asking?": {
-      "main": [
-        [
-          {
-            "node": "Cal.com: Create Booking",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Hold For Manager?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Cal.com: Create Booking": {
-      "main": [
-        [
-          {
-            "node": "Record Direct Booking",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Record Direct Booking": {
-      "main": [
-        [
-          {
-            "node": "Confirm Tour Booked",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Mirror: Read Pipeline Direct Tour",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Confirm Tour Booked": {
-      "main": [
-        [
-          {
-            "node": "Log Prospect Telegram Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Hold For Manager?": {
+    "Exact Requested Slot Exists?": {
       "main": [
         [
           {
@@ -872,14 +986,52 @@
             "index": 0
           }
         ],
-        []
+        [
+          {
+            "node": "Offer Real Alternative Times",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Hold Slot For Approval": {
       "main": [
         [
           {
+            "node": "Tell Prospect: Approval Pending",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mirror: Read Pipeline Pending Tour",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tell Prospect: Approval Pending": {
+      "main": [
+        [
+          {
+            "node": "Log Prospect Telegram Message",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "Ask Manager: Approve This Tour",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Offer Real Alternative Times": {
+      "main": [
+        [
+          {
+            "node": "Log Prospect Telegram Message",
             "type": "main",
             "index": 0
           }
@@ -890,14 +1042,25 @@
       "main": [
         [
           {
-            "node": "Load Lead For Decision",
+            "node": "Authenticate Tour Decision",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Load Lead For Decision": {
+    "Authenticate Tour Decision": {
+      "main": [
+        [
+          {
+            "node": "Claim Pending Tour Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Pending Tour Decision": {
       "main": [
         [
           {
@@ -912,7 +1075,25 @@
       "main": [
         [
           {
+            "node": "Tour Decision Claimed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tour Decision Claimed?": {
+      "main": [
+        [
+          {
             "node": "Tour Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Manager: Stale Tour Action",
             "type": "main",
             "index": 0
           }
@@ -930,7 +1111,7 @@
         ],
         [
           {
-            "node": "Mark Tour Declined",
+            "node": "Tell Prospect: Another Time",
             "type": "main",
             "index": 0
           }
@@ -945,6 +1126,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Alert Manager: Booking Failed",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -952,12 +1140,23 @@
       "main": [
         [
           {
-            "node": "Confirm Approved Tour",
+            "node": "Compose Approved Tour Confirmation",
             "type": "main",
             "index": 0
           },
           {
             "node": "Mirror: Read Pipeline Approved Tour",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose Approved Tour Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Confirm Approved Tour",
             "type": "main",
             "index": 0
           }
@@ -971,15 +1170,9 @@
             "node": "Log Prospect Telegram Message",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Mark Tour Declined": {
-      "main": [
-        [
+          },
           {
-            "node": "Tell Prospect: Another Time",
+            "node": "Notify Manager: Tour Booked",
             "type": "main",
             "index": 0
           }
@@ -993,26 +1186,31 @@
             "node": "Log Prospect Telegram Message",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Mirror: Read Pipeline Direct Tour": {
-      "main": [
-        [
+          },
           {
-            "node": "Mirror: Map Pipeline Direct Tour",
+            "node": "Confirm Tour Declined To Manager",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Mirror: Map Pipeline Direct Tour": {
+    "Alert Manager: Booking Failed": {
       "main": [
         [
           {
-            "node": "Mirror: Upsert Airtable Direct Tour",
+            "node": "Tell Prospect: Booking Needs Followup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tell Prospect: Booking Needs Followup": {
+      "main": [
+        [
+          {
+            "node": "Log Prospect Telegram Message",
             "type": "main",
             "index": 0
           }
@@ -1035,6 +1233,28 @@
         [
           {
             "node": "Mirror: Upsert Airtable Approved Tour",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Read Pipeline Pending Tour": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Map Pipeline Pending Tour",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Map Pipeline Pending Tour": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Upsert Airtable Pending Tour",
             "type": "main",
             "index": 0
           }

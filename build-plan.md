@@ -1,6 +1,15 @@
 # Build Plan — Automated Leasing & Tenant Screening (POC)
 
-Last updated: 2026-09-11
+Last updated: 2026-09-17
+
+Current policy revision: manager-supervised conversational rehearsal, recorded in
+progress-notes.md on September 17. Public FAQ and fixed intake stay automatic; every tour
+requires explicit approval, manager chat confirms synthetic attendance, and welcome email
+requires separate approval after signature. No Telegram Reply or in-flow script is needed.
+The original stage descriptions below are historical implementation gates. Legacy Stage
+3/7 integration harnesses now require an explicit historical-development flag to prevent
+accidental resets/autonomous-booking assumptions. Current rehearsal is
+docs/manual-testing-flow.md; read-only SQL planning is scripts/verify-workflow-sql.js.
 
 Six stages to a working demo. **This is a proof of concept for a meeting or a demo video,
 not a production build.** One happy path that runs end to end, plus one fixture that lands on

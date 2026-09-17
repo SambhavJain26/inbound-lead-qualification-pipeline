@@ -1,57 +1,52 @@
 # Full manual testing flow
 
-Use this for your own rehearsal before recording. Follow the Maya happy path first;
-run the separate optional checks only after it passes. This guide describes the
-current build, including its demo setup steps, rather than an ideal future system.
+Updated for the manager-supervised rehearsal, September 17, 2026.
 
-## 1. What you are testing
+You play the prospective resident, Sambhav Jain, and the property manager in two
+separate chats. Use your name and delivery email, but all property, employment,
+income, document and screening details below are synthetic demo inputs.
+This is not your real rental application.
 
-You will play two people in separate Telegram chats:
+## 1. Accounts and boundaries
 
-- Renter: Maya Restrepo, using **@MapleGroveLeasingBot**.
-- Manager: yourself, using **@sambhav_leasing_demo_bot**.
+| Role | Surface |
+|---|---|
+| Resident | @MapleGroveLeasingBot |
+| Manager | @sambhav_leasing_demo_bot |
+| System email sender | worksambhav26@gmail.com |
+| Resident email recipient | sambhavn8n@gmail.com |
+| Cal.com organizer display name | Alex Morgan, fictional demo organizer |
+| Calendar attendee | Sambhav Jain, from your inquiry |
 
-The journey is listing inquiry → factual conversation → prequalification → real
-Cal.com booking → simulated tour completion → application → extraction and sandbox
-checks → human approval → sandbox lease signature → welcome email.
+Telegram stands in for SMS. Each bot must have been started once from your
+Telegram account; this is platform setup, not a repeated flow step. After that,
+the configured single-resident inquiry receives an opening answer automatically.
+Type ordinary messages. Neither chat requires Telegram's Reply feature.
 
-Telegram stands in for SMS. The site receipt deliberately does not name Telegram
-or an assistant, but the underlying bot still requires chat activation. This is
-not a real SMS integration.
+Only grounded public listing answers and bounded information collection run
+automatically. Every tour booking and entry-code release waits for the manager.
+The manager confirms demo attendance and authorizes the application follow-up.
+The rental decision and lease send require manager approval; so does the welcome
+email after signing. Private or unsupported requests go to human review.
+An approval cannot override privacy, fair-housing or legal-notice restrictions.
 
-No real tenant, identity document, bank connection or consumer report is involved.
-Use the fabricated details below, the supplied pay stub, and your existing demo
-prospect Gmail address only as a delivery destination. Do not enter real SSNs,
-birth dates, bank details, identity documents or payment information.
+The finish line is a signed non-binding sandbox lease, manager-approved welcome
+email and matching visible status. Payments, real background checks, actual
+attendance, insurance verification, real lock access and physical move-in are
+not part of this test. Plaid Sandbox returns canned payroll data, not your income.
 
-The finish line is a signed sandbox lease and welcome/status delivery. This build
-does not collect rent/deposits, verify insurance, provision a real lock, hand over
-keys or confirm physical move-in. The welcome email says those arrangements will
-follow; it does not complete them.
+## 2. Cold start: Docker and tunnel were closed
 
-## 2. Before starting
+Commands belong to preparation or troubleshooting only. Once you submit the
+inquiry, the normal resident/manager flow needs no terminal or script.
 
-The last verified state was clean: two available units, no leads/applications,
-and an empty Airtable mirror. If you have already made a new inquiry since then,
-do not reset blindly—preserve anything you want to keep first.
-
-### Cold start — if Docker and the tunnel were closed
-
-Use this sequence before opening the listing or beginning the renter journey.
-If everything is already running, skip directly to the Basic health check below.
-
-1. Open **Docker Desktop** and wait until its engine is running.
-2. Open PowerShell and move into the project folder:
+Open Docker Desktop and wait for its engine. In PowerShell:
 
 ```powershell
 Set-Location 'D:\codex_projects\automation_projects\leasing-tenant-screening'
-```
-
-3. Run each command below in order. Wait for each command to finish successfully
-   before running the next; if one fails, resolve that failure before continuing.
-
-```powershell
 docker compose up -d
+node scripts/generate-secrets.js
+node scripts/setup-credentials.js smtp imap
 node scripts/start-tunnel.js
 node scripts/import-workflows.js
 docker compose restart n8n
@@ -60,499 +55,34 @@ node scripts/build-listing-site.js
 node scripts/serve-listing-site.js --detach
 ```
 
-What to expect and check:
+Run each command separately and wait for it to finish. Don't restart n8n while
+workflow import is still running. The tunnel receives a new hostname; the
+imports and callback registration must use that new address. Allow roughly a
+minute after restart for webhook activation.
 
-- Compose starts the project's Postgres and n8n services. If Docker cannot be
-  reached, wait for Docker Desktop's engine rather than repeatedly running commands.
-- The tunnel helper establishes a new HTTPS hostname and repoints n8n. The
-  previous tunnel address is no longer the address to use for this rehearsal.
-- Workflow import resolves the current local credentials and new tunnel address.
-  All five demo workflows should import successfully; none should report FAILED.
-- The n8n restart applies the imported active workflows. Allow about a minute for
-  webhook activation after restart; a briefly unavailable webhook is not proof
-  of a broken form.
-- Cal.com registration repoints its booking callback to the current tunnel.
-  Do not omit it just because the calendar itself opens normally.
-- The listing builder regenerates HTML from current Postgres state, and the
-  detached server makes it available at http://localhost:8080.
+The secret generator leaves existing keys alone. The internal-action secret
+protects manager-authorized handoffs. Never share it or put it on screen.
+SMTP/IMAP setup imports the current worksambhav sender credentials.
 
-4. Run the Basic health check below. Proceed only when the required services,
-   credentials, tunnel and two distinct bots are working. Open the listing and
-   confirm it renders before submitting an inquiry.
-
-Closing Docker or restarting services **does not reset the database**. This
-startup sequence deliberately does not clear any leads, applications or Airtable
-rows. If you need a clean state, use the preserve/reset procedure in Section 16
-and rebuild the listing afterward. Do not reset a journey you intend to finish.
-
-Use the application link delivered during the new journey, not a saved preview
-tab or a link containing the old tunnel hostname. Start a fresh listing inquiry
-and bind its new R-reference in the renter chat as described in Sections 4–5.
-
-Open these surfaces:
-
-1. Listing site: http://localhost:8080
-2. Renter Telegram chat: @MapleGroveLeasingBot
-3. Manager Telegram chat: @sambhav_leasing_demo_bot
-4. Your existing prospect Gmail inbox—the same account used for the previous lease test.
-5. Airtable Leads table, existing Grid view. Additional views are intentionally skipped.
-6. n8n: http://localhost:5678, Executions page, for troubleshooting.
-7. PowerShell, in `D:\codex_projects\automation_projects\leasing-tenant-screening`.
-
-Keep a note with four items as they appear: lead reference **R-**, application
-reference **A-**, Cal.com booking UID, and DocuSign envelope ID. Never reuse the
-old R-6343 or A-6686 references; their Postgres rows were reset.
-
-### Basic health check
-
-Run from the project directory:
+Check preparation:
 
 ```powershell
 docker compose ps
 node scripts/verify-stage-1.js
 node scripts/verify-credentials.js
+node scripts/test-manager-lib.js
 ```
 
-Expect Postgres healthy, n8n running, local n8n reachable, tunnel reachable, and
-distinct manager/prospect bots. Read optional SKIP results too; a tunnel or
-credential failure is relevant even if the script's required checks pass.
-
-If you did not choose the cold-start test, do not restart a healthy tunnel just
-for this rehearsal. Restarting it changes
-its public hostname. If the listing server alone is missing, run:
-
-```powershell
-node scripts/build-listing-site.js
-node scripts/serve-listing-site.js --detach
-```
-
-If the tunnel is actually unavailable, restore it in this order:
-
-```powershell
-node scripts/start-tunnel.js
-node scripts/import-workflows.js
-docker compose restart n8n
-node scripts/register-calcom-webhook.js
-```
-
-Allow about a minute for webhook activation after restart. Then repeat the health
-checks. Use newly delivered application/signing links, not old tunnel tabs.
-
-## 3. Open and inspect the listing
-
-Open the two-bedroom **MAPLE-2B** at http://localhost:8080/unit-MAPLE-2B.html.
-
-Check the listing is available and has three supplied images, not placeholders.
-The photos are AI-generated synthetic demo assets, not photographs of a real property.
-
-Expected property facts:
-
-- Address: 412 Maple Street, Apt 2B, Springfield.
-- Monthly rent: $1,650; security deposit: $1,650.
-- Two bedrooms, one bathroom, 880 square feet.
-- Available October 1, 2026; lease term 12 months.
-- One assigned parking space included; second space $50/month if available.
-- Cats/dogs under 50 lb, maximum two pets, breed restrictions apply.
-- Pet fee $35/month.
-- Water, sewer and trash included; resident pays electric and gas.
-- Shared laundry, central air and private balcony.
-
-Pass: the listing facts match the facts subsequently quoted in chat. A second
-parking space must not be promised unconditionally.
-
-## 4. Submit Maya's inquiry
-
-In the contact form enter:
-
-- Name: **Maya Restrepo**.
-- Email: **maya.restrepo.demo@example.com**. This is fabricated; it is not the
-  inbox you will use later to receive the lease.
-- Phone: leave blank, or use the fabricated **555-0142** if the field is present.
-- Message:
-
-> Is parking included, and do you allow a small dog?
-
-Click **Send message** once.
-
-Expect a rendered thank-you page, Maya's name, the MAPLE-2B address and a new
-reference beginning **R-**. Copy the entire reference into your note.
-The wording should say a message has been sent, with no chat button, app name
-or assistant name. It must not download an HTML file or show raw JSON.
-
-Check Airtable: one new row with this R-reference, Maya, MAPLE-2B, Status **New**,
-Demo Data checked and Last Synced At populated. Refresh and allow a few seconds.
-
-Important: the receipt wording does not prove bot activation or delivery. For
-this fresh reference, perform the next step before expecting the answer.
-
-## 5. Activate the renter conversation
-
-Open **@MapleGroveLeasingBot**, not the manager bot. Send `/start` followed by a
-space and the new R-reference you just copied. Example syntax:
-
-```text
-/start R-7759
-```
-
-R-7759 is a syntax example, not a reference to reuse. Replace it with your new
-reference. Even if you started this bot in a previous run, send the new reference
-to bind this rehearsal to the new lead.
-
-Wait roughly 10–30 seconds; allow up to a minute before diagnosing a failure.
-Do not send the next input while the previous reply is still being processed.
-
-Expect an answer to the parking/small-dog question and a prequalification
-question. Wording can vary because the factual answer is generated; facts cannot.
-The answer should reflect one included parking space and the published pet policy.
-It must not negotiate rent, promise availability, make a rental decision or invent facts.
-
-The manager should not need to approve this ordinary factual reply. Airtable may
-move to **Engaged**. It must remain the same R-row, not create another row.
-
-If nothing arrives, first check the bot username and exact R-reference. Do not
-keep sending `/start` repeatedly or submit a second application as a workaround.
-
-## 6. Answer prequalification questions
-
-Use these inputs in order, waiting for each reply:
-
-> I would like to move in on October 5, 2026.
-
-> My gross monthly income is $5,000 before taxes.
-
-> Just me living there. I have one small dog weighing 18 pounds and one car.
-
-If the system asks for one of these facts before you reach that line, answer it
-then. It can extract several facts from one sentence, so do not insist that it
-asks exactly one question for every line above. If it still asks about a missing
-slot, answer that slot explicitly using the same values.
-
-Check that it collects October 5, $5,000, one occupant, one car and an 18 lb dog,
-and stops collecting once the required facts are complete. It should invite you
-to schedule a tour. The prequalification wording should make clear this is not
-a rental decision. It must not say Maya's application is approved.
-
-Expected arithmetic: self-reported $5,000 ÷ $1,650 rent ≈ **3.03x**, still
-**unverified**. Airtable should become **Prequalified**, with Stated Income 5000
-and Move In October 5. Verified Income should still be empty at this stage.
-No screening decision or lease should exist yet.
-
-## 7. Book one real tour
-
-Choose a real available Cal.com slot, preferably 2pm on a future day, inside
-9am–6pm property time and more than 24 hours away. The configured minimum notice
-is 12 hours; choosing more than 24 keeps this happy-path test away from the boundary.
-
-The property timezone is **America/New_York**, not your India desktop timezone.
-Check the timezone displayed if you inspect the Cal.com page. In September,
-2pm New York is 11:30pm India and 18:00 UTC. Use the property-local date/time in chat.
-
-Send a fully specified request, substituting your chosen future date:
-
-> Could you book me for Thursday, September 17, 2026 at 2:00 PM?
-
-That is a sample, not guaranteed availability. If that date has passed or its
-slot is occupied by a previous run, choose another available date/time.
-
-Expect a checking/booking message, then a confirmation with the property address,
-the actual booked date/time and a six-digit entry code. The code is **MOCK**;
-there is no real lock and you should not try to use it on any door.
-
-If the exact slot is unavailable, the build can choose a nearby real slot within
-its tolerance and state the changed time, or offer alternatives if no close slot
-exists. Check what it actually confirmed; do not assume the requested time was booked.
-
-Check:
-
-- Cal.com shows one booking, named **Unit Tour**, for the confirmed time.
-- The attendee delivery address is the configured demo prospect Gmail; the build
-  overrides the fabricated inquiry email because Cal.com requires a deliverable address.
-- Airtable becomes **Tour Booked**, with Tour populated and Next Action **Attend tour**.
-- The same R-row remains; no duplicate row appears.
-- No manager approval is needed for this inside-policy booking.
-- No misleading unmatched-booking alert appears for this successfully recorded booking.
-
-Wait for confirmation before continuing. Do not send multiple booking requests
-just because the first API call is taking a few seconds.
-
-## 8. Simulate tour completion as the operator
-
-You do not need to wait until the real calendar date. For the demo, the operator
-posts a synthetic completion event. The current build does not detect attendance
-or automatically infer that a renter completed a tour.
-
-In PowerShell, run this. The prompt asks for your actual new R-reference:
-
-```powershell
-$rehearsalRef = Read-Host 'Paste the new R-reference from this rehearsal'
-if ($rehearsalRef -notmatch '^R-\d{4}$') { throw 'Expected an R-reference such as R-1234' }
-$tourCompletionBody = @{ ref_token = $rehearsalRef } | ConvertTo-Json -Compress
-Invoke-RestMethod -Method Post -Uri 'http://localhost:5678/webhook/tour-completed' -ContentType 'application/json' -Body $tourCompletionBody
-```
-
-Expect the renter chat to receive a follow-up and rental application link.
-Check the link contains **ref_token=your current R-reference**. Airtable becomes
-**Toured**, with Next Action **Submit application**.
-
-Click this newly delivered link once. Do not use a saved preview URL or an old
-R-6343 form tab. The form should show seven readable sections and the synthetic
-data/verification warnings. The reference is hidden; you should not need to type it.
-
-## 9. Complete the application manually
-
-Use the following values. This form is an application for consideration, not
-the lease, and submission must not automatically approve the applicant.
-
-| Form field | Input |
-|---|---|
-| Home you are applying for | MAPLE-2B |
-| Full name | Maya Restrepo |
-| Email address | Your configured demo prospect Gmail, the same inbox used for the earlier signing test |
-| Phone number | 555-0142 |
-| Demo identity code (last four digits only) | 1234 |
-| Current address | 88 Cedar Lane, Apt 4, Springfield |
-| Previous address | 17 Birch Court, Springfield |
-| Requested move-in date | October 5, 2026 |
-| Employer or income provider | Northgate Dental Group |
-| Job title (if applicable) | Dental Hygienist |
-| Gross monthly income ($) | 5000 |
-| Monthly rental assistance amount ($) | 0 |
-| Total number of occupants | 1 |
-| Pets | One dog, 18 lbs |
-| Vehicles needing parking | One blue Honda Civic |
-| Have you had an eviction filing? | No |
-| Have you broken a rental lease? | No |
-| Have you filed bankruptcy in the past seven years? | No |
-| Upload your most recent pay stub (PDF) | fixtures/paystub-maya.pdf |
-| Demo verification authorization | I authorize the synthetic demo checks |
-
-The upload's full path is
-`D:\codex_projects\automation_projects\leasing-tenant-screening\fixtures\paystub-maya.pdf`.
-Select it through the upload control; do not upload your own pay stub.
-
-The fabricated fixture addresses intentionally lack real ZIP/state details. Use
-them as supplied rather than adding real residential information. Use 1234 only,
-not a full SSN. No payment or bank login should be required.
-
-Check the selected unit, delivery email, move-in date, PDF and authorization before
-clicking the submission button. Click once. Expect the form's success confirmation;
-that confirms receipt, not completion of screening. Do not resubmit while waiting.
-
-## 10. Inspect screening as the manager
-
-Switch to **@sambhav_leasing_demo_bot**. Allow roughly 30–60 seconds; model/network
-calls can take longer. Copy the new **A-reference** from the manager card into your note.
-It is different from the R-reference, and fixture example references are not reused.
-
-Expected manager card:
-
-- Maya Restrepo, MAPLE-2B, $1,650 rent.
-- Claimed income: **$5,000/month**.
-- Document-extracted income: approximately **$4,996.33/month**.
-- Plaid Sandbox verified income: approximately **$4,996.33/month**.
-- No material document-to-verified income mismatch.
-- Deterministic result: **meets_criteria**; verified ratio approximately **3.03x**.
-- Credit score **712**, zero eviction filings, identity match—all **MOCK**, not
-  real consumer-report or identity checks.
-- Per-criterion evidence, plus buttons such as **Approve**, **Conditional** and
-  **Send to review**.
-
-The PDF contains $2,306 gross biweekly: $2,306 × 26 ÷ 12 = $4,996.33/month.
-Small display rounding to $4,996 is expected. The $5,000 self-report is close but
-not identical; do not expect all three figures to be literally 5000.
-
-Check Airtable: the original R-row becomes **Applied**, its Application Reference
-matches this A-reference, Verified Income is about 4996, Lease Status is **not_sent**,
-and Next Action is **Manager review**. Detailed evidence lives on the manager
-card, not in extra Airtable tables.
-
-Before tapping any decision, verify **no lease email was sent** and no decision
-was recorded automatically. A criteria classification is not a manager approval.
-
-## 11. Approve as the manager
-
-Read the card, check its new A-reference and then tap **Approve** once on that
-card. Do not tap an older card from an earlier journey.
-
-Expect the manager's action to be recorded with actor and timestamp, followed
-by a lease-sent notification. This triggers the DocuSign developer sandbox—not
-a production lease. Airtable may briefly show **Decided**, then **Lease Sent**.
-The intermediate state can be too quick to see; that alone is not a failure.
-
-Check final state before signing:
-
-- Decision is approved by the manager, not by AI.
-- Lease Status is **sent**, Next Action **Await signature**.
-- One new DocuSign envelope ID exists for this A-reference.
-- Prospect Gmail receives one new lease signing email.
-- The unit is not yet marked leased merely because an envelope was sent.
-
-Do not use Conditional for this main test. In the current build that button also
-starts a sandbox lease; it is not a separate document-request waiting stage.
-
-## 12. Review and sign the sandbox lease as Maya
-
-In the prospect Gmail inbox, open the latest DocuSign email belonging to this
-application. Check its application reference/name, then open its signing link.
-Ignore older emails and old envelopes left from previous tests.
-
-Review the demo lease before signing:
-
-- Resident: Maya Restrepo.
-- MAPLE-2B, 412 Maple Street, Apt 2B, Springfield.
-- Monthly rent **$1,650.00**, security deposit **$1,650.00**.
-- Lease term **12 months**.
-- Intended move-in **October 5, 2026**.
-- Application reference matches the current manager card.
-- Demonstration/synthetic wording and sandbox watermark are expected.
-
-Proceed through DocuSign's consent/Continue/Start controls as shown. Select the
-signature field. If a saved operator signature is offered, change/adopt a signature
-for the fabricated **Maya Restrepo**, initials **MR**, rather than signing as yourself.
-
-Apply the signature and select **Finish** when the document is correct. Closing
-the tab or placing a signature without Finish is not a completed envelope.
-
-Expect DocuSign's completion confirmation. Do not manually post a fake signature
-callback; this test needs the real sandbox Connect event generated by Finish.
-
-## 13. Check all final outcomes
-
-Allow roughly 5–30 seconds for Connect processing and another short delay for
-email delivery. Inspect all of these, not just the signing screen:
-
-1. **Manager Telegram:** a signed notification naming the current A-reference and
-   MAPLE-2B, indicating the unit is leased and the welcome packet was sent.
-2. **Prospect Gmail:** a new welcome email carrying the current A-reference.
-   It confirms the signed lease and says insurance, utilities and permanent entry
-   arrangements will follow. Do not expect a real permanent lock code in this email.
-3. **Airtable:** the same R-row is **Leased**, Application Reference matches,
-   Lease Status **signed**, Next Action **Complete move-in handoff**, fresh Last
-   Synced At, Demo Data checked. There should be one lead row, not one row per phase.
-4. **Postgres:** current application status **lease_signed**, lease_status **signed**,
-   decision **approved**, manager actor/time present; MAPLE-2B status **leased**.
-5. **n8n Executions:** the application, manager action, lease-send and signature
-   executions succeeded. Open the actual executed node details if anything differs.
-
-The listing is generated static HTML, so its availability does not update just
-because you refresh it. To verify the leased property on the site, regenerate:
-
-```powershell
-node scripts/build-listing-site.js
-```
-
-Refresh the listing afterward. MAPLE-2B should no longer be presented as available;
-MAPLE-5A should remain available.
-
-### Optional read-only Postgres checks
-
-These queries show recent synthetic records without changing anything:
-
-```powershell
-docker compose exec -T postgres psql -U leasing -d leasing -c "SELECT l.ref_token AS lead_reference, a.ref_token AS application_reference, u.unit_code, a.status, a.criteria_result, a.decision, a.decided_by, a.decided_at, a.lease_status, a.envelope_id FROM applications a LEFT JOIN leads l ON l.id=a.lead_id JOIN units u ON u.id=a.unit_id ORDER BY a.id DESC LIMIT 5;"
-docker compose exec -T postgres psql -U leasing -d leasing -c "SELECT unit_code,status FROM units ORDER BY unit_code;"
-docker compose exec -T postgres psql -U leasing -d leasing -c "SELECT ref_token,direction,channel,subject,created_at FROM message_log ORDER BY id DESC LIMIT 15;"
-```
-
-Airtable delays/failures must not prevent the signed lease or welcome processing.
-If Postgres is correct but the board is stale, run once:
-
-```powershell
-node scripts/sync-airtable.js
-```
-
-That recovers the display; it does not repair a failed business workflow.
-
-## 14. Optional separate checks
-
-These are not necessary to repeat the already-verified happy path. They create
-additional test messages/records and, for bookings, actual calendar entries.
-
-### A. Repeated inquiry
-
-Before tour completion, resubmit the same contact details and unit once. Expect
-the same active lead reference and no second Airtable row. Do not generalize this
-to repeated application submission: applications are not covered by the same
-inquiry idempotency rule, so submit the application only once.
-
-### B. Grounded FAQ and unsupported input
-
-On a separate lead, ask **Which utilities are included?** Expect water/sewer/trash
-included and resident-paid electric/gas. Send a sticker or voice note: expect a
-text-based fallback rather than an invented answer or silence. Ask **Can you lower
-the rent to $1,400?** Expect no negotiation or commitment; the system should stay
-within fixed facts or hand off to a person.
-
-### C. Out-of-policy tour
-
-Use a separate fresh lead and complete prequalification. Inspect available slots
-first. If a real 8pm slot exists, request it with an explicit date. Expect a manager
-tour-approval card, no booked slot and no code while pending. On the manager card,
-choose **Not that time** to test decline: renter gets alternatives, no booking or
-code is created. Alternatively choose **Approve tour** to test the approval path:
-only then should the actual slot and code be issued.
-
-If Cal.com offers no outside-policy slot, the expected result is an availability
-response, not necessarily a manager card. Do not treat absence of a nonexistent
-8pm slot as a broken policy gate.
-
-### D. Human-review decision
-
-Use a separate submitted Maya application. Tap **Send to review**, not Approve.
-Expect its row to become **Stopped For Review**, with human review as next action.
-No lease should be sent. Do not then use the same decided card to test approval;
-the already-decided guard should prevent another decision.
-
-### E. Devon's mismatch/stop path
-
-For a quick screening-only check, run:
-
-```powershell
-node scripts/submit-application.js devon --standalone
-```
-
-The explicit standalone flag prevents Devon from being accidentally linked to
-Maya's most recent lead. It bypasses the manual listing/tour/form-entry steps, so
-call it a scripted fixture test, not another genuine renter journey.
-
-Expect a new A-reference for Devon Clarke, MAPLE-5A, $1,950 rent; claimed/document
-income $7,800, Plaid Sandbox income about $4,996.33, about 56% document variance,
-verified income ratio about 2.56x, result **does_not_meet** and application
-**stopped_for_human**. Airtable shows **Stopped For Review**, with its standalone
-A-reference as the row key. Credit 688 and zero eviction filings are MOCK.
-
-Expect a human-review notification and no automated denial, adverse-action notice
-or lease. This demo does not implement a real legal adverse-action process. Do
-not reinterpret the mismatch as proof of real fraud or these sandbox figures as
-a real person's financial records.
-
-## 15. If a step fails
-
-Stop at the failing step and keep its reference/time. Do not reset the evidence
-or create several replacement applications before checking the execution.
-
-| Problem | First check / action |
-|---|---|
-| Listing unavailable | Start the listing server; confirm port 8080 |
-| Receipt missing or raw JSON/download | Check WF1 execution and HTML response node |
-| No renter answer | Correct prospect bot, new `/start R-reference`, active workflow and live tunnel |
-| Repeated collection question | Answer the missing fact explicitly; inspect recorded slots if repetition continues |
-| Booking time differs | Read the confirmed actual slot and property timezone; check calendar availability |
-| No application link | Confirm the operator completion POST used the correct new R-reference |
-| Form 404 | Check tunnel and webhook activation; wait after restart; use the newest link |
-| Application linked incorrectly | Compare link's R-reference and stored lead_id; do not proceed to signing |
-| No manager card after 90 seconds | Inspect WF2 execution, upload/extraction/Plaid errors; do not immediately resubmit |
-| Manager tap has no effect | Correct bot/current card; check WF3 execution and distinct bot credentials |
-| No lease email | Verify manager decision, WF4 send execution, recipient and Gmail Spam/All Mail |
-| DocuSign completed but no final updates | Inspect signature/Connect execution and matching envelope ID |
-| Welcome says sent but email not visible | Check recipient, Spam/All Mail and SMTP node result; a log alone is not inbox proof |
-| Airtable stale | Compare Postgres, inspect mirror-node error, then run sync-airtable once |
-
-## 16. Preserve, reset and prepare to record
-
-After the rehearsal passes, note the four references and save screenshots of
-the manager evidence card, signature completion, welcome email and final board.
-Then run:
+Expect healthy Postgres, running n8n, reachable local/tunnel endpoints, distinct
+bots, SMTP and IMAP authenticated as worksambhav26@gmail.com, and passing manager
+checks. Existing credentials are not proof of successful authentication.
+
+If the stack is already healthy, don't restart its tunnel for this test. Open
+the listing and both chats instead. If only the listing server is missing,
+start it with the listing builder/server commands above.
+
+Restarting Docker does not clear Postgres. Don't reset a test you intend to
+finish. To start clean, preserve first, then reset this project's demo rows:
 
 ```powershell
 node scripts/preserve-demo-evidence.js
@@ -561,35 +91,295 @@ node scripts/build-listing-site.js
 node scripts/verify-stage-2.js
 ```
 
-The first command writes a recoverable local Postgres dump under ignored `tmp/`.
-The reset deliberately removes this project's synthetic leads, applications,
-messages and Airtable mirror rows, restoring the two units to available. Stage 2
-should pass and Airtable should be empty. Do not reset while an execution or
-unsigned test you intend to finish is still in progress.
+Reset doesn't clear Gmail, Telegram history, old calendar bookings or DocuSign
+envelopes. Don't sign an old envelope after reset. Cancel unwanted test bookings
+yourself if they occupy your intended slot.
 
-Reset does **not** clean Gmail, Telegram history, Cal.com bookings or sandbox
-envelopes. Manually tidy visible mail/chats as you planned. Cancel old test
-bookings if necessary to free the slot you intend to demonstrate. Old envelopes
-can remain, but do not sign them after reset.
+## 3. Open the business surfaces
 
-For recording, begin with another **new listing inquiry and new R-reference**.
-Keep this guide off-camera if desired; the tour-completion command is the one
-operator simulation needed in the happy-path journey.
+Have these open:
 
-## Pass checklist
+- Listing: http://localhost:8080/unit-MAPLE-2B.html
+- Resident chat: @MapleGroveLeasingBot
+- Manager chat: @sambhav_leasing_demo_bot
+- Recipient inbox: sambhavn8n@gmail.com
+- Airtable Leads, existing Grid view
+- Cal.com availability or booking confirmation, if needed
 
-- [ ] Listing facts and six synthetic site images render correctly.
-- [ ] Receipt gives a fresh reference and SMS-style wording without a button.
-- [ ] New reference binds to the correct renter chat; grounded answer arrives.
-- [ ] Prequalification records the stated values and remains explicitly unverified.
-- [ ] One real tour is booked at the confirmed property-local time; code is MOCK.
-- [ ] No misleading unmatched alert appears for the recorded API booking.
-- [ ] Operator completion event delivers a correctly referenced application link.
-- [ ] Manual application submission uses the synthetic PDF and explicit authorization.
-- [ ] Manager card shows three income figures, criteria evidence and mock labels.
-- [ ] No decision or lease occurs before your manager approval.
-- [ ] Approval records the actor and creates one sandbox envelope.
-- [ ] Maya's synthetic signature is completed using Finish on the current envelope.
-- [ ] Real Connect event produces signed state, leased unit, manager alert and received welcome email.
-- [ ] Airtable keeps one R-row with the matching A-reference and final signed status.
-- [ ] Evidence is saved; recording starts from another clean, fresh inquiry.
+Keep n8n's Executions page available for troubleshooting, not on the recording.
+Note the new R-reference, A-reference, calendar booking UID and envelope ID as
+they appear. Never reuse a reference from a previous rehearsal.
+
+Check the listing: $1,650 rent and deposit, two bedrooms, one bathroom, 880 sq ft,
+October 1 availability, 12-month term. One assigned parking space is included;
+a second costs $50 if available. Cats/dogs under 50 lb, maximum two, with listed
+restrictions and $35 monthly pet fee. Water/sewer/trash included; electric/gas
+resident-paid. Images are AI-generated synthetic demo assets.
+
+## 4. Submit your inquiry
+
+| Field | Input |
+|---|---|
+| Name | Sambhav Jain |
+| Email | sambhavn8n@gmail.com |
+| Phone | Leave blank or use synthetic 555-0142; don't add real phone data |
+| Question | Is parking included, and do you allow a small dog? |
+
+Click Send message once.
+
+Expect a neutral receipt with your name and an R-reference, without an app name,
+assistant name or handoff button. The resident chat receives the grounded opening
+answer; the manager chat receives a New rental inquiry notice identifying you,
+the unit, reference and inquiry. Airtable creates one lead row.
+
+If you've never started either bot, complete that one-time setup first. Don't
+use an old /start reference. No repeated Reply action or deep-link activation is
+needed for the configured resident email after setup.
+
+## 5. Continue in ordinary resident messages
+
+Send each line normally, waiting for the response:
+
+> I would like to move in on October 5, 2026.
+
+> My gross monthly income is $5,000 before taxes.
+
+> Just me living there. I have one small dog weighing 18 pounds and one car.
+
+These are fictional rehearsal facts, not statements about your real finances.
+If a question comes earlier, answer it then. The bot can collect multiple values
+from one sentence and should skip facts already supplied.
+
+Check October 5, income 5000, one adult, one car and 18 lb dog. The income ratio
+is about 3.03x against $1,650, explicitly self-reported and unverified.
+Prequalification isn't application approval. No lease should exist.
+
+The manager receives progress notices. Airtable becomes Prequalified; Verified
+Income remains empty. The bot asks for your preferred date/time, not a public
+booking link that bypasses approval.
+
+## 6. Request a real available tour
+
+Choose an open future Cal.com slot inside the next fourteen days. Use the
+property's America/New_York timezone, not your India desktop timezone.
+In September, 2pm New York is 11:30pm India and 18:00 UTC.
+
+For example, replace the date with an available future date:
+
+> Could you book me for Saturday, September 19, 2026 at 2:00 PM?
+
+If the exact time is unavailable, expect real alternatives. Choose one in chat.
+The bot must not silently move the booking to another time.
+
+For an available requested slot, expect:
+
+- Resident: request is waiting for manager approval; nothing booked yet.
+- Manager: Tour approval needed card, requested time and approval buttons.
+- Airtable: same lead, Next Action Manager tour approval.
+- Calendar: no booking from this request before approval.
+- No entry code released while pending.
+
+## 7. Approve the tour as manager
+
+In the manager chat, send this as a new message:
+
+> Approve tour
+
+Or tap Approve tour on the current card. No Reply gesture is needed. If there
+are several pending tours, type Approve tour R-1234 using the actual reference.
+The bot asks for clarification when the target isn't unique.
+
+Expect one real calendar booking and resident confirmation only after approval.
+Check:
+
+- Event: Unit Tour.
+- Organizer: Alex Morgan.
+- Attendee: Sambhav Jain.
+- Attendee delivery email: sambhavn8n@gmail.com.
+- Confirmed property-local time matches the time you accepted.
+- Six-digit demo entry code is explicitly MOCK and doesn't operate any lock.
+- Manager receives Tour booked and a demo-completion button.
+- Airtable: Tour Booked, tour time populated, one R-row.
+
+Don't request or approve the same tour several times because the API is slow.
+A repeated approval must not create another booking. A stale card must not
+approve a newer request.
+
+## 8. Confirm tour completion in manager chat
+
+You don't need to wait for the calendar date. This is synthetic demo attendance,
+not automatic attendance detection. Tell the manager bot:
+
+> Tour completed for Sambhav Jain
+
+Or use Confirm tour completed (demo) on the booked-tour card. With exactly one
+eligible booking, Tour completed also works. With several, give its R-reference.
+
+This manager action records completion and authorizes the fixed application
+follow-up. It cannot run before a booking exists. Repeating it must not issue
+another application link.
+
+Expect the resident to receive the application link in chat. Verify its
+ref_token matches your R-reference and its hostname is the current tunnel.
+Airtable becomes Toured, with Submit application as next action.
+No PowerShell command, webhook tool or simulation script is needed here.
+
+## 9. Complete the seven-section application
+
+Click the newly delivered link. Don't use an old saved preview or form.
+
+| Field | Synthetic rehearsal input |
+|---|---|
+| Home | MAPLE-2B |
+| Full name | Sambhav Jain |
+| Email | sambhavn8n@gmail.com |
+| Phone | 555-0142 |
+| Demo identity code, last four only | 1234 |
+| Current address | 88 Cedar Lane, Apt 4, Springfield |
+| Previous address | 17 Birch Court, Springfield |
+| Requested move-in | October 5, 2026 |
+| Employer/income provider | Northgate Dental Group |
+| Job title | Dental Hygienist |
+| Gross monthly income | 5000 |
+| Monthly rental assistance | 0 |
+| Occupants | 1 |
+| Pets | One dog, 18 lbs |
+| Vehicles | One blue Honda Civic |
+| Eviction filing / broken lease / bankruptcy | No / No / No |
+| PDF | fixtures/paystub-maya.pdf |
+| Authorization | I authorize the synthetic demo checks |
+
+The PDF is fabricated evidence for the demo, not your paystub. It bears Maya's
+fixture name; don't represent it as proof of your identity or income. The mock
+identity check does not validate your identity against it. Only your display
+name and delivery address are used to play the resident.
+
+Full upload path:
+D:\codex_projects\automation_projects\leasing-tenant-screening\fixtures\paystub-maya.pdf
+
+No full SSN, DOB, real employer details, bank credentials, payment or identity
+document is required. Submit once. The success screen confirms receipt, not a
+rental decision.
+
+## 10. Review screening as manager
+
+Allow roughly 30–90 seconds. Expect a new A-reference on the manager card:
+
+- Sambhav Jain, MAPLE-2B, $1,650 rent.
+- Claimed monthly income 5000.
+- Extracted biweekly gross 2306, annualized to about 4996.33/month.
+- Plaid Sandbox payroll about 4996.33/month, explicitly canned test data.
+- Deterministic meets_criteria, ratio about 3.03x.
+- Credit, eviction and identity results explicitly MOCK.
+- Evidence per criterion and Approve / Conditional / Send to review buttons.
+
+Don't expect three identical 5000 figures. The calculation is 2306 × 26 ÷ 12.
+Plaid does not ask you to connect an account in this demo.
+
+Before deciding, verify no lease went out. Airtable shows Applied, the matching
+A-reference, not_sent lease status and Manager review as next action.
+
+## 11. Approve the sandbox lease
+
+Read the current evidence card and tap Approve once, or send:
+
+> Approve application A-1234
+
+Replace A-1234 with your current A-reference. When only one relevant approval
+exists, Approve works too. With both a tour and an application pending, the bot
+must not guess. Send to review routes for human handling without a lease.
+
+Expect a recorded manager actor/time, one sandbox envelope and a lease-sent
+notice. Open the latest signing email in sambhavn8n@gmail.com.
+The unit isn't leased merely because the envelope was sent.
+
+Don't use Conditional for this happy path. Its current demo behavior also sends
+a sandbox lease; it isn't a document-request waiting stage.
+
+## 12. Sign the non-binding sandbox document
+
+Check resident Sambhav Jain, MAPLE-2B, $1,650 rent/deposit, twelve months, October
+5 move-in and the current A-reference. Sandbox/demo labels are expected.
+The document explicitly says it isn't a binding agreement.
+
+Follow DocuSign's consent and signing controls. Adopt Sambhav Jain / SJ for the
+display signature, not the saved Maya signature from an earlier run. Finish the
+envelope; closing the tab isn't completion.
+
+Use the real sandbox signing flow, not a fake completion callback.
+
+## 13. Approve the welcome email and check outcomes
+
+After the real Connect event, expect:
+
+- Manager: lease signed, synthetic unit leased, welcome approval requested.
+- Airtable: Leased, signed lease, Next Action Manager welcome approval.
+- No welcome email before that separate approval.
+
+In manager chat, type:
+
+> Send welcome
+
+Or tap Approve welcome email. If several signed files are waiting, include the
+A-reference. Expect one email from worksambhav26@gmail.com to sambhavn8n@gmail.com
+and a manager delivery confirmation. Check Spam/All Mail if needed.
+
+The welcome says insurance, utilities and permanent entry arrangements will
+follow. It doesn't provision a real lock or complete physical move-in.
+Airtable then shows Complete move-in handoff, same R-row and matching A-reference.
+
+Postgres remains authoritative if Airtable fails. A stale mirror is recoverable
+with sync-airtable as an off-flow troubleshooting step, not a business approval.
+The listing is generated static HTML; its availability won't change merely by
+refreshing. Rebuild it during preparation for the next rehearsal, not mid-video.
+
+## 14. Separate exception tests
+
+After the happy path, test these on clearly separate demo records:
+
+| Test | Expected |
+|---|---|
+| Ask for owner's phone / master code | Fixed human-review reply; manager alerted; no private fact or code released |
+| Manager Send message: Water is included. | Grounded human-approved reply delivered without Reply gesture |
+| Manager sends invented rent or private code | Send-time check blocks it; nothing delivered |
+| Not that time on pending tour | No booking/code; resident asked for another time |
+| Approve tour again after booking | No second booking; no matching pending item |
+| Tour completed again | No second application follow-up |
+| Old approval card after a newer request | Stale card rejected |
+| Send to review on an application | Human handoff; no lease |
+| Two pending approvals, then Approve | Clarification, no guessed action |
+| Another Telegram account tries to approve | No state change; only configured manager is authorized |
+| Send welcome twice | One welcome email |
+| Provider failure | Visible manager/resident follow-up; no silent booking/code release |
+
+Devon's existing fabricated MAPLE-5A mismatch fixture remains a separate
+screening stop-path check: claimed/document 7800 versus canned Sandbox 4996.33,
+about 56% variance and 2.56x ratio. No automated denial, adverse-action notice or
+lease. A mismatch is a review fact, not proof of fraud.
+
+## 15. Troubleshooting and final pass
+
+Stop at the failed step. Keep its reference and timestamp; don't reset or create
+several replacement applications before inspecting the execution.
+
+| Symptom | First check |
+|---|---|
+| No first resident message | Configured recipient email, previously started prospect bot, new inquiry, WF1 execution |
+| No new-lead manager notice | Correct manager chat, started manager bot, manager notification node result |
+| No tour approval card | Requested slot exists; prequalification complete; WF5 execution |
+| Manager says ambiguous | Supply the current R/A-reference; don't Reply to old cards |
+| Approved but no booking | WF5 Cal.com result; calendar may have changed; don't blindly retry |
+| No application link | Booked lead and current manager completion message; WF1 execution |
+| Form 404 | Live tunnel, current link, active form after restart |
+| No screening card | File extraction/Plaid/model execution; don't resubmit immediately |
+| No signing email | Recorded approval, current recipient, envelope result, Spam/All Mail |
+| Signed but welcome missing | Separate Send welcome approval and SMTP result |
+| Mirror stale | Compare Postgres; recover mirror outside the resident flow |
+
+Pass means the manager sees the lead from the start, every requested action
+waits for its approval, normal messages work in both chats, no in-flow scripts
+are used, and the real sandbox signature completes the approved handoff.
+
+Save your references/screenshots. Preserve and reset only when nothing you want
+to finish is still running. For the recording, start a fresh inquiry on a clean
+listing. Don't show commands, n8n, credentials or developer verification tools.

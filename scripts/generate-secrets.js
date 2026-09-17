@@ -51,4 +51,7 @@ ensure(
   "Changing this later requires wiping the postgres_data volume."
 );
 
+ensure("INTERNAL_ACTION_SECRET", () => crypto.randomBytes(32).toString("hex"),
+  "Used for local manager-authorized workflow handoffs; never share it.");
+
 console.log("\nDone. Next: fill the CREDENTIALS block in .env (see docs/stage-1-setup.md).");

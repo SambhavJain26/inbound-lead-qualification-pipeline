@@ -1,269 +1,101 @@
-/**
- * Builds n8n-workflows/wf3-telegram-router.json.
- *
- * WF3 owns the only Telegram Trigger in the project. Telegram allows one webhook
- * per bot, so every button tap and command enters here.
- *
- * Its job is narrow: identify the tap, refuse it if the file was already
- * decided, record who decided what and when, and hand approved files to WF4.
- *
- * There is deliberately no button that sends a denial.
- *
- * Run: node scripts/build-wf3-telegram-router.js
- */
-
-const path = require("path");
-const wf = require("./lib/wf-common");
-const { REPO_ROOT } = require("./lib/env");
-
-const OUT = path.join(REPO_ROOT, "n8n-workflows", "wf3-telegram-router.json");
-
-const parseCallbackCode = [
-  "// callback_data is capped at 64 bytes, so it carries a three-letter action",
-  "// and the application reference only - never a decision payload.",
-  "const ACTIONS = {",
-  "  apr: { decision: 'approved', label: 'Approved', triggers_lease: true },",
-  "  con: { decision: 'conditional', label: 'Approved with conditions', triggers_lease: true },",
-  "  rev: { decision: 'sent_to_review', label: 'Sent for closer review', triggers_lease: false },",
-  "};",
-  "",
-  "const out = [];",
-  "for (const item of $input.all()) {",
-  "  const update = item.json;",
-  "  const callback = update.callback_query;",
-  "",
-  "  if (!callback) {",
-  "    // Not a button tap. Nothing else enters this workflow yet.",
-  "    continue;",
-  "  }",
-  "",
-  "  const raw = String(callback.data || '');",
-  "  const separator = raw.indexOf(':');",
-  "  const prefix = separator === -1 ? '' : raw.slice(0, separator);",
-  "  const refToken = separator === -1 ? '' : raw.slice(separator + 1);",
-  "  const action = ACTIONS[prefix];",
-  "",
-  "  // Tour approvals are a different kind of tap: they decide a viewing time,",
-  "  // not an application, and they must never touch the applications table.",
-  "  const TOUR = { tba: true, tbd: false };",
-  "  const isTour = Object.prototype.hasOwnProperty.call(TOUR, prefix);",
-  "",
-  "  if ((!action && !isTour) || !refToken) {",
-  "    throw new Error('Unrecognised callback_data: ' + raw);",
-  "  }",
-  "",
-  "  const from = callback.from || {};",
-  "  const actor = from.username ? '@' + from.username",
-  "    : [from.first_name, from.last_name].filter(Boolean).join(' ') || String(from.id || 'unknown');",
-  "",
-  "  out.push({ json: {",
-  "    ref_token: refToken,",
-  "    is_tour_decision: isTour,",
-  "    tour_approved: isTour ? TOUR[prefix] : null,",
-  "    decision: isTour ? null : action.decision,",
-  "    decision_label: isTour ? (TOUR[prefix] ? 'Tour approved' : 'Tour time declined') : action.label,",
-  "    triggers_lease: isTour ? false : action.triggers_lease,",
-  "    actor: actor,",
-  "    callback_query_id: callback.id,",
-  "    chat_id: (callback.message && callback.message.chat && callback.message.chat.id) || null,",
-  "  } });",
-  "}",
-  "return out;",
-].join("\n");
-
+/* Manager bot: ordinary text and buttons, authenticated and replay guarded. */
+const path = require('path');
+const wf = require('./lib/wf-common');
+const { REPO_ROOT } = require('./lib/env');
+const LIB = wf.inlineLib('leasing-lib.js') + '\n' + wf.inlineLib('manager-lib.js');
+const parse = LIB + "\nconst a=parseManagerUpdate($input.first().json,'__TELEGRAM_CHAT_ID__'); return a?[{json:a}]:[];";
+const resolve = LIB + `
+const a=$('Parse Manager Action').first().json;
+const data=$input.first().json;
+const leads=(data.leads||[]).filter(l=>l.is_active_demo_recipient!==false), apps=data.applications||[];
+const help='You can type normally; Reply is not needed.\\n\\nApprove tour\\nNot that time\\nTour completed for Sambhav Jain\\nApprove application A-1234\\nSend to review A-1234\\nSend welcome\\nSend message R-1234: your public-safe reply\\nStatus\\n\\nWith one pending item, Approve also works. With several, include its reference. Private disclosures and automated adverse-action notices are never allowed.';
+if(a.action==='help'||a.action==='status') {
+ const pipeline=leads.filter(l=>l.status!=='closed').map(l=>'Lead: '+l.ref_token+' · '+l.prospect_name+' · '+l.status);
+ const bookingFollowup=leads.filter(l=>l.tour_approval_state==='approved'&&!l.calcom_booking_uid).map(l=>'Calendar follow-up; do not blindly retry: '+l.ref_token);
+ const pending=leads.filter(l=>l.tour_approval_state==='pending').map(l=>'Tour approval: '+l.ref_token+' · '+l.prospect_name);
+ const booked=leads.filter(l=>l.status==='tour_booked').map(l=>'Awaiting tour completion: '+l.ref_token+' · '+l.prospect_name);
+ const reviews=leads.filter(l=>l.conversation_state?.manager_review_pending).map(l=>'Information review: '+l.ref_token+' · '+l.prospect_name);
+ const decisions=apps.filter(x=>!x.decision&&x.status==='awaiting_decision').map(x=>'Application review: '+x.ref_token+' · '+x.full_name);
+ const welcome=apps.filter(x=>x.lease_status==='signed').map(x=>(x.welcome_claimed?'Welcome already claimed; check delivery record: ':'Welcome approval: ')+x.ref_token+' · '+x.full_name);
+ return [{json:{...a,ok:false,manager_text:escapeTelegramHtml(a.action==='status'?pipeline.concat(pending,bookingFollowup,booked,reviews,decisions,welcome).join('\\n')||'No pending demo work.':help)}}];
+}
+const target=resolveManagerTarget(a,leads,apps);
+if(!target.ok)return [{json:{...a,ok:false,manager_text:escapeTelegramHtml(target.text)}}];
+const row=target.row;
+const result={...a,ok:true,kind:target.kind,ref_token:row.ref_token,prospect_name:row.prospect_name||row.full_name,row:row,
+ request_id:a.request_id||row.conversation_state?.pending_tour_action_id||null,
+ tour_approved:a.action!=='tour_decline',
+ decision:a.action==='application_conditional'?'conditional':a.action==='application_review'?'sent_to_review':'approved',
+ triggers_lease:a.action!=='application_review'};
+if(result.kind==='message') {
+ const v=managerMessageCheck(a.reply_text,buildConversationKnowledge(row,row),guardrailCheck);
+ if(!v.passed)return [{json:{...a,ok:false,manager_text:'The reply failed the send-time safety check. Private facts, legal/outcome wording and unsupported figures cannot be released. Nothing was sent.'}}];
+ result.reply_html=escapeTelegramHtml(a.reply_text); result.guardrail_result=v;
+}
+return [{json:result}];`;
 const nodes = [
-  // The MANAGER bot. WF1's prospect conversation runs on a second bot, because
-  // Telegram allows one webhook per bot. The node id is pinned to its original
-  // value: n8n derives the webhook secret from `${workflowId}_${nodeId}`, and
-  // there is no reason to churn it.
-  {
-    ...wf.telegramTriggerNode("Manager Actions (Telegram)", [-620, 0], {
-      bot: "manager",
-      updates: ["callback_query", "message"],
-      webhookId: "leasing-telegram-router",
-    }),
-    id: "telegram-trigger",
-  },
-
-  wf.codeNode("Parse Manager Action", parseCallbackCode, [-400, 0]),
-
-  // Stops the Telegram spinner immediately. A human waiting on a callback is a
-  // terrible look mid-demo, and the tap is acknowledged before any work runs.
-  {
-    ...wf.plaidNode("Acknowledge Tap", "/noop", "={{ '{}' }}", [-180, 0]),
-    name: "Acknowledge Tap",
-    id: "acknowledge-tap",
-    parameters: {
-      method: "POST",
-      url: "=https://api.telegram.org/bot__TELEGRAM_BOT_TOKEN__/answerCallbackQuery",
-      sendBody: true,
-      contentType: "json",
-      specifyBody: "json",
-      jsonBody: "={{ JSON.stringify({ callback_query_id: $json.callback_query_id }) }}",
-      options: { timeout: 10000 },
-    },
-    credentials: undefined,
-    onError: "continueRegularOutput",
-  },
-
-  // Reads the PARSE node explicitly, not $json. Acknowledge Tap is an HTTP node,
-  // so by this point $json is the Telegram API's answerCallbackQuery response
-  // and every parsed field is gone - the condition silently reads undefined and
-  // every tour tap falls through to the application path.
-  wf.ifNode(
-    "Is A Tour Decision?",
-    [wf.booleanCondition("={{ $('Parse Manager Action').first().json.is_tour_decision }}", true)],
-    [-100, 0]
-  ),
-
-  // Tour decisions go to WF5, which owns scheduling. They must never reach the
-  // application path - approving a viewing time is not a rental decision.
-  {
-    ...wf.plaidNode("Send Tour Decision To WF5", "/noop", "={{ '{}' }}", [40, -200]),
-    name: "Send Tour Decision To WF5",
-    id: "send-tour-decision-to-wf5",
-    parameters: {
-      method: "POST",
-      url: "=__TUNNEL_URL__webhook/tour-decision",
-      sendBody: true,
-      contentType: "json",
-      specifyBody: "json",
-      jsonBody:
-        "={{ JSON.stringify({\n" +
-        "  ref_token: $('Parse Manager Action').first().json.ref_token,\n" +
-        "  approved: $('Parse Manager Action').first().json.tour_approved\n" +
-        "}) }}",
-      options: { timeout: 30000 },
-    },
-    credentials: undefined,
-  },
-
-  wf.telegramNode(
-    "Confirm Tour Decision",
-    {
-      chatId: "={{ $('Parse Manager Action').item.json.chat_id }}",
-      text:
-        "={{ $('Parse Manager Action').item.json.decision_label }} for " +
-        "{{ $('Parse Manager Action').item.json.ref_token }}, recorded against " +
-        "{{ $('Parse Manager Action').item.json.actor }}.",
-    },
-    [260, -200]
-  ),
-
-  wf.postgresNode(
-    "Load Application For Decision",
-    "SELECT a.*, u.unit_code, u.address, u.rent_amount, u.deposit_amount, u.lease_term_months,\n" +
-      "       (a.decision IS NOT NULL) AS already_decided\n" +
-      "FROM applications a JOIN units u ON u.id = a.unit_id\n" +
-      "WHERE a.ref_token = $1 LIMIT 1;",
-    [40, 0],
-    {
-      queryOptions: {
-        queryReplacement: "={{ [$('Parse Manager Action').first().json.ref_token] }}",
-      },
-    }
-  ),
-
-  // Double-tap guard. People double-tap, and a second tap must never produce a
-  // second envelope. The check is on stored state, not on anything in the tap.
-  wf.ifNode(
-    "Already Decided?",
-    [wf.booleanCondition("={{ $json.already_decided }}", true)],
-    [260, 0]
-  ),
-
-  wf.telegramNode(
-    "Notify: Already Actioned",
-    {
-      chatId: "=__TELEGRAM_CHAT_ID__",
-      text:
-        "={{ $json.ref_token }} was already {{ $json.decision }} by {{ $json.decided_by }} " +
-        "on {{ $json.decided_at }}.\n\nNo second action was taken.",
-    },
-    [480, -160]
-  ),
-
-  wf.postgresNode(
-    "Record Decision",
-    "UPDATE applications SET\n" +
-      "  decision = $2,\n" +
-      "  decided_by = $3,\n" +
-      "  decided_at = now(),\n" +
-      "  status = 'decided'\n" +
-      "WHERE ref_token = $1 AND decision IS NULL\n" +
-      "RETURNING *, (SELECT unit_code FROM units WHERE id = applications.unit_id) AS unit_code;",
-    [480, 120],
-    {
-      queryOptions: {
-        queryReplacement:
-          "={{ [" +
-          "$('Parse Manager Action').first().json.ref_token," +
-          "$('Parse Manager Action').first().json.decision," +
-          "$('Parse Manager Action').first().json.actor" +
-          "] }}",
-      },
-    }
-  ),
-
-  wf.ifNode(
-    "Send Lease Now?",
-    [wf.booleanCondition("={{ $('Parse Manager Action').first().json.triggers_lease }}", true)],
-    [700, 120]
-  ),
-
-  {
-    ...wf.plaidNode("Start Lease Workflow", "/noop", "={{ '{}' }}", [920, 40]),
-    name: "Start Lease Workflow",
-    id: "start-lease-workflow",
-    parameters: {
-      method: "POST",
-      url: "=__TUNNEL_URL__webhook/lease-create",
-      sendBody: true,
-      contentType: "json",
-      specifyBody: "json",
-      jsonBody:
-        "={{ JSON.stringify({ ref_token: $('Parse Manager Action').first().json.ref_token }) }}",
-      options: { timeout: 60000 },
-    },
-    credentials: undefined,
-  },
-
-  wf.telegramNode(
-    "Confirm Decision Recorded",
-    {
-      chatId: "=__TELEGRAM_CHAT_ID__",
-      text:
-        "={{ $('Parse Manager Action').first().json.decision_label }} - " +
-        "{{ $('Parse Manager Action').first().json.ref_token }} " +
-        "by {{ $('Parse Manager Action').first().json.actor }}.\n\n" +
-        "{{ $('Parse Manager Action').first().json.triggers_lease " +
-        "? 'Preparing the lease for signature now.' " +
-        ": 'No lease prepared. Nothing has been sent to the applicant.' }}",
-    },
-    [920, 220]
-  ),
+  {...wf.telegramTriggerNode('Manager Actions (Telegram)',[-800,0],{bot:'manager',updates:['callback_query','message'],webhookId:'leasing-telegram-router'}),id:'telegram-trigger'},
+  wf.codeNode('Parse Manager Action',parse,[-580,0]),
+  wf.postgresNode('Claim Manager Update',
+    "INSERT INTO message_log(direction,channel,from_addr,to_addr,body,message_id) VALUES('inbound','telegram',$1,'manager-bot',$2,$3) ON CONFLICT(message_id) DO NOTHING RETURNING id;",
+    [-360,0],{queryOptions:{queryReplacement:"={{ [$json.actor,$json.raw_text,$json.dedupe_key] }}"}}),
+  wf.ifNode('Is Button Tap?',[wf.booleanCondition("={{ Boolean($('Parse Manager Action').first().json.callback_query_id) }}",true)],[-140,0]),
+  wf.internalActionNode('Acknowledge Tap','https://api.telegram.org/bot__TELEGRAM_BOT_TOKEN__/answerCallbackQuery',
+    "={{ JSON.stringify({callback_query_id:$('Parse Manager Action').first().json.callback_query_id}) }}",[80,-180],{authenticate:false,continueOnFail:true}),
+  wf.postgresNode('Load Manager Context',
+    "SELECT COALESCE((SELECT jsonb_agg(x) FROM (SELECT l.*,lower(l.prospect_email)=lower('__PROSPECT_EMAIL__') AS is_active_demo_recipient,u.unit_code,u.address,u.beds,u.baths,u.sqft,u.rent_amount,u.deposit_amount,u.available_from,u.lease_term_months,u.pet_policy,u.pet_fee_monthly,u.parking,u.utilities_included,u.laundry,u.faq_facts FROM leads l JOIN units u ON u.id=l.unit_id ORDER BY l.id DESC LIMIT 100) x),'[]'::jsonb) AS leads, COALESCE((SELECT jsonb_agg(x) FROM (SELECT a.*,EXISTS(SELECT 1 FROM message_log m WHERE m.message_id='mail-welcome-'||a.ref_token) AS welcome_claimed FROM applications a ORDER BY id DESC LIMIT 100) x),'[]'::jsonb) AS applications;",
+    [300,0]),
+  wf.codeNode('Resolve Manager Target',resolve,[520,0]),
+  wf.ifNode('Action Target Clear?',[wf.booleanCondition('={{ $json.ok }}',true)],[740,0]),
+  wf.telegramNode('Manager Help Or Clarification',{chatId:'=__TELEGRAM_CHAT_ID__',text:'={{ $json.manager_text }}',failOnError:true},[960,320]),
+  wf.ifNode('Is Tour Decision?',[wf.booleanCondition("={{ $json.kind === 'tour' }}",true)],[960,0]),
+  wf.internalActionNode('Send Tour Decision To WF5','=http://n8n:5678/webhook/tour-decision',
+    "={{ JSON.stringify({ref_token:$('Resolve Manager Target').first().json.ref_token,approved:$('Resolve Manager Target').first().json.tour_approved,actor:$('Resolve Manager Target').first().json.actor,request_id:$('Resolve Manager Target').first().json.request_id,action_id:$('Resolve Manager Target').first().json.dedupe_key}) }}",[1180,-200]),
+  wf.ifNode('Is Tour Completion?',[wf.booleanCondition("={{ $json.kind === 'completion' }}",true)],[1180,40]),
+  wf.internalActionNode('Confirm Tour Completion In WF1','=http://n8n:5678/webhook/tour-completed',
+    "={{ JSON.stringify({ref_token:$('Resolve Manager Target').first().json.ref_token,actor:$('Resolve Manager Target').first().json.actor,action_id:$('Resolve Manager Target').first().json.dedupe_key}) }}",[1400,-120]),
+  wf.ifNode('Is Human Reply?',[wf.booleanCondition("={{ $json.kind === 'message' }}",true)],[1400,160]),
+  wf.ifNode('Is Welcome Approval?',[wf.booleanCondition("={{ $json.kind === 'welcome' }}",true)],[1500,400]),
+  wf.internalActionNode('Send Welcome Approval To WF4','=http://n8n:5678/webhook/welcome-send',
+    "={{ JSON.stringify({ref_token:$('Resolve Manager Target').first().json.ref_token,actor:$('Resolve Manager Target').first().json.actor,action_id:$('Resolve Manager Target').first().json.dedupe_key}) }}",[1720,500]),
+  wf.postgresNode('Record Approved Human Reply',
+    "INSERT INTO message_log(ref_token,direction,channel,tier,from_addr,to_addr,body,message_id,guardrail_passed,guardrail_result,approved_by,approved_at) SELECT $1,'outbound','telegram','B','manager',$2::text,$3,$4,true,$5::jsonb,$6,now() WHERE EXISTS(SELECT 1 FROM leads WHERE ref_token=$1 AND telegram_chat_id=$2::text::bigint) ON CONFLICT(message_id) DO NOTHING RETURNING *;",
+    [1620,80],{queryOptions:{queryReplacement:"={{ [$('Resolve Manager Target').first().json.ref_token,String($('Resolve Manager Target').first().json.row.telegram_chat_id),$('Resolve Manager Target').first().json.reply_text,'mgr-send-'+$('Resolve Manager Target').first().json.dedupe_key,JSON.stringify({...$('Resolve Manager Target').first().json.guardrail_result,delivery:'pending'}),$('Resolve Manager Target').first().json.actor] }}"}}),
+  wf.telegramNode('Send Human Approved Reply',{bot:'prospect',chatId:'={{ $json.to_addr }}',text:"={{ $('Resolve Manager Target').first().json.reply_html }}",failOnError:true},[1840,80]),
+  wf.postgresNode('Mark Human Reply Delivered',
+    "WITH cleared AS (UPDATE leads SET conversation_state=conversation_state||jsonb_build_object('manager_review_pending',false) WHERE ref_token=$1 RETURNING id) UPDATE message_log SET guardrail_result=guardrail_result||jsonb_build_object('delivery','sent') WHERE message_id=$2 RETURNING ref_token;",
+    [2060,80],{queryOptions:{queryReplacement:"={{ [$('Resolve Manager Target').first().json.ref_token,'mgr-send-'+$('Resolve Manager Target').first().json.dedupe_key] }}"}}),
+  wf.telegramNode('Confirm Human Reply Sent',{chatId:'=__TELEGRAM_CHAT_ID__',text:"=Your approved reply was delivered for {{ $('Resolve Manager Target').first().json.ref_token }}.",failOnError:true},[2280,80]),
+  wf.postgresNode('Record Decision',
+    "UPDATE applications SET decision=$2,decided_by=$3,decided_at=now(),status='decided' WHERE ref_token=$1 AND decision IS NULL AND status='awaiting_decision' AND criteria_result IN ('meets_criteria','conditional') RETURNING *;",
+    [1620,300],{queryOptions:{queryReplacement:"={{ [$('Resolve Manager Target').first().json.ref_token,$('Resolve Manager Target').first().json.decision,$('Resolve Manager Target').first().json.actor] }}"}}),
+  wf.ifNode('Send Lease Now?',[wf.booleanCondition("={{ $('Resolve Manager Target').first().json.triggers_lease }}",true)],[1840,300]),
+  wf.internalActionNode('Start Lease Workflow','=http://n8n:5678/webhook/lease-create',
+    "={{ JSON.stringify({ref_token:$('Resolve Manager Target').first().json.ref_token}) }}",[2060,240]),
+  wf.telegramNode('Confirm Decision Recorded',{chatId:'=__TELEGRAM_CHAT_ID__',text:"={{ 'Decision '+$('Resolve Manager Target').first().json.decision+' recorded for '+$('Resolve Manager Target').first().json.ref_token+' by '+$('Resolve Manager Target').first().json.actor+'. '+($('Resolve Manager Target').first().json.triggers_lease?'Preparing the sandbox lease.':'No lease prepared; nothing sent to the applicant.') }}",failOnError:true},[2280,300]),
+  wf.telegramNode('Confirm Completion Requested',{chatId:'=__TELEGRAM_CHAT_ID__',text:"=Tour completion submitted for {{ $('Resolve Manager Target').first().json.ref_token }} by {{ $('Resolve Manager Target').first().json.actor }}. The approved application follow-up is processing. This is synthetic demo attendance.",failOnError:true},[1620,-120]),
 ];
-
-const connections = wf.connect({
-  "Manager Actions (Telegram)": [["Parse Manager Action"]],
-  "Parse Manager Action": [["Acknowledge Tap"]],
-  "Acknowledge Tap": [["Is A Tour Decision?"]],
-  "Is A Tour Decision?": [["Send Tour Decision To WF5"], ["Load Application For Decision"]],
-  "Send Tour Decision To WF5": [["Confirm Tour Decision"]],
-  "Load Application For Decision": [["Already Decided?"]],
-  "Already Decided?": [["Notify: Already Actioned"], ["Record Decision"]],
-  "Record Decision": [["Send Lease Now?"]],
-  "Send Lease Now?": [["Start Lease Workflow"], ["Confirm Decision Recorded"]],
-  "Start Lease Workflow": [["Confirm Decision Recorded"]],
+const connections=wf.connect({
+ 'Manager Actions (Telegram)':[['Parse Manager Action']], 'Parse Manager Action':[['Claim Manager Update']],
+ 'Claim Manager Update':[['Is Button Tap?']], 'Is Button Tap?':[['Acknowledge Tap'],['Load Manager Context']],
+ 'Acknowledge Tap':[['Load Manager Context']], 'Load Manager Context':[['Resolve Manager Target']],
+ 'Resolve Manager Target':[['Action Target Clear?']], 'Action Target Clear?':[['Is Tour Decision?'],['Manager Help Or Clarification']],
+ 'Is Tour Decision?':[['Send Tour Decision To WF5'],['Is Tour Completion?']],
+ 'Is Tour Completion?':[['Confirm Tour Completion In WF1'],['Is Human Reply?']],
+ 'Confirm Tour Completion In WF1':[['Confirm Completion Requested']],
+ 'Is Human Reply?':[['Record Approved Human Reply'],['Is Welcome Approval?']],
+ 'Is Welcome Approval?':[['Send Welcome Approval To WF4'],['Record Decision']],
+ 'Record Approved Human Reply':[['Send Human Approved Reply']], 'Send Human Approved Reply':[['Mark Human Reply Delivered']],
+ 'Mark Human Reply Delivered':[['Confirm Human Reply Sent']], 'Record Decision':[['Send Lease Now?']],
+ 'Send Lease Now?':[['Start Lease Workflow'],['Confirm Decision Recorded']], 'Start Lease Workflow':[['Confirm Decision Recorded']],
 });
-
 require('./lib/pipeline-mirror').attach(wf,nodes,connections,'Record Decision','$json.ref_token','Decision');
-const workflow = wf.buildWorkflow({
-  id: "wf3-telegram-router",
-  name: "WF3 Telegram Router",
-  nodes,
-  connections,
-  active: true,
-});
-
-console.log(`wf3-telegram-router.json written, ${wf.writeWorkflow(workflow, OUT)} nodes`);
+nodes.find(n=>n.name==='Send Human Approved Reply').onError='continueErrorOutput';
+nodes.push(
+ wf.postgresNode('Mark Human Reply Failed',"UPDATE message_log SET guardrail_result=guardrail_result||jsonb_build_object('delivery','failed_or_uncertain') WHERE message_id=$1 RETURNING ref_token;",[2060,-20],{queryOptions:{queryReplacement:"={{ ['mgr-send-'+$('Resolve Manager Target').first().json.dedupe_key] }}"}}),
+ wf.telegramNode('Notify Manager: Human Reply Failed',{chatId:'=__TELEGRAM_CHAT_ID__',text:'=Your reply could not be confirmed delivered for {{ $json.ref_token }}. The information-review task remains open. Check the send execution before trying again.',failOnError:true},[2280,-20]),
+);
+connections['Send Human Approved Reply'].main[1]=[{node:'Mark Human Reply Failed',type:'main',index:0}];
+connections['Mark Human Reply Failed']=wf.connect({x:[['Notify Manager: Human Reply Failed']]}).x;
+const workflow=wf.buildWorkflow({id:'wf3-telegram-router',name:'WF3 Telegram Router',nodes,connections,active:true});
+console.log('wf3-telegram-router.json written, '+wf.writeWorkflow(workflow,path.join(REPO_ROOT,'n8n-workflows','wf3-telegram-router.json'))+' nodes');

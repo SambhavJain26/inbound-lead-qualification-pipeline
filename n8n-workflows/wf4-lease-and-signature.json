@@ -32,7 +32,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT a.*, u.unit_code, u.address, u.rent_amount, u.deposit_amount, u.lease_term_months\nFROM applications a JOIN units u ON u.id = a.unit_id\nWHERE a.ref_token = $1 AND a.envelope_id IS NULL\nLIMIT 1;",
+        "query": "SELECT a.*, u.unit_code, u.address, u.rent_amount, u.deposit_amount, u.lease_term_months\nFROM applications a JOIN units u ON u.id = a.unit_id\nWHERE a.ref_token = $1 AND a.envelope_id IS NULL AND a.decision IN ('approved','conditional') AND a.decided_by IS NOT NULL AND a.decided_at IS NOT NULL\nLIMIT 1;",
         "options": {
           "queryReplacement": "={{ [$json.body.ref_token] }}"
         }
@@ -268,7 +268,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE applications SET\n  lease_status = 'signed',\n  lease_signed_at = now(),\n  status = 'lease_signed'\nWHERE envelope_id = $1\nRETURNING *, (SELECT unit_code FROM units WHERE id = applications.unit_id) AS unit_code,\n          (SELECT address FROM units WHERE id = applications.unit_id) AS address;",
+        "query": "WITH changed AS (UPDATE applications SET\n  lease_status = 'signed',\n  lease_signed_at = now(),\n  status = 'lease_signed'\nWHERE envelope_id = $1 AND lease_status='sent'\nRETURNING *, (SELECT unit_code FROM units WHERE id = applications.unit_id) AS unit_code,\n          (SELECT address FROM units WHERE id = applications.unit_id) AS address, false AS already_signed) SELECT * FROM changed UNION ALL SELECT a.*,u.unit_code,u.address,true AS already_signed FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.envelope_id=$1 AND a.lease_status='signed' AND NOT EXISTS(SELECT 1 FROM changed);",
         "options": {
           "queryReplacement": "={{ [$json.envelope_id] }}"
         }
@@ -292,7 +292,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// Did the UPDATE actually match an application?\n//\n// alwaysOutputData means a miss arrives here as an empty item rather than\n// stopping the branch, and strict IF nodes need a real boolean - not\n// truthiness on a missing field.\nconst rows = $input.all().filter((item) => item.json && item.json.ref_token);\nif (!rows.length) {\n  const parsed = $('Parse Connect Event').first().json;\n  return [{ json: { application_found: false, envelope_id: parsed.envelope_id || null } }];\n}\nreturn [{ json: Object.assign({}, rows[0].json, { application_found: true }) }];"
+        "jsCode": "// Did the UPDATE actually match an application?\n//\n// alwaysOutputData means a miss arrives here as an empty item rather than\n// stopping the branch, and strict IF nodes need a real boolean - not\n// truthiness on a missing field.\nconst rows = $input.all().filter((item) => item.json && item.json.ref_token);\nif (rows.length && rows[0].json.already_signed) return [];\nif (!rows.length) {\n  const parsed = $('Parse Connect Event').first().json;\n  return [{ json: { application_found: false, envelope_id: parsed.envelope_id || null } }];\n}\nreturn [{ json: Object.assign({}, rows[0].json, { application_found: true }) }];"
       }
     },
     {
@@ -388,10 +388,10 @@
       ],
       "parameters": {
         "fromEmail": "=__SYSTEM_EMAIL__",
-        "toEmail": "={{ $('Mark Lease Signed').first().json.email }}",
-        "subject": "=Welcome to {{ $('Mark Lease Signed').first().json.address }} [{{ $('Mark Lease Signed').first().json.ref_token }}]",
+        "toEmail": "={{ $('Load Signed Application For Welcome').first().json.email }}",
+        "subject": "=Welcome to {{ $('Load Signed Application For Welcome').first().json.address }} [{{ $('Load Signed Application For Welcome').first().json.ref_token }}]",
         "emailFormat": "text",
-        "text": "=Hi {{ $('Mark Lease Signed').first().json.full_name }},\n\nYour lease is signed and {{ $('Mark Lease Signed').first().json.unit_code }} is yours.\n\nBefore move-in we will send over renters insurance details, utility setup, and your permanent entry code. If anything needs sorting before then, just reply to this email.\n\nWelcome aboard.\n\nThe leasing team",
+        "text": "=Hi {{ $('Load Signed Application For Welcome').first().json.full_name }},\n\nYour lease is signed and {{ $('Load Signed Application For Welcome').first().json.unit_code }} is yours.\n\nBefore move-in we will send over renters insurance details, utility setup, and your permanent entry code. If anything needs sorting before then, just reply to this email.\n\nWelcome aboard.\n\nThe leasing team",
         "options": {
           "appendAttribution": false
         }
@@ -401,7 +401,8 @@
           "id": "__SMTP_CREDENTIAL_ID__",
           "name": "Leasing SMTP (outbound mail)"
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "id": "log-welcome-packet",
@@ -414,9 +415,9 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO message_log\n  (ref_token, direction, channel, tier, from_addr, to_addr, subject, body, message_id)\nVALUES ($1, 'outbound', 'email', 'A', '__SYSTEM_EMAIL__', $2, $3, $4, $5)\nON CONFLICT (message_id) DO NOTHING;",
+        "query": "UPDATE message_log SET body='Fixed manager-approved welcome email sent',guardrail_result=guardrail_result||jsonb_build_object('delivery','sent') WHERE message_id=$1 RETURNING ref_token;",
         "options": {
-          "queryReplacement": "={{ [$('Mark Lease Signed').first().json.ref_token, ($('Mark Lease Signed').first().json.email ?? ''), 'Welcome to ' + $('Mark Lease Signed').first().json.address, 'Welcome packet: insurance, utilities and the permanent entry code', 'mail-welcome-' + $('Mark Lease Signed').first().json.ref_token] }}"
+          "queryReplacement": "={{ ['mail-welcome-'+$('Load Signed Application For Welcome').first().json.ref_token] }}"
         }
       },
       "credentials": {
@@ -438,7 +439,7 @@
       ],
       "parameters": {
         "chatId": "=__TELEGRAM_CHAT_ID__",
-        "text": "=Signed. {{ $('Mark Lease Signed').first().json.ref_token }} - {{ $('Mark Lease Signed').first().json.full_name }}.\n\n{{ $('Mark Lease Signed').first().json.unit_code }} is now marked leased and the welcome packet has gone out.",
+        "text": "=Signed. {{ $('Mark Lease Signed').first().json.ref_token }} - {{ $('Mark Lease Signed').first().json.full_name }}.\n\n{{ $('Mark Lease Signed').first().json.unit_code }} is now marked leased and the welcome delivery requires a separate manager approval.",
         "additionalFields": {
           "appendAttribution": false,
           "parse_mode": "HTML"
@@ -463,7 +464,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
+        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income, l.tour_approval_state,\n EXISTS(SELECT 1 FROM message_log m WHERE m.message_id='mail-welcome-'||a.ref_token AND m.guardrail_result->>'delivery'='sent') AS welcome_sent,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,'none',EXISTS(SELECT 1 FROM message_log m WHERE m.message_id='mail-welcome-'||a.ref_token AND m.guardrail_result->>'delivery'='sent'),a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
         "options": {
           "queryReplacement": "={{ [$json.ref_token] }}"
         }
@@ -487,7 +488,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
+        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':row.tour_approval_state==='pending'?'Manager tour approval':status==='Leased'&&row.welcome_sent===false?'Manager welcome approval':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
       }
     },
     {
@@ -532,7 +533,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
+        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income, l.tour_approval_state,\n EXISTS(SELECT 1 FROM message_log m WHERE m.message_id='mail-welcome-'||a.ref_token AND m.guardrail_result->>'delivery'='sent') AS welcome_sent,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,'none',EXISTS(SELECT 1 FROM message_log m WHERE m.message_id='mail-welcome-'||a.ref_token AND m.guardrail_result->>'delivery'='sent'),a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
         "options": {
           "queryReplacement": "={{ [$('Mark Lease Signed').first().json.ref_token] }}"
         }
@@ -556,12 +557,285 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
+        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':row.tour_approval_state==='pending'?'Manager tour approval':status==='Leased'&&row.welcome_sent===false?'Manager welcome approval':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
       }
     },
     {
       "id": "mirror-upsert-airtable-lease-signed",
       "name": "Mirror: Upsert Airtable Lease Signed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4640,
+        0
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/__AIRTABLE_BASE_ID__/Leads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({performUpsert:{fieldsToMergeOn:['Ref Token']},typecast:true,records:[{fields:$json.fields}]}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "__AIRTABLE_CREDENTIAL_ID__",
+          "name": "Leasing Airtable (display mirror)"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
+    },
+    {
+      "id": "authenticate-lease-request",
+      "name": "Authenticate Lease Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const j=$input.first().json; if(j.headers?.['x-leasing-action-secret']!=='__INTERNAL_ACTION_SECRET__') throw new Error('Unauthorized internal action'); return $input.all();"
+      }
+    },
+    {
+      "id": "welcome-approved-internal",
+      "name": "Welcome Approved (Internal)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -720,
+        600
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "welcome-send",
+        "responseMode": "lastNode",
+        "options": {},
+        "responseData": "allEntries"
+      },
+      "webhookId": "welcome-send"
+    },
+    {
+      "id": "authenticate-welcome-approval",
+      "name": "Authenticate Welcome Approval",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -500,
+        600
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const j=$input.first().json; if(j.headers?.['x-leasing-action-secret']!=='__INTERNAL_ACTION_SECRET__') throw new Error('Unauthorized internal action'); return $input.all();"
+      }
+    },
+    {
+      "id": "claim-approved-welcome",
+      "name": "Claim Approved Welcome",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -280,
+        600
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO message_log(ref_token,direction,channel,tier,from_addr,to_addr,subject,body,message_id,approved_by,approved_at,guardrail_passed,guardrail_result) SELECT a.ref_token,'outbound','email','B','__SYSTEM_EMAIL__',a.email,'Welcome to '||u.address,'Fixed welcome email approved; delivery pending','mail-welcome-'||a.ref_token,$2,now(),true,jsonb_build_object('delivery','pending') FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.ref_token=$1 AND a.lease_status='signed' AND a.decision IN ('approved','conditional') ON CONFLICT(message_id) DO NOTHING RETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [$json.body.ref_token,$json.body.actor] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      }
+    },
+    {
+      "id": "load-signed-application-for-welcome",
+      "name": "Load Signed Application For Welcome",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -60,
+        600
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT a.*,u.address,u.unit_code FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.ref_token=$1 AND a.lease_status='signed';",
+        "options": {
+          "queryReplacement": "={{ [$json.ref_token] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      }
+    },
+    {
+      "id": "ask-manager-send-welcome",
+      "name": "Ask Manager: Send Welcome",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        380,
+        420
+      ],
+      "parameters": {
+        "chatId": "=__TELEGRAM_CHAT_ID__",
+        "text": "=Lease signed: {{ $('Mark Lease Signed').first().json.ref_token }}. The synthetic unit is now leased. The welcome email has NOT been sent. Approve it below or type Send welcome; Reply is not needed.",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Approve welcome email",
+                    "additionalFields": {
+                      "callback_data": "=wel:{{ $('Mark Lease Signed').first().json.ref_token }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram (manager bot)"
+        }
+      }
+    },
+    {
+      "id": "notify-manager-welcome-sent",
+      "name": "Notify Manager: Welcome Sent",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        820,
+        600
+      ],
+      "parameters": {
+        "chatId": "=__TELEGRAM_CHAT_ID__",
+        "text": "=Approved welcome email delivered for {{ $('Load Signed Application For Welcome').first().json.ref_token }} to {{ $('Load Signed Application For Welcome').first().json.email }}.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram (manager bot)"
+        }
+      }
+    },
+    {
+      "id": "mark-welcome-delivery-failed",
+      "name": "Mark Welcome Delivery Failed",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        600,
+        820
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE message_log SET guardrail_result=guardrail_result||jsonb_build_object('delivery','failed_or_uncertain') WHERE message_id=$1 RETURNING ref_token;",
+        "options": {
+          "queryReplacement": "={{ ['mail-welcome-'+$('Load Signed Application For Welcome').first().json.ref_token] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      }
+    },
+    {
+      "id": "notify-manager-welcome-failed",
+      "name": "Notify Manager: Welcome Failed",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        820,
+        820
+      ],
+      "parameters": {
+        "chatId": "=__TELEGRAM_CHAT_ID__",
+        "text": "=Welcome email failed or delivery is uncertain for {{ $json.ref_token }}. The approval remains recorded. Check Sent and the SMTP execution before sending again; automatic retries are blocked.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "Leasing Telegram (manager bot)"
+        }
+      }
+    },
+    {
+      "id": "mirror-read-pipeline-welcome-sent",
+      "name": "Mirror: Read Pipeline Welcome Sent",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4200,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income, l.tour_approval_state,\n EXISTS(SELECT 1 FROM message_log m WHERE m.message_id='mail-welcome-'||a.ref_token AND m.guardrail_result->>'delivery'='sent') AS welcome_sent,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,'none',EXISTS(SELECT 1 FROM message_log m WHERE m.message_id='mail-welcome-'||a.ref_token AND m.guardrail_result->>'delivery'='sent'),a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
+        "options": {
+          "queryReplacement": "={{ [$('Load Signed Application For Welcome').first().json.ref_token] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "mirror-map-pipeline-welcome-sent",
+      "name": "Mirror: Map Pipeline Welcome Sent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4420,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':row.tour_approval_state==='pending'?'Manager tour approval':status==='Leased'&&row.welcome_sent===false?'Manager welcome approval':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
+      }
+    },
+    {
+      "id": "mirror-upsert-airtable-welcome-sent",
+      "name": "Mirror: Upsert Airtable Welcome Sent",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -596,7 +870,7 @@
       "main": [
         [
           {
-            "node": "Load Application For Lease",
+            "node": "Authenticate Lease Request",
             "type": "main",
             "index": 0
           }
@@ -752,7 +1026,12 @@
       "main": [
         [
           {
-            "node": "Send Welcome Packet",
+            "node": "Ask Manager: Send Welcome",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mirror: Read Pipeline Lease Signed",
             "type": "main",
             "index": 0
           }
@@ -768,12 +1047,14 @@
             "index": 0
           },
           {
-            "node": "Notify Manager: Lease Signed",
+            "node": "Notify Manager: Welcome Sent",
             "type": "main",
             "index": 0
-          },
+          }
+        ],
+        [
           {
-            "node": "Mirror: Read Pipeline Lease Signed",
+            "node": "Mark Welcome Delivery Failed",
             "type": "main",
             "index": 0
           }
@@ -818,6 +1099,105 @@
         [
           {
             "node": "Mirror: Upsert Airtable Lease Signed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authenticate Lease Request": {
+      "main": [
+        [
+          {
+            "node": "Load Application For Lease",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Welcome Approved (Internal)": {
+      "main": [
+        [
+          {
+            "node": "Authenticate Welcome Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authenticate Welcome Approval": {
+      "main": [
+        [
+          {
+            "node": "Claim Approved Welcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Approved Welcome": {
+      "main": [
+        [
+          {
+            "node": "Load Signed Application For Welcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Signed Application For Welcome": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome Packet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Welcome Delivery Failed": {
+      "main": [
+        [
+          {
+            "node": "Notify Manager: Welcome Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Welcome Packet": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Read Pipeline Welcome Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Read Pipeline Welcome Sent": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Map Pipeline Welcome Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Map Pipeline Welcome Sent": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Upsert Airtable Welcome Sent",
             "type": "main",
             "index": 0
           }

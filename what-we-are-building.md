@@ -1,6 +1,6 @@
 # What We Are Building
 
-Last updated: 2026-09-11
+Last updated: 2026-09-17
 
 A plain-language overview of this project. No technical background needed.
 
@@ -10,13 +10,20 @@ A plain-language overview of this project. No technical background needed.
 
 We are building a system that handles the whole journey from "someone saw your listing" to
 "the lease is signed." It answers a renter's questions within seconds at any hour, qualifies
-them, books their tour, takes their application, reads their documents, checks their real
-income against their bank records, applies the property manager's own approval rules, and
+them, books their manager-approved tour, takes their application, reads synthetic documents,
+compares income with canned Plaid Sandbox payroll data, applies fixed manager-configured rules, and
 hands a complete file to a human to make the final call. If the human approves, it fills in
 the lease and sends it for signature.
 
 It does not decide who gets an apartment. A person always does that. The system just removes
-the two or three days of manual work that normally sit in between.
+coordination work between stages. This is a capability demo, not a measured client outcome.
+
+Current rehearsal: the manager sees inquiries from the start, approves every tour, confirms
+synthetic attendance in ordinary chat and separately approves welcome delivery. Public FAQ
+and fixed intake remain automatic; private or uncertain requests stop for review. Neither
+bot requires Telegram Reply, and no business step requires a terminal command. The approved
+operator may use their contact display name/email; financial and screening evidence stays
+fictional. The production blueprint describes a proposed deployment, not verified results.
 
 ---
 
@@ -96,12 +103,13 @@ this unit, they are offered alternatives or passed to a human.
 
 ### 4. It books the tour
 
-The renter gets a booking link, picks a time, and gets a confirmation. Shortly before the
-tour, they receive their entry instructions and a one-time door code.
+The renter requests a time in ordinary chat. The system checks real availability and asks
+the manager to approve that exact time. Only after approval does it book and send the
+confirmation with a labelled MOCK code. Public calendar links cannot bypass the gate.
 
 ### 5. After the tour, it sends the application
 
-Once the tour window closes, the renter gets a follow-up with a link to apply. No pressure —
+Once the manager confirms synthetic tour completion in chat, the renter gets a link to apply. No pressure —
 if they are not interested they just ignore it. If they liked it, they can apply immediately
 instead of waiting for someone to email them tomorrow.
 
@@ -111,20 +119,19 @@ The application collects what a real rental application collects: identity, addr
 employer and income, other occupants, pets, vehicles, and the legal consent form that allows
 background checks to happen at all.
 
-They upload a photo ID and their recent pay stubs.
+They upload the supplied synthetic paystub PDF. The demo does not upload or verify real ID.
 
 ### 7. The system reads their documents
 
 It pulls the numbers out of the uploaded pay stubs automatically — employer, pay period, gross
 amount — and records where each number came from.
 
-### 8. It verifies their income for real
+### 8. It compares three synthetic income sources
 
-This is the important step.
-
-Instead of trusting the uploaded pay stub, the renter connects their bank account. The system
-reads their **actual payroll deposits** — real money that really arrived. A pay stub can be
-edited in a photo editor. A deposit history cannot.
+The form's claimed income, document-extracted income and canned Plaid Sandbox Payroll Income
+are compared separately. The provider call is real, but its data is fabricated test data.
+There is no bank login or real resident-income verification. A production provider connection
+would require consent, contracted access and a verification process suitable for that business.
 
 ### 9. It checks the property manager's rules
 

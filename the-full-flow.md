@@ -1,11 +1,14 @@
 # The Full Flow, End To End
 
-Last updated: 2026-09-13
+Last updated: 2026-09-17
 
 What actually happens, from a stranger browsing a listing to a new resident holding a signed
 lease. No technical detail — just the sequence, who does what, and how long it takes.
 
-Every message quoted below is real output from a working run.
+Maya's quoted messages below are historical output from earlier working runs.
+The September 17 rehearsal uses the operator's authorized contact display name,
+Sambhav Jain; all income, documents, identity checks and decisions stay synthetic.
+Current operational authority is described below and in docs/manual-testing-flow.md.
 
 ---
 
@@ -14,14 +17,12 @@ Every message quoted below is real output from a working run.
 | Who | Their part |
 |---|---|
 | **The renter** | Finds the listing, asks questions, tours, applies, signs |
-| **The property manager** | Sets the criteria once. Then makes one decision per applicant |
-| **The system** | Everything in between |
+| **The property manager** | Sees intake, approves every tour, confirms attendance, reviews private/uncertain requests, decides the application and approves welcome delivery |
+| **The system** | Public FAQ, fixed collection, preparation, guarded approved actions and visible follow-up |
 
-The important thing to notice as you read: the property manager appears **twice**. Once at the
-start to set the rules, and once per applicant to make the call. That's it.
-
-(There is a third appearance, and it is optional: if a renter asks to tour outside the hours
-the manager published, that one waits for a tap. Ordinary bookings never do.)
+The manager uses ordinary chat or buttons. Neither bot requires Reply. A message without a
+reference works only when its target is unambiguous; otherwise the bot asks which record.
+No resident/manager business step requires a script or command.
 
 ---
 
@@ -123,7 +124,13 @@ answers the way anyone would:
 
 > *"Can I come by next Tuesday at 2pm?"*
 
-She doesn't get a link. She gets a booking:
+She doesn't get a public calendar link. An available exact time goes to the manager, while
+she hears that nothing is booked yet. The manager types Approve tour or taps its button.
+Only after that recorded approval can Cal.com booking and a labelled mock code be released.
+If the exact time is unavailable, she chooses from real alternatives; there is no automatic
+nearby-time substitution. A pending request is not a calendar reservation.
+
+The following quote records the older autonomous-booking policy, now superseded:
 
 > I'm checking whether a self-guided tour is available Tuesday, September 15 at 2:00 PM.
 >
@@ -147,11 +154,10 @@ Two things are worth separating here.
 book a slot that is really there. If nothing is close, it offers the nearest real alternatives
 instead of guessing.
 
-**And it still isn't the one deciding.** The manager wrote down when self-guided tours may
-happen — 9am to 6pm, at least half a day's notice. Inside those hours the assistant books and
-nobody is disturbed. Outside them, it does something different.
+**The manager authorizes every booking.** Published hours and notice rules are still checked
+and exceptions appear on the card; being within policy no longer skips human approval.
 
-### The same conversation, at a different hour
+### Historical out-of-policy example (the same approval gate now covers every tour)
 
 Suppose she'd asked for **8pm on Thursday**, because she works late. Nothing is booked. She gets:
 
@@ -174,9 +180,8 @@ If they approve, it books and she gets the confirmation and her code. If they de
 offered another time — and the slot **was never booked in the first place**, so nothing has to
 be cancelled and no one else was blocked out of it.
 
-That is the shape of the whole system in miniature: the ordinary case runs without anyone, the
-unusual case waits for a person, and the rule deciding which is which was written down in
-advance rather than judged case by case.
+The current division is public answers and collection automatically, consequential actions
+with recorded manager authority. Approval cannot override privacy or the screening stop.
 
 Self-guided either way. No agent drives across town.
 
@@ -186,7 +191,9 @@ Self-guided either way. No agent drives across town.
 
 > **Involved:** **Telegram** (the follow-up and application link) · **Airtable** (*Toured*)
 
-The tour window closes and she gets a follow-up in the same chat:
+The manager types Tour completed for the resident or taps the completion button. This is
+synthetic attendance, not a physical tour or an inference from elapsed time. That action
+authorizes the application follow-up in the same chat:
 
 > Hope the tour of 412 Maple Street, Apt 2B went well. If you would like to apply, here is the
 > application:
@@ -306,9 +313,10 @@ The moment it comes back signed:
 
 - The lease is recorded as signed
 - The unit flips from *available* to *leased*
-- She gets a welcome message about insurance, utilities, and her permanent entry code
+- The manager receives a welcome approval card; Send welcome authorizes the fixed email
 
-In testing, all three happened **4.7 seconds** after the signature came back:
+In the earlier policy test, all three happened **4.7 seconds** after the signature came back.
+That historical timing does not describe the new separate welcome approval:
 
 ```
 18:40:07   Signature completed      (signature service)

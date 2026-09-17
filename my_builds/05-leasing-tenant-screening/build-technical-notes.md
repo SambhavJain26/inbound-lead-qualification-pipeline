@@ -6,23 +6,24 @@ Technical companion to [how-the-system-works.md](how-the-system-works.md). That 
 explains the behavior to a property manager. This one records the implementation, the
 boundaries, the failures that shaped it and the evidence behind the public claims.
 
-There is no client and no production deployment. Every person, property, application,
-document and screening result in the repository is synthetic. A verified result means the
+There is no client and no production deployment. Property, financial, application,
+document and screening evidence is synthetic; the operator has authorized a real contact
+display name/email for rehearsal delivery only. A verified result means the
 local demo behaved as intended against test data. It does not mean the system has handled a
 real rental application or passed a legal, security or production-readiness review.
 
 ## Measured Build Snapshot
 
-The committed workflow exports currently contain **five workflows and 196 nodes**. The count
+The committed workflow exports currently contain **five workflows and 239 nodes**. The count
 comes from parsing `n8n-workflows/*.json`, not from an earlier planning estimate.
 
 | Workflow | Nodes | Responsibility |
 |---|---:|---|
-| WF1 `leasing-front` | 102 | Listing inquiry, renter Telegram conversation, retained email intake, public Cal.com webhook, tour-completed event and lead-pipeline mirroring |
+| WF1 `leasing-front` | 112 | Listing inquiry, immediate manager alert, single-renter conversation, manager-confirmed tour completion and pipeline mirroring |
 | WF2 `application-and-verify` | 24 | Seven-section form, paystub extraction, Plaid Sandbox Payroll Income, mock screening checks, fixed criteria and manager review card |
-| WF3 `telegram-router` | 16 | The manager bot's single callback entry, tour exceptions, application decisions, duplicate guards and decision mirroring |
-| WF4 `lease-and-signature` | 25 | Fixed lease template, DocuSign envelope, Connect callback, signed state, welcome email and lease milestone mirroring |
-| WF5 `tour-booking` | 29 | Cal.com slot lookup, property-local time handling, tour-policy exceptions, booking, renter confirmation and booking mirroring |
+| WF3 `telegram-router` | 30 | Ordinary manager text and buttons, authenticated internal handoffs, guarded approvals, safe human replies and delivery failures |
+| WF4 `lease-and-signature` | 37 | Fixed lease, DocuSign callback, signed state, separately approved welcome delivery and milestone mirroring |
+| WF5 `tour-booking` | 36 | Exact available slots, approval for every tour, atomic claims, approved booking and visible failures |
 
 The schema has **six Postgres tables**:
 
@@ -33,7 +34,7 @@ The schema has **six Postgres tables**:
 - `applications`;
 - `message_log`.
 
-Four current test files produce **69 passing checks**:
+Five current test files produce **105 passing checks**:
 
 | Test file | Passing checks |
 |---|---:|
@@ -41,6 +42,7 @@ Four current test files produce **69 passing checks**:
 | `scripts/test-screening-lib.js` | 19 |
 | `scripts/test-application-form.js` | 8 |
 | `scripts/test-pipeline-mirror.js` | 10 |
+| `scripts/test-manager-lib.js` | 36 |
 
 Those checks cover shared logic, not the entire behavior of five cloud services. Stage gates
 and hand-run evidence supply the integration proof described later.
@@ -88,9 +90,10 @@ The renter asks for an appointment in plain language. WF5 reads real Cal.com slo
 the request from property-local time, selects a genuine slot and checks the configured tour
 policy.
 
-Routine appointments book immediately. Requests outside the published hours or minimum
-notice window are held for the manager. A held request does not occupy the calendar. WF3
-routes the manager's approval or decline back to WF5.
+Every appointment waits for the manager, including routine appointments. A pending request
+does not reserve a Cal.com slot. Only an authenticated manager approval can claim it and
+attempt the real booking. Unavailable exact times produce alternatives, never a silent shift.
+Public-page bookings require manual reconciliation and do not release demo access codes.
 
 This responsibility moved out of WF1 because scheduling has its own API versions, time-zone
 rules, exception state and manager action path. Keeping it separate makes the authority
@@ -245,9 +248,8 @@ The integration proves:
 - storage and presentation to a manager.
 
 It does not prove a real person's income or production eligibility for a Plaid product. The
-current manager card still uses the display label `Bank verified` for this value. The public
-narration and these documents use the more accurate phrase **Plaid Sandbox Payroll Income**.
-That UI label should be corrected before presenting the card as a production design.
+manager card labels it **Plaid Sandbox payroll (canned test data)**. It is not a real bank
+connection or proof of the named demo resident's income.
 
 ## Criteria And The Stop Path
 
@@ -486,7 +488,7 @@ and image names, and `scripts/serve-listing-site.js` serves the output locally.
 
 The project has several layers of evidence:
 
-1. **69 current local checks** for leasing logic, screening logic, form definitions and mirror
+1. **105 current local checks** for leasing logic, manager actions, screening, forms and mirror
    mapping.
 2. **Stage gates** that exercise credentials, schema, fixture assumptions, grounded messages,
    pre-qualification and tour paths.
@@ -511,10 +513,9 @@ behavior under portfolio load, uptime, customer value, provider suitability or c
 - Telegram is a messaging stand-in, not production SMS.
 - The renter must start the Telegram bot before it can receive the referenced conversation.
 - Plaid uses canned Sandbox Payroll Income and has no renter-facing Link flow.
-- The current card's `Bank verified` label is less precise than the underlying Payroll Income
-  call and should be corrected before using the card as a production example.
+- The manager card explicitly labels Plaid Sandbox payroll as canned test data.
 - Credit, eviction and identity results are mock fixtures.
-- Tour completion is operator-triggered; the lock code is mocked.
+- Tour completion is manager-confirmed synthetic attendance in chat; lock codes are mocked.
 - The application supports one applicant and one paystub layout. No co-applicant, guarantor,
   document-chase or dispute workflow is built.
 - No live PMS, CRM, screening bureau, identity provider, smart lock, payment system or move-in

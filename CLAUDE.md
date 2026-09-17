@@ -238,6 +238,28 @@ Never commit `.env`, credentials, tunnel URLs, Telegram tokens, Gmail tokens, Do
 
 Reset and seed scripts must touch fixture/demo data only. Never run reset or delete logic against client infrastructure, production workflows, or real data.
 
+## Manager-Supervised Rehearsal (2026-09-17)
+
+Public grounded FAQ and fixed intake questions remain automatic. Notify the
+manager from intake onward. Every tour, access-code release, post-tour application
+follow-up, screening-stage reply, lease and welcome email requires its recorded
+human authorization. Approval never bypasses privacy, fair-housing or legal stops.
+No confidential disclosure is supported by the demo; hand it to a person outside
+the bot rather than adding private facts to the model's knowledge.
+
+Use ordinary text or buttons, not Telegram Reply. Bind only the configured private
+renter chat and configured prospect email; manager actions without a reference
+must have exactly one eligible target. Authenticate internal action webhooks with
+INTERNAL_ACTION_SECRET, claim actions atomically and reject stale approval cards.
+Merge conversation fields into state so simultaneous turns cannot erase approvals.
+The two WF1 entry paths require explicit named-node first() references: implicit
+item pairing can fail with "Multiple matches found" after automatic intake starts.
+Separate nested object-closing braces in n8n expression bodies (`} }`): adjacent
+`}}` can end interpolation early even when the JavaScript itself parses correctly.
+Keep scripts in preparation/developer verification, never between on-camera steps.
+Legacy Stage 3/7 harnesses describe the older policy; do not run their reset/booking
+steps against a pending manual rehearsal. Use docs/manual-testing-flow.md instead.
+
 ## Completion Guidelines
 
 Before finishing implementation work, decide whether the task exposed a durable command, workaround, gotcha, or rule. If yes, update `CLAUDE.md` and `AGENTS.md` (identical in substance) and `progress-notes.md`.

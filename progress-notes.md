@@ -2405,3 +2405,86 @@ No workflow, database, external account, provider configuration, generated
 carousel or production-blueprint source file was changed. No new durable rule was
 introduced, so AGENTS/CLAUDE did not require an update. Unrelated dirty work was
 preserved.
+
+## 2026-09-17 — Plan revision: manager-supervised conversational rehearsal
+
+User manual testing requested a change to the original exception-only model.
+Announce new inquiries to the manager immediately; keep grounded public FAQ and
+bounded collection automatic, but hold every tour booking and access-code
+release for explicit manager approval. Unsupported/confidential requests go to
+human review without disclosing private facts or bypassing safety checks.
+A manager chat message or button confirms synthetic tour completion and
+authorizes the application follow-up. Neither chat requires Telegram Reply.
+
+Bind the configured single-renter demo chat deterministically to its active
+inquiry. Never ask AI to identify a lead. Plain manager actions may omit a
+reference only when exactly one relevant pending item exists; ambiguous targets
+must ask for clarification. Record authenticated actor, time and action and
+guard replays/double actions. Scripts remain for setup and developer testing,
+not mid-flow renter/manager actions.
+
+Reverse the existing Gmail account and credential roles: worksambhav becomes
+the system sender; sambhavn8n becomes the demo resident recipient. User will use
+Sambhav Jain in the inquiry/application. Set a fictional Cal.com organizer name
+without changing credentials or introducing providers. Financial, identity and
+screening evidence remains synthetic; this is not a real housing decision.
+Implementation and verification pending.
+
+## 2026-09-17 — Manager-supervised rehearsal implemented and live checked
+
+Implemented the revision above without adding tools or changing the synthetic screening
+boundary. Local Gmail roles and their matching app passwords were swapped; SMTP/IMAP
+credentials were reimported and authenticated as worksambhav. The resident recipient is
+sambhavn8n. Cal.com profile was changed via its documented profile API to Alex Morgan;
+the attendee name/email now comes from the actual inquiry, never a Maya override.
+An ignored internal-action secret authenticates WF1/WF3/WF4/WF5 consequential handoffs.
+
+WF1 alerts the manager immediately, starts the configured resident's conversation and
+reports phase changes. Public FAQ/collection remain guarded and automatic. Confidential,
+unsupported or screening-stage questions stop for manager review with a safe response.
+Every exact available tour waits for an atomic, authenticated manager approval. No public
+calendar link bypasses it. A manager message/button records synthetic tour completion and
+authorizes its application link. Normal new messages work in both bots without Reply.
+Ambiguous manager targets require a reference; old recipient records are not guessed.
+Application decisions still stop on does_not_meet and every lease requires the recorded
+human decision. A genuine sandbox signature now requests a separate welcome approval;
+its claim and success/failure delivery record prevent duplicate or silently retried mail.
+
+Measured export package: five workflows, 239 nodes (112 / 24 / 30 / 37 / 36).
+All five were imported and activated; n8n restarted only after imports completed.
+105 local checks pass (32 leasing, 19 screening, 8 form, 10 mirror, 36 manager).
+61 exported Postgres statements prepare successfully against the running schema without
+executing business writes. Transactional fixture probes verified the signed-callback query
+and one welcome claim across two attempts; all probe data was rolled back. This is not
+a genuine signature/welcome delivery retest. The user's final full rehearsal still needs
+to exercise the updated post-signature approval in the real sandbox UI.
+
+Live browser/Telegram evidence: native inquiry R-2292 as Sambhav Jain; automatic grounded
+opening answer; immediate manager intake and Engaged/Prequalified updates. An ordinary
+tour request produced pending state with no UID/code (WF1 247 / WF5 248). Plain Approve
+tour recorded manager authority. First attempt (249/250) failed before the calendar HTTP
+request because adjacent closing braces prematurely ended an n8n expression. Both bots
+were informed and no code was sent. The developer recovered only this new verification
+record to pending, preserving its first decision audit; fixed expression was redeployed.
+The next ordinary approval succeeded (251/252), creating one real Cal.com test booking
+with Alex Morgan organizer and Sambhav Jain / configured recipient attendee, confirmed
+via Cal.com API. Tour completed for Sambhav Jain (253/254) delivered its application link
+and manager follow-up with stored actor/time. Privacy request (256) disclosed no private
+facts and alerted the manager. Ordinary Send message delivered a checked Tier B reply
+with actor, approval time and delivery=sent (257), clearing the review flag. Repeated
+completion (258) returned no matching pending item; exactly one application-link delivery
+remains stored. Final ordinary Status (259) shows R-2292 / Sambhav Jain / toured.
+
+The historical R-8111 manual rehearsal was preserved and no reset/seed was run.
+R-2292 is left toured with its application link, no application/lease created this turn.
+The added test calendar appointment remains; it was not silently cancelled. No commands
+were needed to perform the tested renter/manager business actions. Developer imports,
+diagnostic recovery and probes were technical verification, not the promised normal flow.
+
+Updated manual-testing-flow.md and recording-checklist.md for Sam/contact roles, every
+approval, mock boundaries and cold start. General Copywriter and Syntax Polish guided
+clear instructions; computer-use guidance guided scoped browser checks and Cal inspection.
+Business overview, narrative flow and public technical notes now distinguish historical
+Maya evidence from the current supervised policy. Legacy Stage 3/7 runners are guarded
+against accidental default execution. Added read-only SQL planning helper and synchronized
+AGENTS.md/CLAUDE.md with the durable routing/authentication/item-pairing rules.

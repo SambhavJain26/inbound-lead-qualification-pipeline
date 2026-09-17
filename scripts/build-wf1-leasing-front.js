@@ -35,7 +35,7 @@ const path = require("path");
 const wf = require("./lib/wf-common");
 const { REPO_ROOT } = require("./lib/env");
 
-const LIB = wf.inlineLib("leasing-lib.js");
+const LIB = wf.inlineLib("leasing-lib.js") + '\n' + wf.inlineLib('manager-lib.js');
 const OUT = path.join(REPO_ROOT, "n8n-workflows", "wf1-leasing-front.json");
 
 /* --------------------------------------------------------------- schemas */
@@ -294,7 +294,7 @@ const CONVERSATION_SCRIPT = [
   "  occupants: 'How many adults would be living there?',",
   "};",
   "",
-  "var TOUR_PROMPT = 'Everything looks like a fit so far. Here is the link to pick a tour time that suits you:';",
+  "var TOUR_PROMPT = 'Thanks, we have the details needed for tour scheduling. What date and time would suit you? The manager will approve the time before anything is booked.';",
   "var ALTERNATIVES_PROMPT = 'Thanks for those details. Based on what you have told us this one may not be the closest match on timing or size, but we would still like to help - a member of the team will follow up with other options. If you would like to tour this unit anyway, just say so and we will set it up.';",
   "var HANDOFF_PROMPT = 'Let me get a member of the team to pick this up with you. They will be in touch shortly.';",
   "var MAX_TELEGRAM = 4000;",
@@ -326,7 +326,7 @@ const normalizeInquiryCode = [
   "      prospect_phone: text(body.prospect_phone),",
   "      inquiry_text: text(body.inquiry_text),",
   "      nonce: text(body.nonce) || ('n-' + Date.now()),",
-  "      is_valid: Boolean(unitCode && name && email && email.indexOf('@') > 0),",
+  "      is_valid: Boolean(unitCode && name && email && email.toLowerCase() === '__PROSPECT_EMAIL__'.toLowerCase()),",
   "      received_at: new Date().toISOString(),",
   "    },",
   "  });",
@@ -346,7 +346,7 @@ const confirmationPageCode = [
   "",
   "const out = [];",
   "for (const item of $input.all()) {",
-  "  const lead = item.json;",
+  "  const lead = $('Create Lead From Inquiry').first().json;",
   "  const inquiry = $('Normalize Inquiry Form').first().json;",
   "  const unit = $('Find Unit For Inquiry').first().json;",
   "  const token = lead.ref_token || inquiry.ref_token;",
@@ -438,6 +438,7 @@ const normalizeTelegramCode = [
   "  }",
   "",
   "  const chatId = chat.id || from.id || null;",
+  "  if (String(chatId) !== '__DEMO_PROSPECT_CHAT_ID__') continue;",
   "  const messageId = message.message_id || null;",
   "",
   "  out.push({",
@@ -603,7 +604,10 @@ const turnGateCode = [
   "",
   "const state = lead.conversation_state || {};",
   "const asked = Array.isArray(state.asked) ? state.asked.slice() : [];",
-  "const wantsHuman = Boolean(payload.wants_human) || context.force_handoff;",
+  "const privateRequest = requiresManagerReview(context.current_message);",
+  "const needsReview = privateRequest || (payload.questions_unanswered || []).length > 0;",
+  "const screeningStarted = ['applied','closed'].indexOf(lead.status) !== -1;",
+  "const wantsHuman = Boolean(payload.wants_human) || context.force_handoff || needsReview || screeningStarted;",
   "",
   "// What is still outstanding, in ask order, skipping anything already asked.",
   "const outstanding = COLLECT_ORDER.filter(function (key) {",
@@ -629,7 +633,7 @@ const turnGateCode = [
   "  appended = QUESTION_PROMPTS[nextAsk];",
   "} else if (outcome.result === 'clear') {",
   "  stage = 'clear';",
-  "  appended = TOUR_PROMPT + '\\n__CALCOM_BOOKING_URL__?metadata[ref_token]=' + lead.ref_token;",
+  "  appended = lead.tour_approval_state === 'pending' ? 'Your requested time is waiting for manager approval. Nothing is booked yet.' : lead.status === 'tour_booked' ? 'Your tour is booked. The team will follow up once the manager confirms completion.' : payload.tour_preference ? 'We will check that exact time and send it to the manager before booking.' : lead.status === 'toured' ? 'The team has sent your application link. Please use that link when ready.' : TOUR_PROMPT;",
   "} else if (outstanding.length) {",
   "  // Everything has been asked once and something is still missing. Ask the",
   "  // most important one again rather than looping silently.",
@@ -641,7 +645,7 @@ const turnGateCode = [
   "  appended = HANDOFF_PROMPT;",
   "}",
   "",
-  "let finalText = replyText.trim() + '\\n\\n' + appended;",
+  "let finalText = (privateRequest || screeningStarted ? 'A team member needs to review that before we can proceed.' : replyText.trim()) + '\\n\\n' + appended;",
   "if (finalText.length > MAX_TELEGRAM) finalText = finalText.slice(0, MAX_TELEGRAM);",
   "",
   "if (nextAsk && asked.indexOf(nextAsk) === -1) asked.push(nextAsk);",
@@ -653,6 +657,7 @@ const turnGateCode = [
   "  reask_count: stage === 'reasking' ? Number(state.reask_count || 0) + 1 : Number(state.reask_count || 0),",
   "  turn_count: context.turn_count,",
   "  wants_human: wantsHuman,",
+  "  manager_review_pending: Boolean(state.manager_review_pending) || wantsHuman,",
   "};",
   "",
   "// Mirror at PHASE BOUNDARIES ONLY. Airtable Free allows 1000 API calls a",
@@ -695,7 +700,7 @@ const turnGateCode = [
   "    tour_preference: payload.tour_preference || null,",
   "    // Only chase a booking once the gate is happy and nothing is outstanding.",
   "    wants_tour_slot: Boolean(payload.tour_preference) && outcome.result === 'clear' &&",
-  "      !unasked.length && lead.status !== 'tour_booked' && lead.tour_approval_state !== 'pending',",
+  "      !unasked.length && !wantsHuman && ['new','engaged','prequalified'].indexOf(lead.status) !== -1 && lead.tour_approval_state !== 'pending',",
   "    wants_human: wantsHuman,",
   "    questions_answered: payload.questions_answered || [],",
   "    questions_unanswered: payload.questions_unanswered || [],",
@@ -703,6 +708,7 @@ const turnGateCode = [
   "    reply_text: finalText,",
   "    conversation_state: nextState,",
   "    needs_manager: stage === 'not_clear' || wantsHuman,",
+  "    manager_notice_text: escapeTelegramHtml('Information or follow-up needs human review. Lead: ' + lead.ref_token + ' · ' + lead.prospect_name + ' · ' + context.unit.unit_code + '\\nRequest: ' + context.current_message.slice(0, 900) + '\\nNo private information or action was released. To send a public-safe human reply, type Send message ' + lead.ref_token + ': your reply. For a tour, approve the separate tour card.'),",
   "    phase_changed: phaseChanged,",
   "    next_status: nextStatus,",
   "    next_status_label: STATUS_LABELS[nextStatus] || 'Engaged',",
@@ -1039,10 +1045,10 @@ const nodes = [
       "   ORDER BY id DESC LIMIT 1\n" +
       "), created AS (\n" +
       "  INSERT INTO leads (ref_token, unit_id, source, prospect_name, prospect_email,\n" +
-      "                     prospect_phone, status, conversation_state)\n" +
+      "                     prospect_phone, status, conversation_state, telegram_chat_id)\n" +
       "  SELECT $1, (SELECT id FROM units WHERE unit_code = $2), 'listing_site', $3, $4,\n" +
       "         NULLIF($5::text,''), 'new',\n" +
-      "         jsonb_build_object('inquiry_text', $6::text, 'asked', '[]'::jsonb, 'turn_count', 0)\n" +
+      "         jsonb_build_object('inquiry_text', $6::text, 'asked', '[]'::jsonb, 'turn_count', 0), NULLIF($7::text,'')::bigint\n" +
       "   WHERE NOT EXISTS (SELECT 1 FROM existing)\n" +
       "  RETURNING *\n" +
       ")\n" +
@@ -1057,7 +1063,8 @@ const nodes = [
           "$('Normalize Inquiry Form').item.json.prospect_name," +
           "$('Normalize Inquiry Form').item.json.prospect_email," +
           "($('Normalize Inquiry Form').item.json.prospect_phone ?? '')," +
-          "($('Normalize Inquiry Form').item.json.inquiry_text ?? '')" +
+          "($('Normalize Inquiry Form').item.json.inquiry_text ?? '')," +
+          "($('Normalize Inquiry Form').item.json.prospect_email.toLowerCase() === '__PROSPECT_EMAIL__'.toLowerCase() ? '__DEMO_PROSPECT_CHAT_ID__' : '')" +
           "] }}",
       },
     }
@@ -1193,15 +1200,15 @@ const nodes = [
       "  UPDATE leads\n" +
       "     SET telegram_chat_id = $2::bigint,\n" +
       "         telegram_username = NULLIF($3::text,'')\n" +
-      "   WHERE ref_token = NULLIF($1::text,'')\n" +
+      "   WHERE ref_token = NULLIF($1::text,'') AND lower(prospect_email)=lower('__PROSPECT_EMAIL__')\n" +
       "   RETURNING id\n" +
       ")\n" +
       "SELECT l.*, u.unit_code, u.address, u.beds, u.baths, u.sqft, u.rent_amount,\n" +
       "       u.deposit_amount, u.available_from, u.lease_term_months, u.pet_policy,\n" +
       "       u.pet_fee_monthly, u.parking, u.utilities_included, u.laundry, u.faq_facts\n" +
       "  FROM leads l JOIN units u ON u.id = l.unit_id\n" +
-      " WHERE (NULLIF($1::text,'') IS NOT NULL AND l.ref_token = $1)\n" +
-      "    OR (NULLIF($1::text,'') IS NULL AND l.telegram_chat_id = $2::bigint)\n" +
+      " WHERE lower(l.prospect_email)=lower('__PROSPECT_EMAIL__') AND ((NULLIF($1::text,'') IS NOT NULL AND l.ref_token = $1)\n" +
+      "    OR (NULLIF($1::text,'') IS NULL AND l.telegram_chat_id = $2::bigint))\n" +
       " ORDER BY l.id DESC LIMIT 1;",
     [320, -700],
     {
@@ -1331,7 +1338,7 @@ const nodes = [
       "  occupants = COALESCE(NULLIF($6::text,'')::int, occupants),\n" +
       "  prequal_result = $7,\n" +
       "  prequal_reasons = $8::jsonb,\n" +
-      "  conversation_state = $9::jsonb,\n" +
+      "  conversation_state = conversation_state || $9::jsonb,\n" +
       "  last_prospect_message_at = now(),\n" +
       "  status = CASE\n" +
       "             WHEN $7 = 'clear' AND status IN ('new','engaged') THEN 'prequalified'\n" +
@@ -1413,7 +1420,9 @@ const nodes = [
     id: "start-tour-booking",
     parameters: {
       method: "POST",
-      url: "=__TUNNEL_URL__webhook/tour-request",
+      url: "=http://n8n:5678/webhook/tour-request",
+      sendHeaders: true,
+      headerParameters: { parameters: [{ name: 'X-Leasing-Action-Secret', value: '__INTERNAL_ACTION_SECRET__' }] },
       sendBody: true,
       contentType: "json",
       specifyBody: "json",
@@ -1676,13 +1685,12 @@ const nodes = [
 
   wf.postgresNode(
     "Mark Lead Toured",
-    "UPDATE leads SET status = 'toured'\n" +
-      "WHERE ref_token = $1\n" +
+    "UPDATE leads SET status = 'toured', conversation_state=conversation_state||jsonb_build_object('tour_completed_by',$2::text,'tour_completed_at',now(),'tour_completed_action_id',$3::text,'application_followup_authorized',true)\n" +
+      "WHERE ref_token = $1 AND status='tour_booked' AND calcom_booking_uid IS NOT NULL\n" +
       "RETURNING *, (SELECT address FROM units WHERE id = leads.unit_id) AS address;",
     [-560, 420],
     {
-      queryOptions: { queryReplacement: "={{ [($json.body?.ref_token || $json.query?.ref_token || '')] }}" },
-      alwaysOutputData: true,
+      queryOptions: { queryReplacement: "={{ [$json.body.ref_token,$json.body.actor,$json.body.action_id] }}" },
     }
   ),
 
@@ -2145,6 +2153,47 @@ for (const [old,token,suffix] of [
 }
 mirror.attach(wf,nodes,connections,'Record Tour Booking','$json.ref_token','Public Tour');
 mirror.attach(wf,nodes,connections,'Mark Lead Toured','$json.ref_token','Tour Completed');
+// Manager-supervised revision. Public answers stay fast; consequential actions wait.
+nodes.push(
+  wf.postgresNode('Claim New Lead Notification',
+    "INSERT INTO message_log(ref_token,direction,channel,from_addr,to_addr,body,message_id) VALUES($1,'outbound','telegram','system','manager-bot','New lead notification pending',$2) ON CONFLICT(message_id) DO NOTHING RETURNING ref_token;",
+    [760,-1300],{queryOptions:{queryReplacement:"={{ [$('Create Lead From Inquiry').first().json.ref_token,'mgr-new-'+$('Create Lead From Inquiry').first().json.ref_token] }}"}}),
+  wf.codeNode('Compose New Lead Notice',LIB+"\nconst l=$('Create Lead From Inquiry').first().json;const q=$('Normalize Inquiry Form').first().json;return [{json:{manager_text:escapeTelegramHtml('New rental inquiry\\n'+l.prospect_name+' · '+l.ref_token+' · '+q.unit_code+'\\nEmail: '+l.prospect_email+'\\nQuestion: '+q.inquiry_text.slice(0,900)+'\\n\\nPublic listing answers and collection may proceed. Every tour and entry-code release waits for your approval. Type Status for pending work; Reply is not needed.')}}];",[980,-1300]),
+  wf.telegramNode('Notify Manager: New Inquiry',{chatId:'=__TELEGRAM_CHAT_ID__',text:'={{ $json.manager_text }}',failOnError:true},[1200,-1300]),
+  wf.codeNode('Start Single Renter Inquiry Conversation',
+    "const l=$('Create Lead From Inquiry').first().json;if(!l.telegram_chat_id||l.prospect_email.toLowerCase()!=='__PROSPECT_EMAIL__'.toLowerCase())return [];return [{json:{message:{message_id:'inquiry-'+l.ref_token,text:'/start '+l.ref_token,chat:{id:l.telegram_chat_id,type:'private'},from:{id:l.telegram_chat_id,first_name:l.prospect_name}}}}];",[1420,-1300]),
+  wf.codeNode('Authenticate Tour Completion',wf.internalGuardCode(),[-660,420]),
+  wf.codeNode('Compose Prequalification Milestone',LIB+"\nconst t=$('Check Guardrails (Telegram)').first().json;return [{json:{manager_text:escapeTelegramHtml('Lead update: '+t.prospect_name+' · '+t.ref_token+' · '+t.unit_code+'\\nPhase: '+t.next_status_label+'\\nPrequalification is self-reported and unverified, not a rental decision. Any requested tour will wait for your approval.')}}];",[3800,-760]),
+  wf.telegramNode('Notify Manager: Lead Progress',{chatId:'=__TELEGRAM_CHAT_ID__',text:'={{ $json.manager_text }}',failOnError:true},[4020,-760]),
+  wf.codeNode('Compose Tour Completed Notice',LIB+"\nconst l=$('Mark Lead Toured').first().json;return [{json:{manager_text:escapeTelegramHtml('Tour completion recorded for '+l.prospect_name+' · '+l.ref_token+' by '+l.conversation_state.tour_completed_by+'. The application follow-up was authorized by that manager action. Attendance is synthetic in this demo.')}}];",[300,600]),
+  wf.telegramNode('Notify Manager: Application Followup',{chatId:'=__TELEGRAM_CHAT_ID__',text:'={{ $json.manager_text }}',failOnError:true},[520,600]),
+);
+connections['Respond With Confirmation Page']=wf.connect({'x':[['Claim New Lead Notification','Mirror New Lead To Airtable']]}).x;
+connections['Claim New Lead Notification']=wf.connect({'x':[['Compose New Lead Notice']]}).x;
+connections['Compose New Lead Notice']=wf.connect({'x':[['Notify Manager: New Inquiry']]}).x;
+connections['Notify Manager: New Inquiry']=wf.connect({'x':[['Start Single Renter Inquiry Conversation']]}).x;
+connections['Start Single Renter Inquiry Conversation']=wf.connect({'x':[['Normalize Telegram Message']]}).x;
+connections['Receive Tour Completed (Demo)']=wf.connect({'x':[['Authenticate Tour Completion']]}).x;
+connections['Authenticate Tour Completion']=wf.connect({'x':[['Mark Lead Toured']]}).x;
+connections['Phase Changed?'].main[0].push({node:'Compose Prequalification Milestone',type:'main',index:0});
+connections['Compose Prequalification Milestone']=wf.connect({'x':[['Notify Manager: Lead Progress']]}).x;
+connections['Send Application Link (Telegram)'].main[0].push({node:'Compose Tour Completed Notice',type:'main',index:0});
+connections['Send Application Link (Email)'].main[0].push({node:'Compose Tour Completed Notice',type:'main',index:0});
+connections['Compose Tour Completed Notice']=wf.connect({'x':[['Notify Manager: Application Followup']]}).x;
+const reviewNode=nodes.find(n=>n.name==='Notify Manager: Prequal Needs Review');
+reviewNode.parameters.text="={{ $('Check Guardrails (Telegram)').first().json.manager_notice_text }}";
+delete reviewNode.onError;
+// The public calendar page is not the rehearsal booking surface. A booking made
+// outside the approval route must never release a lock code or confirmation.
+connections['Restore New Booking Payload']=wf.connect({'x':[['Alert Manager: Unmatched Booking']]}).x;
+nodes.find(n=>n.name==='Alert Manager: Unmatched Booking').parameters.text='=Calendar booking requires manual reconciliation. No access code or renter confirmation was released. Use the manager-approved chat booking route.';
+// Retained email intake is visible too; direct calendar-page invitations are removed.
+nodes.push(wf.telegramNode('Notify Manager: Email Inquiry',{chatId:'=__TELEGRAM_CHAT_ID__',text:'=New email rental inquiry received. Reference: {{ $json.ref_token }}. Public FAQ is automatic; booking requires manager approval.',failOnError:true},[180,1100]));
+connections['Create Lead Record'].main[0].push({node:'Notify Manager: Email Inquiry',type:'main',index:0});
+nodes.find(n=>n.name==='Send Tour Booking Link').parameters.text="=Thanks for the details. Please tell the leasing team your preferred date and time. The manager must approve the tour before it is booked.";
+// Each intake/turn has one business item. The two entry paths make n8n's
+// implicit item pairing ambiguous; select the named node's one item explicitly.
+for (const node of nodes) node.parameters = JSON.parse(JSON.stringify(node.parameters).replace(/\.item\.json/g, '.first().json'));
 const workflow = wf.buildWorkflow({
   id: "wf1-leasing-front",
   name: "WF1 Leasing Front",

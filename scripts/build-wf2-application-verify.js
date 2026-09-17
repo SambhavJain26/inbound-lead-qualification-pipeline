@@ -270,7 +270,7 @@ const criteriaCode = [
   "const incomeBlock = [",
   "  'Claimed on form:   ' + money(c.claimed_monthly) + '/mo',",
   "  'Pay stub says:     ' + money(c.extracted_monthly) + '/mo',",
-  "  'Bank verified:     ' + money(c.verified_monthly) + '/mo  (Plaid)',",
+  "  'Plaid Sandbox payroll: ' + money(c.verified_monthly) + '/mo (canned test data)',",
   "].join('\\n');",
   "",
   "const evidenceBlock = outcome.evidence.map(function (e) {",
@@ -365,8 +365,8 @@ const nodes = [
       "   NULLIF($11::text,''), NULLIF($12::text,''),\n" +
       "   NULLIF($13::text,'')::numeric, NULLIF($14::text,'')::numeric,\n" +
       "   jsonb_build_array(jsonb_build_object('count', NULLIF($15::text,'')::int)),\n" +
-      "   jsonb_build_array(jsonb_build_object('description', $16)),\n" +
-      "   jsonb_build_array(jsonb_build_object('description', $17)),\n" +
+      "   jsonb_build_array(jsonb_build_object('description', $16::text)),\n" +
+      "   jsonb_build_array(jsonb_build_object('description', $17::text)),\n" +
       "   $18::jsonb, now(), 'verifying')\n" +
       "RETURNING *;",
     [160, 0],

@@ -2,7 +2,8 @@
 const SQL = `SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,
  l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,
  a.ref_token AS application_ref, a.status AS application_status, a.decision,
- a.lease_status, a.verified_monthly_income,
+ a.lease_status, a.verified_monthly_income, l.tour_approval_state,
+ EXISTS(SELECT 1 FROM message_log m WHERE m.message_id='mail-welcome-'||a.ref_token AND m.guardrail_result->>'delivery'='sent') AS welcome_sent,
  a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,
  a.income_comparison->>'document_variance_pct' AS variance_pct,
  GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at
@@ -11,7 +12,7 @@ const SQL = `SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,
  UNION ALL
  SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,
  a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,
- a.verified_monthly_income,a.income_comparison->>'mismatch_flagged',
+ a.verified_monthly_income,'none',EXISTS(SELECT 1 FROM message_log m WHERE m.message_id='mail-welcome-'||a.ref_token AND m.guardrail_result->>'delivery'='sent'),a.income_comparison->>'mismatch_flagged',
  a.income_comparison->>'document_variance_pct',a.updated_at
  FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL`;
 function toFields(row) {
@@ -29,7 +30,7 @@ function toFields(row) {
    'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,
    'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',
    Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',
-   'Next Action':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};
+   'Next Action':row.tour_approval_state==='pending'?'Manager tour approval':status==='Leased'&&row.welcome_sent===false?'Manager welcome approval':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};
 }
 function attach(wf,nodes,connections,source,tokenExpression,suffix) {
   const read='Mirror: Read Pipeline '+suffix;

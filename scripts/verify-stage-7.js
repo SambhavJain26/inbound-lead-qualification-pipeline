@@ -16,6 +16,10 @@
  *   node scripts/verify-stage-7.js --chat 12345678 --keep   (skip the reset)
  */
 
+if (!process.argv.includes('--legacy-policy')) {
+  console.error('Retired policy harness: this version can reset data and expects autonomous booking. Use docs/manual-testing-flow.md. --legacy-policy is for historical development only.');
+  process.exit(2);
+}
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");

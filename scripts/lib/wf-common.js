@@ -210,7 +210,7 @@ function telegramTriggerNode(name, position, { bot, updates, webhookId } = {}) {
  *
  * callback_data is capped at 64 bytes; a short prefix plus a ref token is ~12.
  */
-function telegramCardNode(name, { chatId, text, buttonRows, bot }, position) {
+function telegramCardNode(name, { chatId, text, buttonRows, bot, failOnError }, position) {
   const built = node(name, "n8n-nodes-base.telegram", 1.2, {
     chatId,
     text,
@@ -227,8 +227,24 @@ function telegramCardNode(name, { chatId, text, buttonRows, bot }, position) {
     },
     additionalFields: { appendAttribution: false, parse_mode: "HTML" },
   }, position, { credentials: telegramCredential(bot) });
-  built.onError = "continueRegularOutput";
+  if (!failOnError) built.onError = "continueRegularOutput";
   return built;
+}
+
+/** Authenticated local workflow handoff. */
+function internalActionNode(name, url, body, position, { authenticate = true, continueOnFail = false } = {}) {
+  const built = node(name, 'n8n-nodes-base.httpRequest', 4.2, {
+    method: 'POST', url, sendBody: true, contentType: 'json', specifyBody: 'json', jsonBody: body,
+    ...(authenticate ? { sendHeaders: true, headerParameters: { parameters: [
+      { name: 'X-Leasing-Action-Secret', value: '__INTERNAL_ACTION_SECRET__' }
+    ] } } : {}), options: { timeout: 60000 },
+  }, position);
+  if (continueOnFail) built.onError = 'continueRegularOutput';
+  return built;
+}
+
+function internalGuardCode() {
+  return "const j=$input.first().json; if(j.headers?.['x-leasing-action-secret']!=='__INTERNAL_ACTION_SECRET__') throw new Error('Unauthorized internal action'); return $input.all();";
 }
 
 /** HTTP Request against Plaid Sandbox, authenticated by the header credential. */
@@ -492,6 +508,8 @@ module.exports = {
   telegramCardNode,
   telegramTriggerNode,
   telegramCredential,
+  internalActionNode,
+  internalGuardCode,
   respondHtmlNode,
   plaidNode,
   webhookNode,

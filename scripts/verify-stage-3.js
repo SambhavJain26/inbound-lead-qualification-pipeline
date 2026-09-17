@@ -14,6 +14,10 @@
  *   node scripts/verify-stage-3.js --skip-mail   (webhook paths only, ~20s)
  */
 
+if (!process.argv.includes('--legacy-policy')) {
+  console.error('Retired policy harness: unapproved tour-completion fixtures no longer represent the rehearsal. Use docs/manual-testing-flow.md. --legacy-policy is for historical development only.');
+  process.exit(2);
+}
 const { execFileSync } = require("child_process");
 const { REPO_ROOT, loadEnv } = require("./lib/env");
 const { sendMail } = require("./lib/smtp");

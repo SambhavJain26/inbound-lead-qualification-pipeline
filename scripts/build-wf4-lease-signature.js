@@ -115,6 +115,7 @@ const envelopeGuardCode = [
   "// stopping the branch, and strict IF nodes need a real boolean - not",
   "// truthiness on a missing field.",
   "const rows = $input.all().filter((item) => item.json && item.json.ref_token);",
+  "if (rows.length && rows[0].json.already_signed) return [];",
   "if (!rows.length) {",
   "  const parsed = $('Parse Connect Event').first().json;",
   "  return [{ json: { application_found: false, envelope_id: parsed.envelope_id || null } }];",
@@ -131,7 +132,7 @@ const nodes = [
     "Load Application For Lease",
     "SELECT a.*, u.unit_code, u.address, u.rent_amount, u.deposit_amount, u.lease_term_months\n" +
       "FROM applications a JOIN units u ON u.id = a.unit_id\n" +
-      "WHERE a.ref_token = $1 AND a.envelope_id IS NULL\n" +
+      "WHERE a.ref_token = $1 AND a.envelope_id IS NULL AND a.decision IN ('approved','conditional') AND a.decided_by IS NOT NULL AND a.decided_at IS NOT NULL\n" +
       "LIMIT 1;",
     [-500, 0],
     {
@@ -286,13 +287,13 @@ const nodes = [
 
   wf.postgresNode(
     "Mark Lease Signed",
-    "UPDATE applications SET\n" +
+    "WITH changed AS (UPDATE applications SET\n" +
       "  lease_status = 'signed',\n" +
       "  lease_signed_at = now(),\n" +
       "  status = 'lease_signed'\n" +
-      "WHERE envelope_id = $1\n" +
+      "WHERE envelope_id = $1 AND lease_status='sent'\n" +
       "RETURNING *, (SELECT unit_code FROM units WHERE id = applications.unit_id) AS unit_code,\n" +
-      "          (SELECT address FROM units WHERE id = applications.unit_id) AS address;",
+      "          (SELECT address FROM units WHERE id = applications.unit_id) AS address, false AS already_signed) SELECT * FROM changed UNION ALL SELECT a.*,u.unit_code,u.address,true AS already_signed FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.envelope_id=$1 AND a.lease_status='signed' AND NOT EXISTS(SELECT 1 FROM changed);",
     [-60, 220],
     {
       queryOptions: { queryReplacement: "={{ [$json.envelope_id] }}" },
@@ -381,7 +382,7 @@ const nodes = [
         "=Signed. {{ $('Mark Lease Signed').first().json.ref_token }} - " +
         "{{ $('Mark Lease Signed').first().json.full_name }}.\n\n" +
         "{{ $('Mark Lease Signed').first().json.unit_code }} is now marked leased and the " +
-        "welcome packet has gone out.",
+        "welcome delivery requires a separate manager approval.",
     },
     [600, 220]
   ),
@@ -408,7 +409,43 @@ const connections = wf.connect({
 
 const mirror = require('./lib/pipeline-mirror');
 mirror.attach(wf,nodes,connections,'Record Envelope Sent','$json.ref_token','Lease Sent');
-mirror.attach(wf,nodes,connections,'Send Welcome Packet',"$('Mark Lease Signed').first().json.ref_token",'Lease Signed');
+mirror.attach(wf,nodes,connections,'Mark Unit Leased',"$('Mark Lease Signed').first().json.ref_token",'Lease Signed');
+nodes.push(
+  wf.codeNode('Authenticate Lease Request',wf.internalGuardCode(),[-600,0]),
+  wf.webhookNode('Welcome Approved (Internal)','welcome-send',[-720,600]),
+  wf.codeNode('Authenticate Welcome Approval',wf.internalGuardCode(),[-500,600]),
+  wf.postgresNode('Claim Approved Welcome',
+    "INSERT INTO message_log(ref_token,direction,channel,tier,from_addr,to_addr,subject,body,message_id,approved_by,approved_at,guardrail_passed,guardrail_result) SELECT a.ref_token,'outbound','email','B','__SYSTEM_EMAIL__',a.email,'Welcome to '||u.address,'Fixed welcome email approved; delivery pending','mail-welcome-'||a.ref_token,$2,now(),true,jsonb_build_object('delivery','pending') FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.ref_token=$1 AND a.lease_status='signed' AND a.decision IN ('approved','conditional') ON CONFLICT(message_id) DO NOTHING RETURNING *;",
+    [-280,600],{queryOptions:{queryReplacement:'={{ [$json.body.ref_token,$json.body.actor] }}'}}),
+  wf.postgresNode('Load Signed Application For Welcome',
+    "SELECT a.*,u.address,u.unit_code FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.ref_token=$1 AND a.lease_status='signed';",
+    [-60,600],{queryOptions:{queryReplacement:'={{ [$json.ref_token] }}'}}),
+  wf.telegramCardNode('Ask Manager: Send Welcome',{chatId:'=__TELEGRAM_CHAT_ID__',text:"=Lease signed: {{ $('Mark Lease Signed').first().json.ref_token }}. The synthetic unit is now leased. The welcome email has NOT been sent. Approve it below or type Send welcome; Reply is not needed.",failOnError:true,
+    buttonRows:[[{text:'Approve welcome email',callbackData:"=wel:{{ $('Mark Lease Signed').first().json.ref_token }}"}]]},[380,420]),
+  wf.telegramNode('Notify Manager: Welcome Sent',{chatId:'=__TELEGRAM_CHAT_ID__',text:"=Approved welcome email delivered for {{ $('Load Signed Application For Welcome').first().json.ref_token }} to {{ $('Load Signed Application For Welcome').first().json.email }}.",failOnError:true},[820,600]),
+);
+connections['Lease Requested']=wf.connect({x:[['Authenticate Lease Request']]}).x;
+connections['Authenticate Lease Request']=wf.connect({x:[['Load Application For Lease']]}).x;
+connections['Mark Unit Leased'].main[0]=connections['Mark Unit Leased'].main[0].filter(c=>c.node!=='Send Welcome Packet');
+connections['Mark Unit Leased'].main[0].unshift({node:'Ask Manager: Send Welcome',type:'main',index:0});
+connections['Welcome Approved (Internal)']=wf.connect({x:[['Authenticate Welcome Approval']]}).x;
+connections['Authenticate Welcome Approval']=wf.connect({x:[['Claim Approved Welcome']]}).x;
+connections['Claim Approved Welcome']=wf.connect({x:[['Load Signed Application For Welcome']]}).x;
+connections['Load Signed Application For Welcome']=wf.connect({x:[['Send Welcome Packet']]}).x;
+connections['Send Welcome Packet']=wf.connect({x:[['Log Welcome Packet','Notify Manager: Welcome Sent']]}).x;
+const welcomeNode=nodes.find(n=>n.name==='Send Welcome Packet');
+for(const key of ['toEmail','subject','text'])welcomeNode.parameters[key]=welcomeNode.parameters[key].split('Mark Lease Signed').join('Load Signed Application For Welcome');
+const welcomeLog=nodes.find(n=>n.name==='Log Welcome Packet');
+welcomeLog.parameters.query="UPDATE message_log SET body='Fixed manager-approved welcome email sent',guardrail_result=guardrail_result||jsonb_build_object('delivery','sent') WHERE message_id=$1 RETURNING ref_token;";
+welcomeLog.parameters.options.queryReplacement="={{ ['mail-welcome-'+$('Load Signed Application For Welcome').first().json.ref_token] }}";
+welcomeNode.onError='continueErrorOutput';
+nodes.push(
+  wf.postgresNode('Mark Welcome Delivery Failed',"UPDATE message_log SET guardrail_result=guardrail_result||jsonb_build_object('delivery','failed_or_uncertain') WHERE message_id=$1 RETURNING ref_token;",[600,820],{queryOptions:{queryReplacement:"={{ ['mail-welcome-'+$('Load Signed Application For Welcome').first().json.ref_token] }}"}}),
+  wf.telegramNode('Notify Manager: Welcome Failed',{chatId:'=__TELEGRAM_CHAT_ID__',text:"=Welcome email failed or delivery is uncertain for {{ $json.ref_token }}. The approval remains recorded. Check Sent and the SMTP execution before sending again; automatic retries are blocked.",failOnError:true},[820,820]),
+);
+connections['Send Welcome Packet'].main[1]=[{node:'Mark Welcome Delivery Failed',type:'main',index:0}];
+connections['Mark Welcome Delivery Failed']=wf.connect({x:[['Notify Manager: Welcome Failed']]}).x;
+mirror.attach(wf,nodes,connections,'Log Welcome Packet',"$('Load Signed Application For Welcome').first().json.ref_token",'Welcome Sent');
 const workflow = wf.buildWorkflow({
   id: "wf4-lease-and-signature",
   name: "WF4 Lease And Signature",

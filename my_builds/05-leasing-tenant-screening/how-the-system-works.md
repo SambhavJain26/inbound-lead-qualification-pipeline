@@ -106,22 +106,22 @@ Maya can say:
 
 > Can I come by next Tuesday at 2pm?
 
-The system reads actual Cal.com availability, interprets the request in the property's local
-time and selects an available slot. It states the time it booked. If the exact request is not
-available, it must not quietly replace it without saying so.
+The system reads actual Cal.com availability and interprets the request in the property's
+local time. An available exact time waits for manager approval; nothing is booked yet.
+An unavailable time produces real alternatives rather than booking a different time.
 
-Tour policy lives in a separate configuration record. A request inside the published hours
-and notice window can book without interrupting the manager. An out-of-policy request is held
-for a manager decision. While it is held, nothing is booked and the renter isn't told that it
-is confirmed.
+Tour policy lives in a separate configuration record. Every request requires a manager
+decision, with policy exceptions shown on the card. The manager taps Approve tour or types
+it as an ordinary message. Reply is unnecessary. Only then can booking and confirmation run.
 
 The one-time entry code is a labelled mock. A production self-guided tour would use an
 approved identity and access provider, or the company would retain a staff-guided showing.
 
-### 5. Tour completion is a disclosed operator event
+### 5. The manager confirms tour completion in chat
 
-The demo does not conduct a physical showing. After the calendar booking, the operator records
-a synthetic tour-completed event off-camera. The event is clearly labelled in the recording.
+The demo does not conduct a physical showing. After the calendar booking, the manager types
+Tour completed, names the resident or taps the completion button. This records synthetic
+attendance with the manager's identity and timestamp; no command or script is needed.
 
 That event changes the lead to toured and sends Maya the application link for the same lead
 and unit. The system doesn't infer attendance because a calendar appointment passed.
@@ -208,8 +208,9 @@ Finish.
 ### 11. The callback closes the demonstrated path
 
 DocuSign sends a completion callback. The workflow matches the envelope to the application,
-marks the lease signed, changes the synthetic unit to leased, sends the welcome email and
-notifies the manager.
+marks the lease signed, changes the synthetic unit to leased and asks the manager to approve
+the fixed welcome email. Send welcome or its button authorizes delivery; success or failure
+is reported separately. Signing alone no longer sends that email.
 
 Postgres holds the authoritative demo state. Airtable receives a phase-boundary mirror for
 visibility. The mirror can fail without stopping the leasing path, and the automation never

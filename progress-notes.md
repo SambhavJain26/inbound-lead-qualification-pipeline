@@ -2542,3 +2542,21 @@ remain canonical. Non-local Markdown references point back to the canonical leas
 documents rather than accidentally reading renewal progress or marketing context.
 Preserved the current 13-post plan and existing scripts; no automation or fixture
 changes were needed. User-owned paystub changes were left untouched.
+
+## 2026-09-18 — Post-script Markdown matched to earlier builds
+
+Compared the Make-Ready Build 3 scripts with the user's screenshot. Updated canonical
+Build 5 scripts and the renewal-retention collection copy: blockquoted captions,
+49 slide-copy groups, 12 shot narrations and the fallback caption; bold editorial
+labels and horizontal separators between posts. Wording, post IDs, the 13-post
+mix, slide counts and visual instructions are unchanged. Supporting collection
+links and its canonical-source notice remain intact.
+
+Added shared script-markdown normalization to copy checks and renderer comparison.
+Advanced the historical non-carousel baseline to d38bb02, the approved pre-format
+package: the prior baseline predates the already-authorized no-terminal directions.
+Whole-file normalized text equals the pre-change source. Editorial checks pass for
+13 posts, 49 slides and all eight preserved non-carousel scripts. No PDF artwork
+changed or fresh PDF rendering was claimed. Social guidance informed the separation
+of publishing copy and instructions; copywriting guidance did not override the user's
+formatting-only scope. Durable formatting rules are identical in AGENTS/CLAUDE.

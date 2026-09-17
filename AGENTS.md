@@ -339,6 +339,12 @@ drafts remain recoverable in Git; dated historical counts are not current totals
 
 ## Structured Carousel Text Checks
 
+Separate publishing captions, slide copy and spoken narration from editorial notes
+with Markdown blockquotes; keep metadata labels bold and post sections separated.
+Use carousel-kit/script-markdown.cjs to normalize presentation before approved-copy
+checks and renderer comparisons. Formatting-only revisions must preserve normalized
+source text and update any collection reference copy without changing its links.
+
 Measure actual text-run bounds as well as outer containers, especially grids,
 unit-bearing figures and page furniture. A fitting parent does not prove its
 text fits. Keep canonical scripts and sources aligned when prose becomes status

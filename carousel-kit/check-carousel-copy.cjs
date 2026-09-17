@@ -4,12 +4,15 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
 const scriptsPath = 'docs/build-5-content-strategy/linkedin-post-scripts.md';
-const scripts = fs.readFileSync(path.join(root, scriptsPath), 'utf8').replace(/\r\n/g, '\n');
+const { normalizeScriptFormatting } = require('./script-markdown.cjs');
+const scripts = normalizeScriptFormatting(fs.readFileSync(path.join(root, scriptsPath), 'utf8'));
 const plan = fs.readFileSync(path.join(root,
   'docs/build-5-content-strategy/linkedin-content-plan.md'), 'utf8').replace(/\r\n/g, '\n');
 const blueprint = fs.readFileSync(path.join(root,
   'docs/build-5-content-strategy/carousel-design-blueprint.md'), 'utf8').replace(/\r\n/g, '\n');
-const baseline = execFileSync('git', ['show', '7acef8d:' + scriptsPath],
+// Latest approved package before the presentation-only Markdown revision.
+// The old baseline predates the user's no-terminal recording directions.
+const baseline = execFileSync('git', ['show', 'd38bb02:' + scriptsPath],
   { cwd: root, encoding: 'utf8' }).replace(/\r\n/g, '\n');
 const section = (text, id) => text.match(new RegExp('^## ' + id +
   ' — [\\s\\S]*?(?=^## |$(?![\\s\\S]))', 'm'))?.[0];
@@ -76,7 +79,7 @@ const counts = { carousels: formats.filter(f => f?.startsWith('carousel,')).leng
 if (counts.carousels !== 5 || counts.text !== 6 || counts.fullVideo !== 1 || counts.shortVideo !== 1)
   throw new Error('Expected five carousels, six text posts and two videos');
 for (const id of postIds.filter(id => !(id in expected))) {
-  if (section(scripts, id) !== section(baseline, id)) throw new Error('Non-carousel post changed: ' + id);
+  if (normalizeScriptFormatting(section(scripts, id)) !== normalizeScriptFormatting(section(baseline, id))) throw new Error('Non-carousel post changed: ' + id);
 }
 if (2400 * 24 / 12 !== 4800 || 2400 * 26 / 12 !== 5200 || 5000 - 4100 !== 900)
   throw new Error('Illustrative arithmetic');

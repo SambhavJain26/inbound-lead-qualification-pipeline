@@ -99,8 +99,8 @@ for (const dir of [pdfDir, previewDir, scratch]) fs.mkdirSync(dir, { recursive: 
     if (problems.length) throw new Error(JSON.stringify(problems, null, 2));
     const postId = name.match(/^(b5-\d{2})/)?.[1].toUpperCase();
     if (postId) {
-      const scripts = fs.readFileSync(path.resolve(__dirname,
-        '../docs/build-5-content-strategy/linkedin-post-scripts.md'), 'utf8');
+      const scripts = require('./script-markdown.cjs').normalizeScriptFormatting(fs.readFileSync(path.resolve(__dirname,
+        '../docs/build-5-content-strategy/linkedin-post-scripts.md'), 'utf8'));
       const section = scripts.split('## ' + postId + ' — ')[1]?.split('\n## B5-')[0];
       if (!section) throw new Error('No approved copy found for ' + postId);
       const slides = [...section.matchAll(/#### Slide (\d+)\s+Title: ([^\n]+)\s+Body: ([^\n]+)\s+Footer: ([^\n]+)/g)];

@@ -2530,3 +2530,15 @@ validation is not being presented as live provider completion.
 Updated manual testing, build plan, business overview/narrative and public technical
 notes. General Copywriter/Syntax Polish guidance kept approval and uncertainty
 wording explicit. AGENTS.md and CLAUDE.md carry the same durable safety rules.
+
+## 2026-09-18 — Build 5 added to the five-build content collection
+
+The user referenced the legacy renewal-retention path containing Build 1–4 content
+folders. Located its current path at D:/codex_projects/automation_projects/renewal-retention/docs.
+Added build-5-content-strategy there with the existing leasing customer-language.md,
+linkedin-content-plan.md and linkedin-post-scripts.md. These are labelled reference
+copies, not a new campaign or fresh research. The leasing project's existing files
+remain canonical. Non-local Markdown references point back to the canonical leasing
+documents rather than accidentally reading renewal progress or marketing context.
+Preserved the current 13-post plan and existing scripts; no automation or fixture
+changes were needed. User-owned paystub changes were left untouched.

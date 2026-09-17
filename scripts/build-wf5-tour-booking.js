@@ -99,5 +99,6 @@ const connections=wf.connect({
 });
 require('./lib/pipeline-mirror').attach(wf,nodes,connections,'Record Approved Booking','$json.ref_token','Approved Tour');
 require('./lib/pipeline-mirror').attach(wf,nodes,connections,'Hold Slot For Approval','$json.ref_token','Pending Tour');
+require('./lib/tour-reschedule-workflow')(wf,nodes,connections);
 const w=wf.buildWorkflow({id:'wf5-tour-booking',name:'WF5 Tour Booking',nodes,connections,active:true});
 console.log('wf5-tour-booking.json written, '+wf.writeWorkflow(w,path.join(REPO_ROOT,'n8n-workflows','wf5-tour-booking.json'))+' nodes');

@@ -2488,3 +2488,45 @@ Business overview, narrative flow and public technical notes now distinguish his
 Maya evidence from the current supervised policy. Legacy Stage 3/7 runners are guarded
 against accidental default execution. Added read-only SQL planning helper and synchronized
 AGENTS.md/CLAUDE.md with the durable routing/authentication/item-pairing rules.
+# Plan revision — 2026-09-17: manager-approved tour rescheduling
+
+The current manual journey exposed a gap: a booked resident asking for a new time
+was routed to generic information review instead of an actionable calendar change.
+Add a separate reschedule approval state while preserving the confirmed booking.
+Check exact Cal.com availability, show both times to the manager, and recheck at
+approval. Use Cal.com's native reschedule operation, then verify the replacement
+and the original cancellation before confirming. Replay/stale actions cannot move
+the booking twice. Uncertain provider results stop for calendar reconciliation.
+Tour completion is blocked while a change is pending or unresolved. No new tools,
+paid dependencies, public calendar bypasses, or business-step scripts are introduced.
+
+## 2026-09-17 — Rescheduling implementation and recovered manual request
+
+Implemented separate pending/processing/completed/declined/unavailable/uncertain
+reschedule state, native Cal.com rescheduling, exact-time recheck, durable provider
+receipt, old-cancellation verification, mock-code rotation and booking history.
+Manager text Approve change / Keep original and guarded callback buttons resolve
+without Telegram Reply; stale/replayed decisions cannot claim twice. Pending or
+uncertain changes block completion. Calendar success and resident delivery are
+tracked separately, and historical callbacks cannot replace the current booking.
+
+Verification: 146 local checks passed across six test files; 12 transactional
+reschedule SQL checks passed and rolled back; 73 exported SQL statements planned;
+278 actual n8n expression bodies parsed. Rebuilt/imported five workflows, 296
+nodes total, restarted n8n after imports and checked readiness and bot webhooks.
+An intentional unauthenticated probe failed at the guard (execution 277); it
+made no state change. Recovered the resident's existing 11AM request rather than
+resetting the journey. Execution 278 succeeded: manager card message 90 contains
+the current/requested times and Approve change / Keep original buttons; resident
+message 150 confirms pending approval; Airtable upsert returned one record.
+
+The current resident reference remains R-6531. Original Cal.com booking remains
+accepted at September 20, 2026, 10AM America/New_York. Requested change is 11AM,
+stored as 15:00 UTC, pending actual manager approval. No native reschedule or
+cancellation has been executed for this live booking yet. That live mutation
+and received final confirmation remain the next manual rehearsal check; fixture
+validation is not being presented as live provider completion.
+
+Updated manual testing, build plan, business overview/narrative and public technical
+notes. General Copywriter/Syntax Polish guidance kept approval and uncertainty
+wording explicit. AGENTS.md and CLAUDE.md carry the same durable safety rules.

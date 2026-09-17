@@ -35,7 +35,7 @@ const path = require("path");
 const wf = require("./lib/wf-common");
 const { REPO_ROOT } = require("./lib/env");
 
-const LIB = wf.inlineLib("leasing-lib.js") + '\n' + wf.inlineLib('manager-lib.js');
+const LIB = wf.inlineLib("leasing-lib.js") + '\n' + wf.inlineLib('manager-lib.js') + '\n' + wf.inlineLib('tour-reschedule-lib.js');
 const OUT = path.join(REPO_ROOT, "n8n-workflows", "wf1-leasing-front.json");
 
 /* --------------------------------------------------------------- schemas */
@@ -551,6 +551,7 @@ const buildContextCode = [
   "    },",
   "    transcript: lines.join('\\n') || '(this is the first message)',",
   "    current_message: current,",
+  "    existing_tour: {status:lead.status,starts_at:lead.tour_starts_at,timezone:'__TOUR_TIMEZONE__',property_local:lead.tour_starts_at?new Intl.DateTimeFormat('en-US',{timeZone:'__TOUR_TIMEZONE__',dateStyle:'full',timeStyle:'short'}).format(new Date(lead.tour_starts_at)):null,awaiting_new_time:Boolean(state.awaiting_reschedule_time)},",
   "    turn_count: turnCount,",
   "    force_handoff: turnCount > HANDOFF_AFTER_TURNS,",
   "  },",
@@ -604,10 +605,11 @@ const turnGateCode = [
   "",
   "const state = lead.conversation_state || {};",
   "const asked = Array.isArray(state.asked) ? state.asked.slice() : [];",
+  "const reschedule = classifyRescheduleTurn(lead,payload,context);",
   "const privateRequest = requiresManagerReview(context.current_message);",
   "const needsReview = privateRequest || (payload.questions_unanswered || []).length > 0;",
   "const screeningStarted = ['applied','closed'].indexOf(lead.status) !== -1;",
-  "const wantsHuman = Boolean(payload.wants_human) || context.force_handoff || needsReview || screeningStarted;",
+  "const wantsHuman = (!reschedule.requested && (Boolean(payload.wants_human) || needsReview)) || context.force_handoff || screeningStarted;",
   "",
   "// What is still outstanding, in ask order, skipping anything already asked.",
   "const outstanding = COLLECT_ORDER.filter(function (key) {",
@@ -619,7 +621,10 @@ const turnGateCode = [
   "let nextAsk = null;",
   "let appended;",
   "",
-  "if (wantsHuman) {",
+  "if (reschedule.requested) {",
+  "  stage = 'rescheduling';",
+  "  appended = reschedule.blocked ? 'The team is checking the calendar change already in progress. Please wait for confirmation.' : reschedule.needs_time ? 'Please send your preferred new date and time. Your original tour stays booked until a manager-approved change is confirmed.' : 'We will check that exact new time and ask the manager to approve the change. Your original tour stays booked for now.';",
+  "} else if (wantsHuman) {",
   "  stage = 'handoff';",
   "  appended = HANDOFF_PROMPT;",
   "} else if (outcome.result === 'not_clear') {",
@@ -645,7 +650,7 @@ const turnGateCode = [
   "  appended = HANDOFF_PROMPT;",
   "}",
   "",
-  "let finalText = (privateRequest || screeningStarted ? 'A team member needs to review that before we can proceed.' : replyText.trim()) + '\\n\\n' + appended;",
+  "let finalText = reschedule.requested ? appended : (privateRequest || screeningStarted ? 'A team member needs to review that before we can proceed.' : replyText.trim()) + '\\n\\n' + appended;",
   "if (finalText.length > MAX_TELEGRAM) finalText = finalText.slice(0, MAX_TELEGRAM);",
   "",
   "if (nextAsk && asked.indexOf(nextAsk) === -1) asked.push(nextAsk);",
@@ -657,6 +662,7 @@ const turnGateCode = [
   "  reask_count: stage === 'reasking' ? Number(state.reask_count || 0) + 1 : Number(state.reask_count || 0),",
   "  turn_count: context.turn_count,",
   "  wants_human: wantsHuman,",
+  "  awaiting_reschedule_time: reschedule.needs_time,",
   "  manager_review_pending: Boolean(state.manager_review_pending) || wantsHuman,",
   "};",
   "",
@@ -699,7 +705,8 @@ const turnGateCode = [
   "    intent: payload.intent || null,",
   "    tour_preference: payload.tour_preference || null,",
   "    // Only chase a booking once the gate is happy and nothing is outstanding.",
-  "    wants_tour_slot: Boolean(payload.tour_preference) && outcome.result === 'clear' &&",
+  "    is_reschedule: reschedule.submit,",
+  "    wants_tour_slot: reschedule.submit || Boolean(payload.tour_preference) && outcome.result === 'clear' &&",
   "      !unasked.length && !wantsHuman && ['new','engaged','prequalified'].indexOf(lead.status) !== -1 && lead.tour_approval_state !== 'pending',",
   "    wants_human: wantsHuman,",
   "    questions_answered: payload.questions_answered || [],",
@@ -1309,6 +1316,8 @@ const nodes = [
         "{{ JSON.stringify($('Build Conversation Context').item.json.unit_knowledge) }}\n\n" +
         "ALREADY ON RECORD (do not re-extract unless the prospect corrects it):\n" +
         "{{ JSON.stringify($('Build Conversation Context').item.json.known_slots) }}\n\n" +
+        "EXISTING TOUR (a time-only change means the same property-local date; do not invent a different date):\n" +
+        "{{ JSON.stringify($('Build Conversation Context').item.json.existing_tour) }}\n\n" +
         "CONVERSATION SO FAR:\n" +
         "{{ $('Build Conversation Context').item.json.transcript }}\n\n" +
         "THEIR NEW MESSAGE:\n" +
@@ -1420,7 +1429,7 @@ const nodes = [
     id: "start-tour-booking",
     parameters: {
       method: "POST",
-      url: "=http://n8n:5678/webhook/tour-request",
+      url: "=http://n8n:5678/webhook/{{ $('Check Guardrails (Telegram)').first().json.is_reschedule ? 'tour-reschedule-request' : 'tour-request' }}",
       sendHeaders: true,
       headerParameters: { parameters: [{ name: 'X-Leasing-Action-Secret', value: '__INTERNAL_ACTION_SECRET__' }] },
       sendBody: true,
@@ -1550,7 +1559,7 @@ const nodes = [
       "  lock_code = $4,\n" +
       "  lock_code_source = 'mock',\n" +
       "  status = 'tour_booked'\n" +
-      "WHERE ref_token = $1\n" +
+      "WHERE ref_token = $1 AND status='prequalified' AND tour_approval_state='approved' AND calcom_booking_uid IS NULL\n" +
       "RETURNING *, (SELECT address FROM units WHERE id = leads.unit_id) AS address;",
     [-340, 120],
     {
@@ -1686,7 +1695,7 @@ const nodes = [
   wf.postgresNode(
     "Mark Lead Toured",
     "UPDATE leads SET status = 'toured', conversation_state=conversation_state||jsonb_build_object('tour_completed_by',$2::text,'tour_completed_at',now(),'tour_completed_action_id',$3::text,'application_followup_authorized',true)\n" +
-      "WHERE ref_token = $1 AND status='tour_booked' AND calcom_booking_uid IS NOT NULL\n" +
+      "WHERE ref_token = $1 AND status='tour_booked' AND calcom_booking_uid IS NOT NULL AND COALESCE(conversation_state->>'reschedule_state','') NOT IN ('pending','processing','failed_or_uncertain')\n" +
       "RETURNING *, (SELECT address FROM units WHERE id = leads.unit_id) AS address;",
     [-560, 420],
     {
@@ -2132,7 +2141,7 @@ const mirror = require('./lib/pipeline-mirror');
 // API bookings are recorded by WF5. Allow that write to finish before checking
 // a metadata-free callback; duplicates must not rotate the code or send again.
 nodes.push({id:'wait-for-booking-owner',name:'Allow Booking Owner To Record',type:'n8n-nodes-base.wait',typeVersion:1.1,position:[-500,400],parameters:{resume:'timeInterval',amount:10,unit:'seconds'},webhookId:'booking-owner-delay'});
-nodes.push(wf.postgresNode('Check Existing Booking Owner','SELECT EXISTS(SELECT 1 FROM leads WHERE calcom_booking_uid=$1) AS already_recorded',[-300,400],{queryOptions:{queryReplacement:"={{ [$('Issue Lock Code (MOCK)').first().json.booking_uid ?? ''] }}"}}));
+nodes.push(wf.postgresNode('Check Existing Booking Owner',"SELECT EXISTS(SELECT 1 FROM leads WHERE calcom_booking_uid=$1 OR conversation_state->>'reschedule_provider_uid'=$1 OR EXISTS(SELECT 1 FROM jsonb_array_elements(COALESCE(conversation_state->'tour_history','[]'::jsonb)) h WHERE h->>'old_uid'=$1 OR h->>'new_uid'=$1)) AS already_recorded",[-300,400],{queryOptions:{queryReplacement:"={{ [$('Issue Lock Code (MOCK)').first().json.booking_uid ?? ''] }}"}}));
 nodes.push(wf.ifNode('Booking Already Recorded?',[wf.booleanCondition('={{ $json.already_recorded }}',true)],[-100,400]));
 nodes.push(wf.codeNode('Restore New Booking Payload',"return [{json:$('Issue Lock Code (MOCK)').first().json}];",[100,400]));
 connections['Issue Lock Code (MOCK)']={main:[[{node:'Allow Booking Owner To Record',type:'main',index:0}]]};

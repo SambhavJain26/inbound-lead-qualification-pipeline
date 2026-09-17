@@ -6,6 +6,9 @@ Current policy revision: manager-supervised conversational rehearsal, recorded i
 progress-notes.md on September 17. Public FAQ and fixed intake stay automatic; every tour
 requires explicit approval, manager chat confirms synthetic attendance, and welcome email
 requires separate approval after signature. No Telegram Reply or in-flow script is needed.
+Booked tours now have a separate manager-approved reschedule path: preserve the
+original while pending, recheck the exact time, use native Cal.com rescheduling,
+verify old-slot cancellation, and stop uncertain results for reconciliation.
 The original stage descriptions below are historical implementation gates. Legacy Stage
 3/7 integration harnesses now require an explicit historical-development flag to prevent
 accidental resets/autonomous-booking assumptions. Current rehearsal is

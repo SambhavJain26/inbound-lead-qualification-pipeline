@@ -14,16 +14,16 @@ real rental application or passed a legal, security or production-readiness revi
 
 ## Measured Build Snapshot
 
-The committed workflow exports currently contain **five workflows and 239 nodes**. The count
+The committed workflow exports currently contain **five workflows and 296 nodes**. The count
 comes from parsing `n8n-workflows/*.json`, not from an earlier planning estimate.
 
 | Workflow | Nodes | Responsibility |
 |---|---:|---|
 | WF1 `leasing-front` | 112 | Listing inquiry, immediate manager alert, single-renter conversation, manager-confirmed tour completion and pipeline mirroring |
 | WF2 `application-and-verify` | 24 | Seven-section form, paystub extraction, Plaid Sandbox Payroll Income, mock screening checks, fixed criteria and manager review card |
-| WF3 `telegram-router` | 30 | Ordinary manager text and buttons, authenticated internal handoffs, guarded approvals, safe human replies and delivery failures |
+| WF3 `telegram-router` | 32 | Ordinary manager text and buttons, tour-change approvals, authenticated handoffs, safe human replies and delivery failures |
 | WF4 `lease-and-signature` | 37 | Fixed lease, DocuSign callback, signed state, separately approved welcome delivery and milestone mirroring |
-| WF5 `tour-booking` | 36 | Exact available slots, approval for every tour, atomic claims, approved booking and visible failures |
+| WF5 `tour-booking` | 91 | Exact available slots, manager-approved booking and native rescheduling, atomic claims, cancellation verification and visible failures |
 
 The schema has **six Postgres tables**:
 
@@ -34,7 +34,7 @@ The schema has **six Postgres tables**:
 - `applications`;
 - `message_log`.
 
-Five current test files produce **105 passing checks**:
+Six current test files produce **146 passing checks**:
 
 | Test file | Passing checks |
 |---|---:|
@@ -43,6 +43,11 @@ Five current test files produce **105 passing checks**:
 | `scripts/test-application-form.js` | 8 |
 | `scripts/test-pipeline-mirror.js` | 10 |
 | `scripts/test-manager-lib.js` | 36 |
+| `scripts/test-tour-reschedule.js` | 41 |
+
+`scripts/verify-tour-reschedule-sql.js` adds 12 transactional state-transition checks
+against a rolled-back fixture, with no calendar calls. `scripts/verify-workflow-sql.js`
+plans 73 exported SQL statements without executing business writes.
 
 Those checks cover shared logic, not the entire behavior of five cloud services. Stage gates
 and hand-run evidence supply the integration proof described later.
@@ -98,6 +103,20 @@ Public-page bookings require manual reconciliation and do not release demo acces
 This responsibility moved out of WF1 because scheduling has its own API versions, time-zone
 rules, exception state and manager action path. Keeping it separate makes the authority
 boundary easier to audit.
+
+Booked-tour changes have separate authority and state. The original UID/time stays
+intact while a change waits for approval. The manager sees both times, approves
+the move or keeps the original. Approval rechecks exact availability and calls
+Cal.com's native reschedule endpoint using its documented 2026-02-25 version.
+A durable replacement receipt precedes old-booking cancellation verification.
+Only then are the lead UID/time and labelled mock code updated and confirmation
+sent. History records old/new UIDs, times, approving actor and timestamp.
+Stale/replayed actions cannot claim twice. Pending, processing and uncertain changes
+block tour completion. Calendar uncertainty and resident-message delivery failure
+are different tasks; a failed message never authorizes another calendar mutation.
+
+The native calendar mutation is subject to the manager's live rehearsal approval.
+Local fixtures prove the guards, not completion of this particular live reschedule.
 
 ### The listing site is not tunnelled
 
@@ -488,7 +507,7 @@ and image names, and `scripts/serve-listing-site.js` serves the output locally.
 
 The project has several layers of evidence:
 
-1. **105 current local checks** for leasing logic, manager actions, screening, forms and mirror
+1. **146 current local checks** for leasing logic, manager actions, tour changes, screening, forms and mirror
    mapping.
 2. **Stage gates** that exercise credentials, schema, fixture assumptions, grounded messages,
    pre-qualification and tour paths.

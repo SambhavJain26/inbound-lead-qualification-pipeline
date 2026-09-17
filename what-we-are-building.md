@@ -25,6 +25,11 @@ bot requires Telegram Reply, and no business step requires a terminal command. T
 operator may use their contact display name/email; financial and screening evidence stays
 fictional. The production blueprint describes a proposed deployment, not verified results.
 
+A renter can also request a different time after booking. The manager sees both
+times and approves the change or keeps the original. The original stays active
+while approval is pending. Confirmation follows only after the calendar accepts
+the replacement and the system verifies cancellation of the previous booking.
+
 ---
 
 ## The Problem We Are Solving

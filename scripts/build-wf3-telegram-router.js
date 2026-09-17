@@ -8,23 +8,24 @@ const resolve = LIB + `
 const a=$('Parse Manager Action').first().json;
 const data=$input.first().json;
 const leads=(data.leads||[]).filter(l=>l.is_active_demo_recipient!==false), apps=data.applications||[];
-const help='You can type normally; Reply is not needed.\\n\\nApprove tour\\nNot that time\\nTour completed for Sambhav Jain\\nApprove application A-1234\\nSend to review A-1234\\nSend welcome\\nSend message R-1234: your public-safe reply\\nStatus\\n\\nWith one pending item, Approve also works. With several, include its reference. Private disclosures and automated adverse-action notices are never allowed.';
+const help='You can type normally; Reply is not needed.\\n\\nApprove tour\\nNot that time\\nApprove change\\nKeep original\\nTour completed for Sambhav Jain\\nApprove application A-1234\\nSend to review A-1234\\nSend welcome\\nSend message R-1234: your public-safe reply\\nStatus\\n\\nWith one pending item, Approve also works. With several, include its reference. Private disclosures and automated adverse-action notices are never allowed.';
 if(a.action==='help'||a.action==='status') {
  const pipeline=leads.filter(l=>l.status!=='closed').map(l=>'Lead: '+l.ref_token+' · '+l.prospect_name+' · '+l.status);
  const bookingFollowup=leads.filter(l=>l.tour_approval_state==='approved'&&!l.calcom_booking_uid).map(l=>'Calendar follow-up; do not blindly retry: '+l.ref_token);
  const pending=leads.filter(l=>l.tour_approval_state==='pending').map(l=>'Tour approval: '+l.ref_token+' · '+l.prospect_name);
- const booked=leads.filter(l=>l.status==='tour_booked').map(l=>'Awaiting tour completion: '+l.ref_token+' · '+l.prospect_name);
+ const changes=leads.filter(l=>['pending','processing','failed_or_uncertain'].includes(l.conversation_state?.reschedule_state)).map(l=>'Tour change: '+l.ref_token+' · '+l.conversation_state.reschedule_state+' · completion blocked until resolved');
+ const booked=leads.filter(l=>l.status==='tour_booked'&&!['pending','processing','failed_or_uncertain'].includes(l.conversation_state?.reschedule_state)).map(l=>'Awaiting tour completion: '+l.ref_token+' · '+l.prospect_name);
  const reviews=leads.filter(l=>l.conversation_state?.manager_review_pending).map(l=>'Information review: '+l.ref_token+' · '+l.prospect_name);
  const decisions=apps.filter(x=>!x.decision&&x.status==='awaiting_decision').map(x=>'Application review: '+x.ref_token+' · '+x.full_name);
  const welcome=apps.filter(x=>x.lease_status==='signed').map(x=>(x.welcome_claimed?'Welcome already claimed; check delivery record: ':'Welcome approval: ')+x.ref_token+' · '+x.full_name);
- return [{json:{...a,ok:false,manager_text:escapeTelegramHtml(a.action==='status'?pipeline.concat(pending,bookingFollowup,booked,reviews,decisions,welcome).join('\\n')||'No pending demo work.':help)}}];
+ return [{json:{...a,ok:false,manager_text:escapeTelegramHtml(a.action==='status'?pipeline.concat(pending,changes,bookingFollowup,booked,reviews,decisions,welcome).join('\\n')||'No pending demo work.':help)}}];
 }
 const target=resolveManagerTarget(a,leads,apps);
 if(!target.ok)return [{json:{...a,ok:false,manager_text:escapeTelegramHtml(target.text)}}];
 const row=target.row;
 const result={...a,ok:true,kind:target.kind,ref_token:row.ref_token,prospect_name:row.prospect_name||row.full_name,row:row,
- request_id:a.request_id||row.conversation_state?.pending_tour_action_id||null,
- tour_approved:a.action!=='tour_decline',
+ request_id:a.request_id||(target.kind==='reschedule'?row.conversation_state?.reschedule_request_id:row.conversation_state?.pending_tour_action_id)||null,
+ tour_approved:!['tour_decline','reschedule_decline'].includes(a.action),
  decision:a.action==='application_conditional'?'conditional':a.action==='application_review'?'sent_to_review':'approved',
  triggers_lease:a.action!=='application_review'};
 if(result.kind==='message') {
@@ -49,6 +50,9 @@ const nodes = [
   wf.ifNode('Action Target Clear?',[wf.booleanCondition('={{ $json.ok }}',true)],[740,0]),
   wf.telegramNode('Manager Help Or Clarification',{chatId:'=__TELEGRAM_CHAT_ID__',text:'={{ $json.manager_text }}',failOnError:true},[960,320]),
   wf.ifNode('Is Tour Decision?',[wf.booleanCondition("={{ $json.kind === 'tour' }}",true)],[960,0]),
+  wf.ifNode('Is Reschedule Decision?',[wf.booleanCondition("={{ $json.kind === 'reschedule' }}",true)],[960,-360]),
+  wf.internalActionNode('Send Reschedule Decision To WF5','=http://n8n:5678/webhook/tour-reschedule-decision',
+    "={{ JSON.stringify({ref_token:$('Resolve Manager Target').first().json.ref_token,approved:$('Resolve Manager Target').first().json.tour_approved,actor:$('Resolve Manager Target').first().json.actor,request_id:$('Resolve Manager Target').first().json.request_id,action_id:$('Resolve Manager Target').first().json.dedupe_key}) }}",[1180,-360]),
   wf.internalActionNode('Send Tour Decision To WF5','=http://n8n:5678/webhook/tour-decision',
     "={{ JSON.stringify({ref_token:$('Resolve Manager Target').first().json.ref_token,approved:$('Resolve Manager Target').first().json.tour_approved,actor:$('Resolve Manager Target').first().json.actor,request_id:$('Resolve Manager Target').first().json.request_id,action_id:$('Resolve Manager Target').first().json.dedupe_key}) }}",[1180,-200]),
   wf.ifNode('Is Tour Completion?',[wf.booleanCondition("={{ $json.kind === 'completion' }}",true)],[1180,40]),
@@ -79,7 +83,8 @@ const connections=wf.connect({
  'Manager Actions (Telegram)':[['Parse Manager Action']], 'Parse Manager Action':[['Claim Manager Update']],
  'Claim Manager Update':[['Is Button Tap?']], 'Is Button Tap?':[['Acknowledge Tap'],['Load Manager Context']],
  'Acknowledge Tap':[['Load Manager Context']], 'Load Manager Context':[['Resolve Manager Target']],
- 'Resolve Manager Target':[['Action Target Clear?']], 'Action Target Clear?':[['Is Tour Decision?'],['Manager Help Or Clarification']],
+ 'Resolve Manager Target':[['Action Target Clear?']], 'Action Target Clear?':[['Is Reschedule Decision?'],['Manager Help Or Clarification']],
+ 'Is Reschedule Decision?':[['Send Reschedule Decision To WF5'],['Is Tour Decision?']],
  'Is Tour Decision?':[['Send Tour Decision To WF5'],['Is Tour Completion?']],
  'Is Tour Completion?':[['Confirm Tour Completion In WF1'],['Is Human Reply?']],
  'Confirm Tour Completion In WF1':[['Confirm Completion Requested']],

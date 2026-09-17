@@ -1,0 +1,41 @@
+/* Development-only transactional checks; no calendar calls or committed test rows. */
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const cp=require('node:child_process');
+const {loadEnv,REPO_ROOT}=require('./lib/env');
+const env=loadEnv();
+const workflows=['wf1-leasing-front','wf5-tour-booking'].flatMap(name=>JSON.parse(fs.readFileSync('n8n-workflows/'+name+'.json','utf8')).nodes);
+const quote=v=>v===true?'true':v===false?'false':"'"+String(v).replace(/'/g,"''")+"'";
+const statements=['BEGIN;',"INSERT INTO leads(ref_token,unit_id,source,prospect_name,prospect_email,status,tour_approval_state,calcom_booking_uid,tour_starts_at) VALUES('R-0000',(SELECT id FROM units ORDER BY id LIMIT 1),'manual','Calendar Test Fixture','fixture@example.invalid','tour_booked','approved','fixture-old','2026-09-20T14:00:00Z');"];
+let count=0;
+function run(name,values){const node=workflows.find(n=>n.name===name);assert.ok(node,name);statements.push(node.parameters.query.replace(/\$(\d+)/g,(_,n)=>quote(values[Number(n)-1])));}
+function check(condition,name){count++;statements.push("DO $check$ BEGIN IF NOT EXISTS(SELECT 1 FROM leads WHERE ref_token='R-0000' AND ("+condition+")) THEN RAISE EXCEPTION '"+name+"'; END IF; END $check$;");}
+run('Save Pending Reschedule',['R-0000','2026-09-20T15:00:00Z','rs-fixture','fixture-old']);
+check("calcom_booking_uid='fixture-old' AND tour_starts_at='2026-09-20T14:00:00Z'::timestamptz AND conversation_state->>'reschedule_state'='pending'",'pending preserves original');
+run('Save Pending Reschedule',['R-0000','2026-09-20T16:00:00Z','rs-duplicate','fixture-old']);
+check("conversation_state->>'reschedule_request_id'='rs-fixture'",'duplicate pending request cannot overwrite');
+run('Claim Pending Reschedule',['R-0000',true,'Fixture Manager','action-stale','rs-stale']);
+check("conversation_state->>'reschedule_state'='pending'",'stale decision cannot claim');
+run('Claim Pending Reschedule',['R-0000',true,'Fixture Manager','action-current','rs-fixture']);
+check("calcom_booking_uid='fixture-old' AND conversation_state->>'reschedule_state'='processing' AND conversation_state->>'reschedule_decided_by'='Fixture Manager'",'approved claim preserves original and records actor');
+run('Claim Pending Reschedule',['R-0000',true,'Another Actor','action-replay','rs-fixture']);
+check("conversation_state->>'reschedule_action_id'='action-current'",'replay cannot reclaim');
+run('Mark Lead Toured',['R-0000','Fixture Manager','completion-premature']);
+check("status='tour_booked'",'completion blocked while processing');
+run('Store Calendar Change Receipt',['R-0000','rs-fixture','fixture-new','2026-09-20T15:00:00Z']);
+check("calcom_booking_uid='fixture-old' AND conversation_state->>'reschedule_provider_uid'='fixture-new'",'receipt is durable before finalizing');
+run('Record Confirmed Tour Change',['R-0000','rs-fixture','fixture-new','2026-09-20T15:00:00Z','123456']);
+check("calcom_booking_uid='fixture-new' AND tour_starts_at='2026-09-20T15:00:00Z'::timestamptz AND conversation_state->>'reschedule_state'='completed' AND jsonb_array_length(conversation_state->'tour_history')=1 AND conversation_state->'tour_history'->0->>'old_uid'='fixture-old'",'confirmed replacement and audit history');
+run('Record Confirmed Tour Change',['R-0000','rs-fixture','fixture-new','2026-09-20T15:00:00Z','123456']);
+check("jsonb_array_length(conversation_state->'tour_history')=1",'finalization replay cannot duplicate history');
+run('Mark Change Confirmation Delivered',['R-0000','rs-fixture']);
+check("conversation_state->>'reschedule_resident_delivery'='sent'",'delivery tracked separately from calendar action');
+run('Mark Lead Toured',['R-0000','Fixture Manager','completion-current']);
+check("status='toured'",'completion allowed after verified change');
+statements.push("UPDATE leads SET status='tour_booked',calcom_booking_uid='fixture-old',conversation_state=jsonb_build_object('reschedule_state','pending','reschedule_request_id','rs-decline','reschedule_old_uid','fixture-old') WHERE ref_token='R-0000';");
+run('Claim Pending Reschedule',['R-0000',false,'Fixture Manager','decline-current','rs-decline']);
+check("calcom_booking_uid='fixture-old' AND conversation_state->>'reschedule_state'='declined'",'decline preserves booking');
+statements.push('ROLLBACK;');
+const result=cp.spawnSync('docker',['compose','exec','-T','postgres','psql','-U',env.POSTGRES_USER||'leasing','-d',env.POSTGRES_DB||'leasing','-v','ON_ERROR_STOP=1'],{cwd:REPO_ROOT,input:statements.join('\n'),encoding:'utf8'});
+if(result.error)throw result.error;
+if(result.status){console.error(result.stderr);process.exitCode=1;}else console.log(count+' reschedule SQL checks passed; fixture transaction rolled back, no calendar calls.');

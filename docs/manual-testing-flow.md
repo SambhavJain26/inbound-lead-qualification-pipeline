@@ -205,6 +205,44 @@ Don't request or approve the same tour several times because the API is slow.
 A repeated approval must not create another booking. A stale card must not
 approve a newer request.
 
+## 7a. Optional: change an already-booked tour
+
+In the resident chat, send a new message:
+
+> I would like to change my tour time. Is that possible?
+
+Expect a request for the new date/time. Then send:
+
+> Same day, at 11:00 AM instead.
+
+Choose an available future time in the property's timezone, America/New_York.
+If the exact time is unavailable, expect real alternatives. The original booking
+stays active, and the system must not pick a nearby time without asking you.
+
+For an available time, check the manager's Tour change approval needed card:
+current time, requested time, reference, timezone, Approve change and Keep original.
+Airtable keeps Tour Booked and shows Manager reschedule approval as Next Action.
+
+In the manager chat, type Approve change normally or tap the current button.
+With several pending items, include the R-reference. No Reply gesture or terminal
+step is needed. Approval rechecks availability, then Cal.com's native reschedule
+operation replaces the booking. Confirmation must give the new time and state
+that cancellation of the old booking was verified.
+
+Check one active replacement booking, the previous booking cancelled, the same
+attendee and organizer, the new time on the same Airtable row, and a new labelled
+MOCK code. Repeated approvals and old cards must not move the booking again.
+
+To refuse a pending change, type Keep original. Expect no replacement or cancellation
+and a resident message confirming that the original tour remains booked.
+Resolve one pending change before requesting another. Tour completion is blocked
+while a change is pending, processing, or needs calendar reconciliation.
+
+If a calendar operation has an uncertain result, expect a manager follow-up alert,
+not a claim that the new time is confirmed. Inspect both bookings before retrying.
+A failed resident confirmation after a verified change is a delivery follow-up,
+not permission to reschedule again.
+
 ## 8. Confirm tour completion in manager chat
 
 You don't need to wait for the calendar date. This is synthetic demo attendance,

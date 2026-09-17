@@ -12,6 +12,12 @@ production blueprint explains what a contracted company deployment would require
 
 ## The Business Problem
 
+In the current rehearsal, an already-booked resident can ask for a different tour
+time in ordinary chat. The manager sees the original and requested times and can
+approve the change or keep the original. Approval rechecks availability; the calendar
+replaces the booking and the system verifies cancellation of the old slot before
+confirming the new one. Uncertain results stop for calendar reconciliation.
+
 Leasing looks like one process from the outside. Inside a property-management company, it is
 a chain of small handoffs:
 

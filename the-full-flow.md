@@ -185,6 +185,17 @@ with recorded manager authority. Approval cannot override privacy or the screeni
 
 Self-guided either way. No agent drives across town.
 
+### Changing a booked tour
+
+If the resident asks for a different time, the system collects the new preference
+and checks that exact slot. The manager receives a separate change card showing
+the current and requested times. Approve change authorizes the move; Keep original
+leaves the confirmed tour alone. The original stays booked while approval is pending.
+After approval, availability is checked again. Cal.com's native reschedule operation
+replaces the booking, and the system verifies that the old booking is cancelled
+before sending confirmation. Uncertain results stop for calendar reconciliation,
+not an automatic retry. All of this happens in ordinary chat, without Reply or scripts.
+
 ---
 
 ## Scene 5 — Saturday, just after the tour

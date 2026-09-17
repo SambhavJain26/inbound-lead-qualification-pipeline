@@ -262,6 +262,14 @@ steps against a pending manual rehearsal. Use docs/manual-testing-flow.md instea
 
 ## Completion Guidelines
 
+Booked-tour changes use separate reschedule authority and request IDs. Preserve
+the confirmed UID/time while pending; recheck exact availability at approval.
+Use Cal.com's native reschedule endpoint, verify accepted replacement and old
+cancellation, and retain provider receipt/history. Never cancel first or blindly
+retry an uncertain operation. Block completion while pending/processing/uncertain.
+Track calendar success separately from resident-message delivery. Old callbacks
+must recognize historical booking UIDs without overwriting the current booking.
+
 Before finishing implementation work, decide whether the task exposed a durable command, workaround, gotcha, or rule. If yes, update `CLAUDE.md` and `AGENTS.md` (identical in substance) and `progress-notes.md`.
 
 After every completed task, commit and push to `main` unless told otherwise. Use short imperative or conventional commit messages, e.g. `docs: lock stage 0 scope` or `feat: add wf1 application intake export`. If push fails because no remote or authentication is configured, say so clearly and include the local commit hash.

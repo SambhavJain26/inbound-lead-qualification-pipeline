@@ -14,6 +14,7 @@ function parseManagerUpdate(update, allowedChat) {
   if (callback) {
     var parts = raw.split(':');
     var actions = { tba: 'tour_approve', tbd: 'tour_decline', tcm: 'tour_complete',
+      rsa: 'reschedule_approve', rsd: 'reschedule_decline',
       apr: 'application_approve', con: 'application_conditional', rev: 'application_review', wel: 'send_welcome' };
     result.action = actions[parts[0]] || 'help';
     result.ref_token = parts[1] || null;
@@ -30,6 +31,10 @@ function parseManagerUpdate(update, allowedChat) {
   if (/^(?:tour\s+(?:is\s+)?complet(?:e|ed)|complet(?:e|ed)\s+(?:the\s+)?tour)/i.test(command)) {
     result.action = 'tour_complete';
     var name = command.match(/\bfor\s+(.+)$/i); result.target_name = name ? name[1].trim() : null;
+  } else if (/^(?:approve|confirm)\s+(?:the\s+)?(?:change|reschedule|rescheduling)$/i.test(command)) {
+    result.action = 'reschedule_approve';
+  } else if (/^(?:keep\s+(?:the\s+)?original(?:\s+(?:booking|time))?|decline\s+(?:the\s+)?(?:change|reschedule))$/i.test(command)) {
+    result.action = 'reschedule_decline';
   } else if (/^(?:approve|confirm)\s+(?:the\s+)?(?:tour|meeting|viewing)(?:\s+time)?$/i.test(command)) {
     result.action = 'tour_approve';
   } else if (/^(?:decline\s+(?:the\s+)?(?:tour|meeting|viewing)|not\s+that\s+time)$/i.test(command)) {
@@ -56,8 +61,14 @@ function resolveManagerTarget(action, leads, applications) {
       return !a.decision && a.status === 'awaiting_decision' && a.criteria_result !== 'does_not_meet';
     }).map(function (a) { return { kind: 'application', row: a }; }));
   }
+  if (/^reschedule_/.test(action.action) || action.action === 'approve' || action.action === 'tour_approve' || action.action === 'tour_decline') {
+    candidates = candidates.concat(eligibleLeads.filter(function (l) {
+      return l.status === 'tour_booked' && l.calcom_booking_uid && l.conversation_state?.reschedule_state === 'pending';
+    }).map(function (l) { return { kind: 'reschedule', row: l }; }));
+  }
   if (action.action === 'tour_complete') candidates = eligibleLeads.filter(function (l) {
-    return l.status === 'tour_booked' && l.calcom_booking_uid;
+    return l.status === 'tour_booked' && l.calcom_booking_uid &&
+      ['pending','processing','failed_or_uncertain'].indexOf(l.conversation_state?.reschedule_state) === -1;
   }).map(function (l) { return { kind: 'completion', row: l }; });
   if (action.action === 'send_message') candidates = eligibleLeads.filter(function (l) {
     return l.telegram_chat_id;
@@ -75,8 +86,9 @@ function resolveManagerTarget(action, leads, applications) {
     'More than one item matches. Include the R-reference or A-reference; no action was taken.' :
     'No matching pending item. It may already be actioned, or the tour has not been booked. No action was taken.' };
   var selected = candidates[0];
-  if (action.request_id && action.request_id !== selected.row.conversation_state?.pending_tour_action_id) {
-    return { ok: false, text: 'This card is stale. Use the latest tour card or type Approve tour. No action was taken.' };
+  var expectedRequest = selected.kind === 'reschedule' ? selected.row.conversation_state?.reschedule_request_id : selected.row.conversation_state?.pending_tour_action_id;
+  if (action.request_id && action.request_id !== expectedRequest) {
+    return { ok: false, text: 'This card is stale. Use the latest approval card. No action was taken.' };
   }
   return { ok: true, kind: selected.kind, row: selected.row };
 }

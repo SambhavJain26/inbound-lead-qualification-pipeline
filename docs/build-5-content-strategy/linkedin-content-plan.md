@@ -1,6 +1,6 @@
 # LinkedIn content plan — Build 05: leasing coordination
 
-Created: 2026-09-16. Carousel briefs revised: 2026-09-17 after user feedback. Current slide copy lives in the scripts. The ten-page B5-01 and subsequently requested nine-page B5-04 PDFs are rendered and checked. Technical QA is not user design acceptance. Earlier seven-page proofs are superseded. The other three active PDFs remain ungenerated.
+Created: 2026-09-16. Carousel briefs revised: 2026-09-17 after user feedback. Current slide copy lives in the scripts. The ten-page B5-01 and subsequently requested nine-page B5-04 PDFs are rendered and checked. Technical QA is not user design acceptance. Earlier seven-page proofs are superseded. The remaining three PDFs were subsequently exported and checked after the explicit batch request; all five now exist.
 
 Thirteen posts: one full demo video, one short video cut from that same recording, five document carousels and six text posts. No standalone image posts. One recording, two video posts.
 

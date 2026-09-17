@@ -1,6 +1,6 @@
 # Build 05 — LinkedIn post scripts
 
-Written 2026-09-17; active package reduced to thirteen posts on 2026-09-17. This is a writing package, not a publication log. Two carousel PDFs have been generated in later design tasks; recording, remaining exports and publication still need their own verification.
+Written 2026-09-17; active package reduced to thirteen posts on 2026-09-17. This is a writing package, not a publication log. All five carousel PDFs are now exported and checked (49 pages); recording and publication still need their own verification.
 
 ## How to use this file
 
@@ -140,7 +140,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Use the synthetic demo as the pattern's evidence, not as a client-results claim. No real consumer reports, protected-class inference, AI decisions, rankings or outcome recommendations. The worksheet is an operational aid, not legal advice or a universal screening policy.
 
-The matching ten-page first-carousel PDF proof was rendered and inspected on 2026-09-17. Exact wording, layout and final-PDF checks pass. Earlier seven-page previews are superseded. The user subsequently requested B5-04 individually; three active decks now remain ungenerated. Technical QA is not user design approval or authorization to publish.
+The matching ten-page first-carousel PDF proof was rendered and inspected on 2026-09-17. Exact wording, layout and final-PDF checks pass. Earlier seven-page previews are superseded. The user subsequently requested B5-04 individually; the remaining three active decks were subsequently exported under an explicit batch request. Technical QA is not user design approval or authorization to publish.
 
 ## B5-02 — Full current-build demo
 
@@ -665,7 +665,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Use the synthetic demo as the pattern's evidence, not as a client-results claim. No real consumer reports, protected-class inference, AI decisions, rankings or outcome recommendations. The worksheet is an operational aid, not legal advice or a universal screening policy.
 
-This active deck is not yet rendered. B5-01 and B5-04 have matching PDF exports; B5-06/B5-09/B5-11 remain to generate. Render only the next requested deck, inspect every final-PDF page and do not treat writing checks as visual acceptance.
+This deck now has a matching PDF export. Exact canonical copy, font embedding, layout and final-PDF checks pass. Every page and representative mobile previews were inspected on 2026-09-17. See remaining-carousel-design-assessment.md. Technical QA is not user approval or authorization to publish.
 
 ## B5-07 — Start with the software the company already has
 
@@ -881,7 +881,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Provider definitions rechecked 2026-09-17: [Plaid Bank Income](https://plaid.com/docs/income/bank-income/) and [Plaid Payroll Income](https://plaid.com/docs/income/payroll-income/). The two numerical examples are constructed teaching examples, not stored fixture outputs, real applicants or recommended screening thresholds. The frequency calculation assumes regular pay over a year, not a guaranteed monthly cash receipt. Plaid directs new US integrations toward its applicable consumer-report products; production selection needs separate eligibility, permission and policy review. No automated adverse-action or fraud verdict. [FTC landlord guidance](https://www.ftc.gov/business-guidance/resources/using-consumer-reports-what-landlords-need-know).
 
-This active deck is not yet rendered. B5-01 and B5-04 have matching PDF exports; B5-06/B5-09/B5-11 remain to generate. Render only the next requested deck, inspect every final-PDF page and do not treat writing checks as visual acceptance.
+This deck now has a matching PDF export. Exact canonical copy, font embedding, layout and final-PDF checks pass. Every page and representative mobile previews were inspected on 2026-09-17. See remaining-carousel-design-assessment.md. Technical QA is not user approval or authorization to publish.
 
 ## B5-10 — Five rows didn't mean five prospects
 
@@ -1035,7 +1035,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Keep the proposed-production boundary on every page. These worksheets describe a production design, not deployed client integrations or additional implemented demo features. Applicable requirements, access, retention and authority belong to the company's authorized process. No universal integration, legal compliance or ROI claim.
 
-This active deck is not yet rendered. B5-01 and B5-04 have matching PDF exports; B5-06/B5-09/B5-11 remain to generate. Render only the next requested deck, inspect every final-PDF page and do not treat writing checks as visual acceptance.
+This deck now has a matching PDF export. Exact canonical copy, font embedding, layout and final-PDF checks pass. Every page and representative mobile previews were inspected on 2026-09-17. See remaining-carousel-design-assessment.md. Technical QA is not user approval or authorization to publish.
 
 ## B5-12 — A blocked reply still needs a response
 

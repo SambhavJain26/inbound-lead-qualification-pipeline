@@ -36,6 +36,14 @@ mean the new worksheet layouts have already been implemented or visually tested.
 Use the local node carousel-kit/render-carousel.cjs <deck-name> and verifier,
 not the reference document's historical PowerShell render command below.
 
+### Remaining-deck worksheets — 2026-09-17
+
+The shared .lesson-fields--wide modifier sets full evidence and signoff labels in
+two columns at the existing 48/72 body scale, including inverted-color inheritance.
+It reduces selection-box padding without shrinking text or abbreviating fields.
+Only the newly exported income and readiness worksheets use it; existing decks
+are unaffected. Each new deck has one dark emphasis page and selective annotations.
+
 ## Reference system
 
 ### Implemented teaching layouts — first proof, 2026-09-17

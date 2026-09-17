@@ -1,13 +1,14 @@
 # Carousel content and design blueprint
 
 Updated 2026-09-17 after the second design review. This is the current production
-brief for five active carousels, not a claim that new PDFs have been rendered or approved.
+brief for five active carousels. All five matching PDFs are now rendered and checked;
+technical QA does not establish user design approval.
 The current exact public copy is in [linkedin-post-scripts.md](linkedin-post-scripts.md).
 Earlier seven-page PDF/PNG proofs are rejected and superseded. The first ten-page
 proof is now rendered and inspected. The user requested the next deck, so the
 nine-page B5-04 review-file checklist is also rendered and inspected; the other
-three remain active briefs. Individual technical QA does not establish design approval.
-See the first and B5-04 self-assessments.
+three were subsequently exported after the user's explicit batch request.
+See the first, B5-04 and remaining-deck self-assessments.
 
 ## 1. What these documents must do for the reader
 
@@ -329,10 +330,12 @@ new hierarchy and annotation mix. Every final-PDF page was inspected; representa
 next nine-page B5-04 checklist. It shares the teaching hierarchy and adds a named
 two-column written-question worksheet, rather than shrinking long field labels.
 
-The earlier copy-and-design-brief pass produced no PDF. There are now two matching
-PDFs, with no external publication, recording or runtime change. B5-06/09/11
-remain ungenerated. Continue with the next requested deck individually. The video
-and six retained text-post scripts remain unchanged. B5-04's detailed review is in
+The earlier copy-and-design-brief pass produced no PDF. The user's subsequent batch
+request completed B5-06/09/11 at 9/11/10 pages. All five matching PDFs now cover
+49 pages. Every new final-PDF page and representative mobile previews were checked;
+exact wording, geometry, fonts and shared grain checks pass. No external publication,
+recording or runtime change occurred. The video and six retained text-post scripts
+remain unchanged. B5-04's detailed review is in
 [b5-04-carousel-design-assessment.md](b5-04-carousel-design-assessment.md).
 
 2026-09-17 scope update: B5-13's ungenerated fit worksheet was removed from the active campaign, along with text post B5-14. Current carousel counts are 10/9/9/11/10 (49 pages). Existing-business fit still appears in B5-07/B5-15. Two decks are exported; three remain. This does not revise the automation or production-blueprint scope.

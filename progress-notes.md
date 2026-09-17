@@ -2166,3 +2166,31 @@ Previous exports remain recoverable in Git; only renderer-managed page previews
 were replaced. No runtime, account, publishing or upload action. Existing rules
 cover this request; no new AGENTS/CLAUDE rule. Unrelated dirty changes preserved;
 only task-owned files and this progress append staged. Three decks remain pending.
+
+## 2026-09-17 — Export the three remaining carousel decks
+
+The user explicitly authorized the remaining three as a batch. Exported B5-06
+message permissions (9 pages, 112,689 bytes), B5-09 income reconciliation
+(11 pages, 131,124 bytes) and B5-11 post-signature readiness (10 pages,
+123,547 bytes). All five active decks now exist: 49 pages across thirteen posts.
+Existing B5-01/B5-04 sources and outputs are unchanged. Canonical public wording
+and the eight non-carousel scripts are unchanged; no new copy or research claims.
+
+Added matching HTML, PDFs, PDF-derived page PNGs and contact sheets. The isolated
+shared .lesson-fields--wide layout keeps full evidence/signoff labels in two
+columns at 48/72 without per-page shrink or overrides. Each new deck has one dark
+emphasis page, with selective blue boxes, pen strokes and gold highlights.
+
+All three renderer and final-PDF verification runs pass exact copy, dimensions,
+fonts, annotation geometry, clearances and the shared grain checks. Inspected
+all 30 full-size final pages, contact sheets and representative 360px mobile
+previews. Compared visual grammar with the vendor COI reference. No clipping,
+pen-target wrapping or footer collision observed. Documented prose-matrix and
+wrapped-label tradeoffs in remaining-carousel-design-assessment.md. Technical
+QA is not user approval or authorization to publish.
+
+Updated current kit, blueprint, plan and script status. Screening human authority
+and proposed-production/demo boundaries remain explicit. No runtime, account,
+upload, publishing or paid-dependency change. Existing carousel rules cover this
+task; no new AGENTS/CLAUDE rule. Preserve unrelated dirty work and stage only this
+append plus task-owned files. No active carousel exports remain pending.

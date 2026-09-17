@@ -767,6 +767,12 @@ html, body {
 .lesson-fields--questions > li { font-size: var(--size-lesson-body); font-weight: 600; }
 .lesson-fields--questions .sel { margin-left: 0; margin-right: 0; padding-left: .06em; padding-right: .06em; }
 
+/* Evidence/signoff labels need the existing 48/72 body step and two columns.
+   Shared, not per-page shrink-to-fit; inherited inverted colors remain valid. */
+.lesson-fields--wide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lesson-fields--wide > li { font-size: var(--size-lesson-body); font-weight: 600; }
+.lesson-fields--wide .sel { margin-left: 0; margin-right: 0; padding-left: .06em; padding-right: .06em; }
+
 /* New layouts include their inverted colors in the same implementation. */
 .slide--teach.slide--invert::before {
   background-image:

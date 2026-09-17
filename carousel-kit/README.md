@@ -42,9 +42,21 @@ columns at the existing 48/72 body scale, with compact selection-box padding.
 B5-04 has two blue boxes, four blue underlines, two blue circles and three gold
 highlights. Page seven is the only dark page and deliberately has no focal mark.
 
-Two decks are generated; B5-06/09/11 remain active briefs. Continue one requested deck
-at a time, not a batch inferred from this request. No account uploads, publishing
-or operational-service changes happened. Technical QA is not user preference.
+The user explicitly requested all three remaining decks. All five are now exported:
+
+| New deck | Pages | PDF bytes |
+| --- | ---: | ---: |
+| b5-06-message-permissions | 9 | 112,689 |
+| b5-09-income-reconciliation | 11 | 131,124 |
+| b5-11-post-signature-readiness | 10 | 123,547 |
+
+Each has matching HTML, PDF-derived page previews and a contact sheet. All 30 new
+pages and representative 360px mobile previews were inspected. Exact canonical
+copy, layout, fonts and shared grain checks pass. The isolated .lesson-fields--wide
+modifier preserves complete evidence/signoff labels in two columns at 48/72.
+See ../docs/build-5-content-strategy/remaining-carousel-design-assessment.md.
+No account uploads, publishing or operational-service changes happened.
+Technical QA is not user design approval. The existing two exports are unchanged.
 
 ## Existing helpers
 

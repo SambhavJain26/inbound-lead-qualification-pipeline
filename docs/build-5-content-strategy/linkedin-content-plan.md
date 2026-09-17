@@ -1,8 +1,8 @@
 # LinkedIn content plan — Build 05: leasing coordination
 
-Created: 2026-09-16. Carousel briefs revised: 2026-09-17 after user feedback. Current slide copy lives in the scripts. The ten-page B5-01 and subsequently requested nine-page B5-04 PDFs are rendered and checked. Technical QA is not user design acceptance. Earlier seven-page proofs are superseded. The other four PDFs remain ungenerated.
+Created: 2026-09-16. Carousel briefs revised: 2026-09-17 after user feedback. Current slide copy lives in the scripts. The ten-page B5-01 and subsequently requested nine-page B5-04 PDFs are rendered and checked. Technical QA is not user design acceptance. Earlier seven-page proofs are superseded. The other three active PDFs remain ungenerated.
 
-Fifteen posts: one full demo video, one short video cut from that same recording, six document carousels and seven text posts. No standalone image posts. One recording, two video posts.
+Thirteen posts: one full demo video, one short video cut from that same recording, five document carousels and six text posts. No standalone image posts. One recording, two video posts.
 
 The demo video follows the build that exists now: listing inquiry, factual conversation, self-reported pre-qualification, real tour booking, simulated tour completion, application, evidence preparation, human review, DocuSign sandbox signing and welcome delivery. It doesn't show a production PM deployment or completed physical move-in.
 
@@ -52,8 +52,8 @@ Pricing, deployment timing, guarantees and recurring support terms remain unappr
 | --- | --- | --- | --- |
 | Full native demo video | 1 | B5-02 | Record the current build once; preserve the complete business flow in the published edit |
 | Short native video | 1 | B5-08 | Extract clips and original audio from B5-02's source footage; no separate recording or new voiceover |
-| PDF document carousel | 6 | B5-01, B5-04, B5-06, B5-09, B5-11, B5-13 | Multi-page teaching document, not individual image uploads |
-| Text-only post | 7 | B5-03, B5-05, B5-07, B5-10, B5-12, B5-14, B5-15 | No accompanying standalone screenshot, stock photo or generated graphic |
+| PDF document carousel | 5 | B5-01, B5-04, B5-06, B5-09, B5-11 | Multi-page teaching document, not individual image uploads |
+| Text-only post | 6 | B5-03, B5-05, B5-07, B5-10, B5-12, B5-15 | No accompanying standalone screenshot, stock photo or generated graphic |
 | Standalone image post | 0 | None | Excluded by the user's instruction |
 
 The current carousel design uses annotated typography, not screenshots or mocked interfaces. A video cover frame is part of the video asset, not another feed post. Don't add a teaser, trailer, second short, talking-head response video or alternate demo post to the count.
@@ -77,9 +77,9 @@ No format is assigned a guaranteed reach advantage. This is an editorial choice.
 | Pillar | Posts | Job |
 | --- | --- | --- |
 | Leasing coordination distinctions | B5-01, B5-03, B5-05 | Explain the stages and the work surrounding them |
-| Demonstration and evidence | B5-02, B5-08, B5-10, B5-14 | Show what ran and how far the proof goes |
+| Demonstration and evidence | B5-02, B5-08, B5-10 | Show what ran and how far the proof goes |
 | Human control and information quality | B5-04, B5-06, B5-09, B5-12 | Make AI boundaries and safe handoffs concrete |
-| Existing-business deployment | B5-07, B5-11, B5-13 | Explain fit without calling proposed production steps implemented |
+| Existing-business deployment | B5-07, B5-11 | Explain fit without calling proposed production steps implemented |
 | Process conversation | B5-15 | Invite a relevant next step without soliciting sensitive records |
 
 The opening three posts establish the problem, show the demonstration and clarify that pre-qualification isn't approval. Later posts can examine evidence, failures and deployment without asking a cold reader to decode n8n first.
@@ -100,9 +100,9 @@ The opening three posts establish the problem, show the demonstration and clarif
 | 10 | B5-10 | Text | A lead changed stages; the display made more rows | Operations / systems-minded PM |
 | 11 | B5-11 | Carousel, 10 slides | Signed isn't the same as move-in ready | Operations leader / owner |
 | 12 | B5-12 | Text | A safety block shouldn't leave the prospect in silence | Leasing lead / operations leader |
-| 13 | B5-13 | Carousel, 11 slides | How this would fit an existing PM company | Owner / executive |
-| 14 | B5-14 | Text | What the passing checks prove—and don't | Buyer / operations leader |
-| 15 | B5-15 | Text | Discuss one handoff, not a new software stack | Owner / operations leader |
+| 13 | B5-15 | Text | Discuss one handoff, not a new software stack | Owner / operations leader |
+
+Post IDs stay stable: B5-13 and B5-14 are retired, not renumbered or counted as publishing slots. B5-15 is now slot thirteen. The two completed decks remain active.
 
 ## 5. Brief fields and evidence notation
 
@@ -112,7 +112,7 @@ Proof IDs P1–P9 refer to the register in [product-marketing.md](../../.agents/
 
 Boundary labels have three meanings: demonstrated with synthetic data, mock/Sandbox step, or proposed production design. A post must work on its own; viewers shouldn't need an earlier disclaimer to understand the scope.
 
-## 6. The fifteen post briefs
+## 6. The thirteen post briefs
 
 ### B5-01 — The work between an inquiry and a lease
 
@@ -428,58 +428,6 @@ Boundary: demonstrated fallback doesn't establish a staffed production support q
 
 Assets: none. No new exception footage; this is an evidence-backed text lesson.
 
-### B5-13 — How this would fit an existing PM company
-
-Format: PDF carousel, 11 slides. Framework: Value-Stack: discovery questions, exception design and a pilot brief.
-
-Reader: Owner, executive or operations leader. Reader deliverable: Existing-business automation fit worksheet.
-
-Purpose: Scope one supported event-to-task gap, define system authority and test normal and failure paths before rollout.
-
-Opening angle: a specific operating task the reader can improve, not a generic opinion or client-results claim. This deck must work as a reference document without needing the caption to supply its method.
-
-| Slide | Reader value |
-| --- | --- |
-| 1 | Map the gap before adding automation |
-| 2 | Check what your software already does |
-| 3 | Name the authority for each record |
-| 4 | Define the event that starts work |
-| 5 | Use approved channels and calendars |
-| 6 | Keep sensitive evidence in approved systems |
-| 7 | Make the human handoff explicit |
-| 8 | Design the failed path before rollout |
-| 9 | Return work to the team's system |
-| 10 | Pilot one path, including failure |
-| 11 | Use this one-path pilot brief |
-
-Takeaway: Scope one supported event-to-task gap, define system authority and test normal and failure paths before rollout.
-
-Evidence and boundary: production blueprint, explicitly proposed; the local demo doesn't perform all these controls or connect to a client's PMS.
-
-Invitation: soft availability of the existing production blueprint, without a free offer or universal integration promise.
-
-Assets: annotated typography with structured lists, comparisons and templates from the current [post scripts](linkedin-post-scripts.md). Follow [carousel-design-blueprint.md](carousel-design-blueprint.md). No invented screenshots, borrowed evidence or build-number page labels. A new design proof must precede the remaining PDF exports.
-
-### B5-14 — What the passing checks prove—and don't
-
-Format: text, 170–240 words. Pillar: demonstration and evidence.
-
-Reader and event: a buyer hears that the build's checks passed. Purpose: define evidence honestly before an automation count becomes a performance claim.
-
-Opening angle: the project reports 69 checks, but that number doesn't mean 69 applicants or a 100% accuracy rate.
-
-The turn: stored rows, received messages and test-mode provider events show specified behavior in specified conditions. They don't establish sustained operation at portfolio scale or extraction quality across unseen documents.
-
-Evidence: P6: 32 leasing, 19 screening, 8 application-form and 10 mirror checks, as recorded in progress notes. P1–P5 are separate execution/delivery evidence, not another invented test population.
-
-Text structure: define the check count; identify two concrete evidence types; name untested production claims; explain what a client pilot would need to measure.
-
-Takeaway: ask exactly what the test covered. Invitation: none.
-
-Boundary: don't call these all live end-to-end cases or fabricate failed-case rates. Recheck the count before publication; if the suite changes, update this brief and eventual script together.
-
-Assets: none. A client-result chart or green-check screenshot isn't needed.
-
 ### B5-15 — Discuss one handoff, not a new software stack
 
 Format: text, 170–240 words. Pillar: process conversation.
@@ -562,7 +510,7 @@ Review subtitles manually, especially rent, dates, names and income figures. Ret
 
 ## 9. Carousel production rules
 
-The current six briefs total 60 slides: 10 + 9 + 9 + 11 + 10 + 11. The user authorized 7–11 pages per carousel based on value; there is no fixed seven- or eight-page requirement. Add or remove a page only for a distinct teaching point, and keep briefs and scripts aligned.
+The current five briefs total 49 slides: 10 + 9 + 9 + 11 + 10. The user authorized 7–11 pages per carousel based on value; there is no fixed seven- or eight-page requirement. Add or remove a page only for a distinct teaching point, and keep briefs and scripts aligned.
 
 Use a consistent template within each carousel. One strong cover, one idea per interior slide and a close that fits the post's purpose. An informational close doesn't need a comment keyword or sales CTA.
 
@@ -570,13 +518,13 @@ Use the kit's annotated document style: structured text, comparisons, lists and 
 
 Prepare carousels as multi-page PDFs with equal-size pages; PDF document sharing is supported by LinkedIn's [document guidance](https://www.linkedin.com/help/linkedin/answer/a519831). This is not a plan to publish separate JPEG image posts. Review every exported page before upload because a carousel's explanatory boundaries need to survive outside the caption too.
 
-Label teaching content carefully: demo-informed operating patterns for B5-01/B5-04, configured communication rules for B5-06, illustrative reconciliation for B5-09, and proposed production controls for B5-11/B5-13. A polished page mustn't make a proposal look deployed.
+Label teaching content carefully: demo-informed operating patterns for B5-01/B5-04, configured communication rules for B5-06, illustrative reconciliation for B5-09, and proposed production controls for B5-11. A polished page mustn't make a proposal look deployed.
 
 ## 10. Cadence, publication order and other builds
 
-Recommended starting cadence: one post per week, in the listed order. That gives fifteen publishing slots. It's a manageable editorial baseline, not an algorithm promise or a scheduled automation.
+Recommended starting cadence: one post per week, in the listed order. That gives thirteen publishing slots. It's a manageable editorial baseline, not an algorithm promise or a scheduled automation.
 
-If the operator prefers two posts per week after reviewing quality and workload, the same sequence takes roughly eight weeks. Don't rush asset review to satisfy a calendar. Full demo comes before the short; keep several explanatory posts between them.
+If the operator prefers two posts per week after reviewing quality and workload, the same sequence takes roughly seven weeks. Don't rush asset review to satisfy a calendar. Full demo comes before the short; keep several explanatory posts between them.
 
 No exact dates or posting times are set here. Choose times when the author can respond and the intended audience is active; evaluate actual account results instead of copying a universal best-time claim.
 
@@ -594,7 +542,7 @@ If other builds interleave, keep stable post IDs and move publishing slots. Don'
 
 ## 11. Invitation and response boundaries
 
-Most posts teach or demonstrate without asking for a sale. B5-02 and B5-13 can make relevant assets available softly; B5-15 carries the only direct process-conversation invitation.
+Most posts teach or demonstrate without asking for a sale. B5-02 can make the walkthrough available softly; B5-15 carries the only direct process-conversation invitation.
 
 No comment-to-download gating, compulsory follow, engagement pod, cold DM sequence or automatic prospect reply is required by this plan. Publishing and account actions aren't authorized by writing the document.
 
@@ -623,7 +571,7 @@ Record observed feedback as observed. Keep a reader's quotation separate from a 
 
 | Check | Pass standard |
 | --- | --- |
-| Format contract | Exactly one full demo, one reused-footage short, six carousels, seven text posts; no standalone image posts |
+| Format contract | Exactly one full demo, one reused-footage short, five carousels, six text posts; no standalone image posts |
 | Recording burden | Both videos come from one master and its original audio; no hidden extra voiceover task |
 | Build scope | Only implemented behavior appears as demonstrated; proposed deployment is labelled |
 | Rental authority | No AI approval, denial, ranking, risk label or recommendation |
@@ -648,13 +596,13 @@ Run a final copyedit before scripts or assets ship. Check rhythm, repeated openi
 
 ## 14. Handoff to scripts and asset production
 
-The completed [post scripts](linkedin-post-scripts.md) are organized by B5-01 through B5-15. They contain finished LinkedIn copy for all posts, exact slide copy for the six carousels, full-demo narration/capture guidance and an edit brief for the one short based on reusable original narration.
+The completed [post scripts](linkedin-post-scripts.md) retain stable IDs B5-01 through B5-12 plus B5-15. They contain finished LinkedIn copy for all thirteen posts, exact slide copy for the five carousels, full-demo narration/capture guidance and an edit brief for the one short based on reusable original narration.
 
 Before recording, the demo script should make S08–S12 intelligible on their own. After recording, replace planned capture descriptions with actual footage notes and in/out timestamps for the short. If the footage differs, revise the relevant script/brief; don't narrate missing evidence.
 
 Carousel PDF design/export and video editing are later production tasks. This file defines their requirements; it doesn't claim those assets exist. No PDFs, video exports, account uploads or scheduled posts were created in this planning task.
 
-Completion criteria for THIS document: all fifteen briefs have a reader, business event, purpose, evidence, structure, takeaway, boundary, invitation and assets; all format totals agree; the short needs no separate recording; downstream scripts remain distinct.
+Completion criteria for THIS document: all thirteen briefs have a reader, business event, purpose, evidence, structure, takeaway, boundary, invitation and assets; all format totals agree; the short needs no separate recording; downstream scripts remain distinct.
 
 ## 15. Source notes and change log
 
@@ -667,3 +615,5 @@ External product/process interpretations rely on primary sources already registe
 2026-09-17 — Linked the completed fifteen-post scripts package. Recording, actual footage timestamps, carousel design/PDF exports, video editing and publication remain later tasks; format and evidence boundaries are unchanged.
 
 2026-09-17 — Revised all six carousel briefs to practical reference-document deliverables and 10/9/9/11/10/11 pages (60 total). The user authorized a 7–11-page value-led range, balanced copy and more visible blue/gold annotation variety. No change to the two-video/six-carousel/seven-text format contract or original recording burden. New PDFs remain pending one revised design proof.
+
+2026-09-17 — User reduced the active package to thirteen posts. Removed B5-13 (existing-business fit carousel) and B5-14 (verification-count text post) from the active briefs and scripts. Existing-tool fit remains in B5-07/B5-15; evidence limits remain in the demo and release checks. Current mix: five carousels, six text posts, two videos; 49 carousel pages. Two decks are generated, three remain. Stable IDs, one master recording and retained public wording are unchanged; removed drafts remain recoverable in Git history.

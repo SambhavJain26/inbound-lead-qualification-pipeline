@@ -1,12 +1,12 @@
 # Carousel content and design blueprint
 
 Updated 2026-09-17 after the second design review. This is the current production
-brief for six carousels, not a claim that new PDFs have been rendered or approved.
+brief for five active carousels, not a claim that new PDFs have been rendered or approved.
 The current exact public copy is in [linkedin-post-scripts.md](linkedin-post-scripts.md).
 Earlier seven-page PDF/PNG proofs are rejected and superseded. The first ten-page
 proof is now rendered and inspected. The user requested the next deck, so the
 nine-page B5-04 review-file checklist is also rendered and inspected; the other
-four remain briefs. Individual technical QA does not establish design approval.
+three remain active briefs. Individual technical QA does not establish design approval.
 See the first and B5-04 self-assessments.
 
 ## 1. What these documents must do for the reader
@@ -26,9 +26,8 @@ missing steps or turn an empty slogan into a useful method.
 | B5-06 | 9 | Leasing message-permission worksheet |
 | B5-09 | 11 | Income evidence reconciliation worksheet |
 | B5-11 | 10 | Post-signature readiness worksheet |
-| B5-13 | 11 | Existing-business automation fit worksheet |
 
-The 60-page total follows value, not a promise to keep every future deck at these
+The 49-page total follows value, not a promise to keep every future deck at these
 counts. The user authorized 7–11 pages per carousel. Merge repeated ideas or split
 an overloaded comparison, then update the plan and scripts together.
 
@@ -114,7 +113,6 @@ blue on cream pages and gold on the dark page; retain the gold byline rule.
 | B5-06 | 9 | 2 | 6 | 2 | 4 | 7 |
 | B5-09 | 11 | 2 | 5 | 3 | 4 | 9 |
 | B5-11 | 10 | 2 | 5 | 3 | 3 | 8 |
-| B5-13 | 11 | 3 | 6 | 1 | 5 | 7 |
 
 Counts describe the copy's planned annotation types. On the dark page, any pen
 stroke becomes gold for legibility; it must not falsely be counted as visible blue.
@@ -279,24 +277,6 @@ Reader outcome: Assign evidence and authority to applicable readiness conditions
 | 9 | boundary | circle: “possession” |
 | 10 | template | underline: “Handover authority”; highlight: “Blocker” |
 
-### B5-13 — Existing-business automation fit worksheet
-
-Reader outcome: Scope one supported event-to-task gap, define system authority and test normal and failure paths before rollout.
-
-| Page | Composition | Focal annotations |
-| --- | --- | --- |
-| 1 | cover | box: “gap”; highlight: “one unfinished leasing handoff” |
-| 2 | checklist | underline: “licensed features” |
-| 3 | roles | box: “authority” |
-| 4 | reference | circle: “event”; highlight: “trusted household reference” |
-| 5 | evidence | underline: “contact permissions” |
-| 6 | boundary | Quiet page; no focal annotation |
-| 7 — dark | payoff | underline: “backup reviewer” |
-| 8 | exception | box: “failed path”; highlight: “owner, next action” |
-| 9 | contrast | underline: “supported writeback” |
-| 10 | worked-example | highlight: “normal event”; underline: “own recovery” |
-| 11 | template | underline: “Completion evidence”; highlight: “Failure owner” |
-
 ## 8. Review at mobile scale and full resolution
 
 Before accepting the next proof, inspect the full PDF pages and a 360px-wide preview.
@@ -313,7 +293,7 @@ emphasizes an important boundary rather than making the deck's last page dark by
 
 ## 9. Honest acceptance criteria
 
-Content review passes only if all six documents deliver their promised checklist,
+Content review passes only if all five active documents deliver their promised checklist,
 method or worksheet, each page adds a distinct point, and arithmetic/source
 interpretation is correct. A long deck with repeated slogans fails.
 
@@ -335,7 +315,9 @@ next nine-page B5-04 checklist. It shares the teaching hierarchy and adds a name
 two-column written-question worksheet, rather than shrinking long field labels.
 
 The earlier copy-and-design-brief pass produced no PDF. There are now two matching
-PDFs, with no external publication, recording or runtime change. B5-06/09/11/13
+PDFs, with no external publication, recording or runtime change. B5-06/09/11
 remain ungenerated. Continue with the next requested deck individually. The video
-and seven text-post scripts remain unchanged. B5-04's detailed review is in
+and six retained text-post scripts remain unchanged. B5-04's detailed review is in
 [b5-04-carousel-design-assessment.md](b5-04-carousel-design-assessment.md).
+
+2026-09-17 scope update: B5-13's ungenerated fit worksheet was removed from the active campaign, along with text post B5-14. Current carousel counts are 10/9/9/11/10 (49 pages). Existing-business fit still appears in B5-07/B5-15. Two decks are exported; three remain. This does not revise the automation or production-blueprint scope.

@@ -1,12 +1,12 @@
 # Build 05 — LinkedIn post scripts
 
-Written 2026-09-17; all six carousel sections revised 2026-09-17 after design feedback. This is the writing package for the fifteen-post content plan, not a publication log. Nothing has been recorded, designed, uploaded or scheduled by this task.
+Written 2026-09-17; active package reduced to thirteen posts on 2026-09-17. This is a writing package, not a publication log. Two carousel PDFs have been generated in later design tasks; recording, remaining exports and publication still need their own verification.
 
 ## How to use this file
 
 Copy only the text under **LinkedIn post** when preparing a caption or text post. Slide titles, bodies and footers below are the current rewritten copy; visual directions and production notes are instructions, not publishing copy. Source links sit beside the claims they support. For LinkedIn, preserve the source URLs when converting Markdown links to plain text.
 
-The package contains six carousels with 60 slides, seven text posts, one full demo video and one short cut from that same recording. There are no standalone image posts. Publish in B5-01–B5-15 order unless the content plan is revised.
+The active package contains five carousels with 49 slides, six text posts, one full demo video and one short cut from that same recording: thirteen posts total. There are no standalone image posts. Follow the content plan's thirteen publishing slots. IDs B5-13 and B5-14 are retired; B5-15 remains the closing invitation, not a fifteenth active post.
 
 The master video covers the current synthetic, operator-run demo. It does not show a deployed client system, real consumer screening, real SMS, a physical tour or a completed move-in. Telegram stands in for messaging; Plaid and DocuSign run in their test environments. Proposed production integrations are labeled as proposals.
 
@@ -140,7 +140,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Use the synthetic demo as the pattern's evidence, not as a client-results claim. No real consumer reports, protected-class inference, AI decisions, rankings or outcome recommendations. The worksheet is an operational aid, not legal advice or a universal screening policy.
 
-The matching ten-page first-carousel PDF proof was rendered and inspected on 2026-09-17. Exact wording, layout and final-PDF checks pass. Earlier seven-page previews are superseded. The user subsequently requested B5-04 individually; four decks now remain ungenerated. Technical QA is not user design approval or authorization to publish.
+The matching ten-page first-carousel PDF proof was rendered and inspected on 2026-09-17. Exact wording, layout and final-PDF checks pass. Earlier seven-page previews are superseded. The user subsequently requested B5-04 individually; three active decks now remain ungenerated. Technical QA is not user design approval or authorization to publish.
 
 ## B5-02 — Full current-build demo
 
@@ -521,7 +521,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Use the synthetic demo as the pattern's evidence, not as a client-results claim. No real consumer reports, protected-class inference, AI decisions, rankings or outcome recommendations. The worksheet is an operational aid, not legal advice or a universal screening policy.
 
-Generated individually on 2026-09-17 after the user's next-carousel request. Matching source: carousel-kit/b5-04-reviewable-application-file.html. Final PDF: output/pdf/b5-04-reviewable-application-file.pdf, nine pages, 116,563 bytes. Every final-PDF page and representative mobile previews inspected; exact title/body/footer wording, layout, dimensions, embedded used fonts and one grain image checks pass. The written-question worksheet uses the shared two-column variant; page seven remains a quiet navy human-action boundary. See [b5-04-carousel-design-assessment.md](b5-04-carousel-design-assessment.md). No publication or approval of the remaining four decks is implied.
+Generated individually on 2026-09-17 after the user's next-carousel request. Matching source: carousel-kit/b5-04-reviewable-application-file.html. Final PDF: output/pdf/b5-04-reviewable-application-file.pdf, nine pages, 116,563 bytes. Every final-PDF page and representative mobile previews inspected; exact title/body/footer wording, layout, dimensions, embedded used fonts and one grain image checks pass. The written-question worksheet uses the shared two-column variant; page seven remains a quiet navy human-action boundary. See [b5-04-carousel-design-assessment.md](b5-04-carousel-design-assessment.md). No publication or approval of the remaining three active decks is implied.
 
 ## B5-05 — The booking worked. The time was wrong.
 
@@ -665,7 +665,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Use the synthetic demo as the pattern's evidence, not as a client-results claim. No real consumer reports, protected-class inference, AI decisions, rankings or outcome recommendations. The worksheet is an operational aid, not legal advice or a universal screening policy.
 
-Only copy and design directions are current in this pass. The earlier first-carousel PDF and previews are superseded; they must not be published or treated as matching this rewrite. Render one new design proof before batching the other five.
+This active deck is not yet rendered. B5-01 and B5-04 have matching PDF exports; B5-06/B5-09/B5-11 remain to generate. Render only the next requested deck, inspect every final-PDF page and do not treat writing checks as visual acceptance.
 
 ## B5-07 — Start with the software the company already has
 
@@ -881,7 +881,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Provider definitions rechecked 2026-09-17: [Plaid Bank Income](https://plaid.com/docs/income/bank-income/) and [Plaid Payroll Income](https://plaid.com/docs/income/payroll-income/). The two numerical examples are constructed teaching examples, not stored fixture outputs, real applicants or recommended screening thresholds. The frequency calculation assumes regular pay over a year, not a guaranteed monthly cash receipt. Plaid directs new US integrations toward its applicable consumer-report products; production selection needs separate eligibility, permission and policy review. No automated adverse-action or fraud verdict. [FTC landlord guidance](https://www.ftc.gov/business-guidance/resources/using-consumer-reports-what-landlords-need-know).
 
-Only copy and design directions are current in this pass. The earlier first-carousel PDF and previews are superseded; they must not be published or treated as matching this rewrite. Render one new design proof before batching the other five.
+This active deck is not yet rendered. B5-01 and B5-04 have matching PDF exports; B5-06/B5-09/B5-11 remain to generate. Render only the next requested deck, inspect every final-PDF page and do not treat writing checks as visual acceptance.
 
 ## B5-10 — Five rows didn't mean five prospects
 
@@ -1035,7 +1035,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Keep the proposed-production boundary on every page. These worksheets describe a production design, not deployed client integrations or additional implemented demo features. Applicable requirements, access, retention and authority belong to the company's authorized process. No universal integration, legal compliance or ROI claim.
 
-Only copy and design directions are current in this pass. The earlier first-carousel PDF and previews are superseded; they must not be published or treated as matching this rewrite. Render one new design proof before batching the other five.
+This active deck is not yet rendered. B5-01 and B5-04 have matching PDF exports; B5-06/B5-09/B5-11 remain to generate. Render only the next requested deck, inspect every final-PDF page and do not treat writing checks as visual acceptance.
 
 ## B5-12 — A blocked reply still needs a response
 
@@ -1060,170 +1060,6 @@ The test reminded me that blocking an unsafe reply is only part of the behavior.
 ### Production notes
 
 No reenactment or separate recording. Source: guardrail refusal and fallback entries in `progress-notes.md`. Don't repeat the restricted prospect question, manufacture a resident complaint or claim a staffed escalation SLA. Distinguish current manager alert from proposed production assignment and escalation controls.
-
-## B5-13 — Fit the coordination around the existing business
-
-Format: carousel, 11 slides. Purpose: Scope one supported event-to-task gap, define system authority and test normal and failure paths before rollout.
-
-Framework: Value-Stack: discovery questions, exception design and a pilot brief. Reader: Owner, executive or operations leader.
-
-Saveable asset: Existing-business automation fit worksheet. The pages deliver the method and template themselves; the caption is supporting context, not a substitute for information missing from the slides.
-
-### LinkedIn post
-
-The first automation question isn't which new tool to buy.
-
-It's which handoff the company's existing tools and team still have to complete manually.
-
-This fit worksheet starts with native capabilities, then maps record authority, permitted events, human decisions, writeback and failed work. It ends with a one-path pilot brief, not a promise to connect everything.
-
-That's the production direction behind my leasing blueprint. It's a proposal, not footage of live PMS integrations or a client rollout. The local demo proves a narrower synthetic flow with stand-ins and test services.
-
-A useful discovery process can also find that the native software already covers the gap. In that case, configure it before adding a custom layer.
-
-### Carousel slides
-
-#### Slide 1
-
-Title: Map the gap before adding automation
-
-Body: Use this fit worksheet to connect one unfinished leasing handoff around existing systems. Define where work starts, who acts next and what proves completion before choosing another tool.
-
-Footer: Proposed production design · Integration-dependent
-
-Visual: cover layout. Blue box: “gap”. Gold highlight: “one unfinished leasing handoff”. Use only these focal marks; preserve unmarked supporting copy.
-
-#### Slide 2
-
-Title: Check what your software already does
-
-Body: Review the team's licensed features, templates and configured workflows. If the native system handles the gap, use it; a custom layer shouldn't duplicate a process that already works.
-
-Footer: Discovery question · No claim about every PMS
-
-Visual: checklist layout. Blue underline: “licensed features”. Use only these focal marks; preserve unmarked supporting copy.
-
-#### Slide 3
-
-Title: Name the authority for each record
-
-Body: Identify which system owns property facts, household identity, applications, signing and funds. Agree how changes flow back; a copied dashboard row must not become a competing source of truth.
-
-Footer: Proposed integration map · No demo stack required
-
-Visual: roles layout. Blue box: “authority”. Use only these focal marks; preserve unmarked supporting copy.
-
-#### Slide 4
-
-Title: Define the event that starts work
-
-Body: For one handoff, name the business event and required fields. Confirm supported access and duplicate handling; an event without a trusted household reference shouldn't start an applicant action.
-
-Footer: Proposed control · Validate interface access
-
-Visual: reference layout. Blue circle: “event”. Gold highlight: “trusted household reference”. Use only these focal marks; preserve unmarked supporting copy.
-
-#### Slide 5
-
-Title: Use approved channels and calendars
-
-Body: Keep staff in existing communication and scheduling tools where supported. Check contact permissions, account access and property-local time; don't assume a connection authorizes every message or booking.
-
-Footer: Proposed integrations · Telegram is a demo stand-in
-
-Visual: evidence layout. Blue underline: “contact permissions”. Use only these focal marks; preserve unmarked supporting copy.
-
-#### Slide 6
-
-Title: Keep sensitive evidence in approved systems
-
-Body: Map where applications and documents live, who may access them and what data the automation needs. Confirm provider eligibility, retention and approved alternatives before connecting sensitive applicant information.
-
-Footer: Proposed design · No real consumer data in the demo
-
-Visual: boundary layout. Quiet page: use hierarchy, spacing and rules without a focal color annotation. Keep the complete useful copy.
-
-#### Slide 7
-
-Title: Make the human handoff explicit
-
-Body: Name the rental decision-maker, screening-message approver and backup reviewer. Show where each action is recorded. AI can prepare bounded material; it doesn't inherit those people's authority.
-
-Footer: Proposed control · AI never chooses tenants
-
-Visual: payoff layout. Blue underline: “backup reviewer”. Use only these focal marks; preserve unmarked supporting copy.
-
-#### Slide 8
-
-Title: Design the failed path before rollout
-
-Body: Missing evidence, failed delivery and delayed confirmations need an owner, next action and follow-up time. Define escalation and reconciliation; a retry alone doesn't tell staff who is responsible.
-
-Footer: Proposed operations · Not a demonstrated uptime claim
-
-Visual: exception layout. Blue box: “failed path”. Gold highlight: “owner, next action”. Use only these focal marks; preserve unmarked supporting copy.
-
-#### Slide 9
-
-Title: Return work to the team's system
-
-Body: Confirm supported writeback for tasks, statuses and exceptions. Test that staff see the owner and act from their existing tools; an API connection alone doesn't prove that experience.
-
-Footer: Proposed writeback · Subject to access and licensing
-
-Visual: contrast layout. Blue underline: “supported writeback”. Use only these focal marks; preserve unmarked supporting copy.
-
-#### Slide 10
-
-Title: Pilot one path, including failure
-
-Body: Measure manual touches and waiting time before and during the pilot. Test a normal event, a duplicate and an unavailable service. Expand only after staff can own recovery and review.
-
-Footer: Proposed pilot · No measured client result yet
-
-Visual: worked-example layout. Gold highlight: “normal event”. Blue underline: “own recovery”. Use only these focal marks; preserve unmarked supporting copy.
-
-#### Slide 11
-
-Title: Use this one-path pilot brief
-
-Body: Trigger. Source record. Allowed action. Human approval. Writeback destination. Completion evidence. Failure owner. Baseline measure. Fill these in for one handoff; stop if access or responsibility remains unresolved.
-
-Footer: Reusable fit worksheet · Existing tools come first
-
-Visual: template layout. Blue underline: “Completion evidence”. Gold highlight: “Failure owner”. Use only these focal marks; preserve unmarked supporting copy.
-
-### Production notes
-
-Rewritten 2026-09-17 following the user's balanced-text and reference-document direction. Page count follows value, not the old fixed brief. Public pages contain no internal build number. Follow [carousel-design-blueprint.md](carousel-design-blueprint.md) for hierarchy, spacing, annotation roles and the selected dark page. Do not force the longest copy into the old giant-type statement layout.
-
-Keep the proposed-production boundary on every page. These worksheets describe a production design, not deployed client integrations or additional implemented demo features. Applicable requirements, access, retention and authority belong to the company's authorized process. No universal integration, legal compliance or ROI claim.
-
-Only copy and design directions are current in this pass. The earlier first-carousel PDF and previews are superseded; they must not be published or treated as matching this rewrite. Render one new design proof before batching the other five.
-
-## B5-14 — What the 69 checks tell me
-
-Format: text. Purpose: state verification evidence without turning it into an accuracy statistic.
-
-### LinkedIn post
-
-I don't want to present 69 checks as “69 renters tested” or “99% accurate.”
-
-The leasing build's recorded checks cover different pieces: 32 leasing checks, 19 screening checks, eight application-form checks and ten pipeline-mirror checks.
-
-Some check routing or a stored value. Others check a form behavior or a display update. They aren't 69 complete renter journeys, and they don't measure model accuracy.
-
-The end-to-end evidence is a separate question. For the tested path, I checked received messages, the calendar booking, the stored application, the manager action, the sandbox signing callback and welcome delivery.
-
-That supports a narrow claim: the recorded synthetic path ran and the inspected outputs matched the checks. It doesn't prove a client rollout, a reduction in staffing or every exception a production business could encounter.
-
-For a pilot, I'd measure the work still left to people: handling time, follow-up effort, waiting at each handoff, unresolved exceptions and whether statuses match the source systems.
-
-Checks help explain what was verified. Their count shouldn't replace that explanation.
-
-### Production notes
-
-Source: recorded verification summaries and separate execution evidence in `progress-notes.md`. Keep the 32 + 19 + 8 + 10 breakdown intact. No accuracy percentage, client outcome, handling-time reduction or assertion that all checks were complete end-to-end cases.
 
 ## B5-15 — Start with one handoff worth fixing
 
@@ -1251,10 +1087,10 @@ One invitation only: a DM about a non-sensitive operational gap. Don't append a 
 
 ## Release checklist
 
-- All fifteen captions remain aligned with their evidence and scope. The current six carousels contain 10, 9, 9, 11, 10 and 11 slides respectively, 60 total. The user-authorized range is 7–11 pages based on value.
+- All thirteen captions remain aligned with their evidence and scope. The current five carousels contain 10, 9, 9, 11 and 10 slides respectively, 49 total. The user-authorized range is 7–11 pages based on value.
 - The full demo is one master recording. The short uses only its original footage and audio, with its own visible test disclosures.
 - Video captions are checked against the final recorded events. Primary and fallback short versions are alternatives, not two posts.
-- Carousel PDFs and video exports remain later production work. Inspect legibility, captions, disclosures and privacy before uploading.
+- Two carousel PDFs are generated; three active decks and video exports remain production work. Inspect legibility, captions, disclosures and privacy before uploading.
 - No mock becomes a real verification claim. No criteria result becomes an AI rental decision. No signing event becomes a physical move-in claim.
 - No automation generates or sends an adverse-action notice. Production obligations remain an authorized human process.
 - External definitions retain their primary-source links. Before upload, verify the current composer accepts the intended files; [LinkedIn document guidance](https://www.linkedin.com/help/linkedin/answer/a519831) supports document posting, not a promised reach advantage.
@@ -1269,3 +1105,5 @@ The copy uses the existing offer-positioning matrix, a before/after/bridge struc
 2026-09-17 — Completed fifteen posts, 46 exact carousel slides, twelve-shot full-demo narration and the single-short original-audio edit brief, including a narrower fallback. No recording, graphic design, exports, publishing or runtime changes performed.
 
 2026-09-17 — Rewrote all six carousels as practical reference documents: 10/9/9/11/10/11 pages, 60 total. Added checklists, two labeled income calculations and reusable worksheets. Balanced text replaces both the dense first proof and overly sparse revision. Non-carousel post scripts and video narration are unchanged. Existing PDF assets are superseded pending a new design proof; no new PDF or publication in this pass.
+
+2026-09-17 — Removed B5-13's existing-business fit carousel and B5-14's verification-count text post from the active package at the user's request for thirteen posts. Five decks now total 49 pages; six text posts and the two-video/single-recording contract remain. Kept stable IDs and all retained captions, slide fields, text and narration unchanged. Removed drafts remain recoverable in Git history; generated B5-01/B5-04 assets are untouched.

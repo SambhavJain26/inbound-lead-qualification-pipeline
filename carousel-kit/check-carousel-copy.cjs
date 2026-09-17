@@ -15,7 +15,7 @@ const section = (text, id) => text.match(new RegExp('^## ' + id +
   ' — [\\s\\S]*?(?=^## |$(?![\\s\\S]))', 'm'))?.[0];
 const words = s => (s.match(/[\p{L}\p{N}]+(?:['’.-][\p{L}\p{N}]+)*/gu) || []).length;
 const banned = /\b(delve|leverage|robust|seamless|supercharge|unlock|empower|revolutionize|synergy|ecosystem|journey|elevate|streamline|utilize|comprehensive|impactful|actionable|very|really|quite|rather|somewhat|essentially|basically|actually|simply)\b/i;
-const expected = { 'B5-01': 10, 'B5-04': 9, 'B5-06': 9, 'B5-09': 11, 'B5-11': 10, 'B5-13': 11 };
+const expected = { 'B5-01': 10, 'B5-04': 9, 'B5-06': 9, 'B5-09': 11, 'B5-11': 10 };
 const report = [];
 const lengthWarnings = [];
 for (const [id, count] of Object.entries(expected)) {
@@ -59,12 +59,27 @@ for (const [id, count] of Object.entries(expected)) {
   report.push({ id, pages: count, words: lengths, averageWords: Number((lengths.reduce((a,b)=>a+b,0) / count).toFixed(1)), captionWords: captionLength, marks });
 }
 const postIds = [...scripts.matchAll(/^## (B5-\d{2}) — /gm)].map(m => m[1]);
-if (postIds.length !== 15 || postIds.some((id,i)=>id !== 'B5-' + String(i+1).padStart(2,'0')))
-  throw new Error('Fifteen-post order changed');
+// Post IDs identify artifacts, not publishing slots. Retired IDs stay retired.
+const activeIds = Array.from({ length: 12 }, (_, i) => 'B5-' + String(i + 1).padStart(2, '0')).concat('B5-15');
+if (JSON.stringify(postIds) !== JSON.stringify(activeIds))
+  throw new Error('Thirteen-post active order changed');
+const briefIds = [...plan.matchAll(/^### (B5-\d{2}) — /gm)].map(m => m[1]);
+const slots = [...plan.matchAll(/^\| (\d+) \| (B5-\d{2}) \| /gm)];
+if (JSON.stringify(briefIds) !== JSON.stringify(activeIds) || slots.length !== activeIds.length ||
+    slots.some((slot, i) => Number(slot[1]) !== i + 1 || slot[2] !== activeIds[i]))
+  throw new Error('Active plan briefs/publishing slots differ from scripts');
+const formats = postIds.map(id => section(scripts, id).match(/^Format: ([^.]+)\./m)?.[1]);
+const counts = { carousels: formats.filter(f => f?.startsWith('carousel,')).length,
+  text: formats.filter(f => f === 'text').length,
+  fullVideo: formats.filter(f => f?.startsWith('one native video,')).length,
+  shortVideo: formats.filter(f => f?.startsWith('one short,')).length };
+if (counts.carousels !== 5 || counts.text !== 6 || counts.fullVideo !== 1 || counts.shortVideo !== 1)
+  throw new Error('Expected five carousels, six text posts and two videos');
 for (const id of postIds.filter(id => !(id in expected))) {
   if (section(scripts, id) !== section(baseline, id)) throw new Error('Non-carousel post changed: ' + id);
 }
 if (2400 * 24 / 12 !== 4800 || 2400 * 26 / 12 !== 5200 || 5000 - 4100 !== 900)
   throw new Error('Illustrative arithmetic');
 console.log(JSON.stringify({ status: 'PASS: copy structure and preserved posts only; visual QA is separate',
-  totalPages: report.reduce((n,d)=>n+d.pages,0), nonCarouselPostsPreserved: 9, lengthWarnings, report }, null, 2));
+  activePosts: postIds.length, formatCounts: counts,
+  totalPages: report.reduce((n,d)=>n+d.pages,0), nonCarouselPostsPreserved: 8, lengthWarnings, report }, null, 2));

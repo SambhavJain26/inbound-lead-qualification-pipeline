@@ -7,8 +7,8 @@ See the latest review at the end and the current design blueprint.
 
 Subsequent production update: the user requested the next deck individually.
 B5-04's nine-page checklist is also rendered and reviewed in
-[its separate assessment](b5-04-carousel-design-assessment.md). Four decks remain
-ungenerated. Historical statuses below describe their respective review passes.
+[its separate assessment](b5-04-carousel-design-assessment.md). Three active decks remain
+ungenerated; B5-13 and text post B5-14 were subsequently retired. Historical statuses below describe their respective review passes.
 
 Reviewed 2026-09-17. This is a self-assessment, not user design approval.
 Only the first seven-slide leasing carousel was redesigned. The other five remain

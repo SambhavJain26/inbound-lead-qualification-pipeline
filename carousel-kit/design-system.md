@@ -24,7 +24,8 @@ Read ../docs/build-5-content-strategy/carousel-design-blueprint.md before render
 - Keep internal build IDs off public pages and preserve human decision authority,
   simulation/test boundaries and proposed-production labels.
 - User-authorized copy revisions update scripts and source together. Prior proof
-  HTML/PDF is superseded until regenerated to match the 60-slide rewrite.
+  HTML/PDF is superseded until regenerated to match the active scripts. The
+  current campaign has five decks and 49 pages after retiring B5-13.
 - Compare reader usefulness, hierarchy, readability and annotation balance, not
   word reduction alone. Exact fit checks cannot establish design acceptance.
 

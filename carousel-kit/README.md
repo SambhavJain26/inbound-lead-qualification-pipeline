@@ -2,9 +2,9 @@
 
 ## Current generated decks; individual review
 
-All six carousel sections in ../docs/build-5-content-strategy/linkedin-post-scripts.md
+The five active carousel sections in ../docs/build-5-content-strategy/linkedin-post-scripts.md
 were rewritten after the user's second design review. Current counts are
-10/9/9/11/10/11 pages: 60 total. Teaching pages have balanced explanatory text,
+10/9/9/11/10 pages: 49 total. Teaching pages have balanced explanatory text,
 practical examples and reusable worksheets, not the rejected sparse statements.
 
 The current b5-01-inquiry-to-lease.html and output/pdf/b5-01-inquiry-to-lease.pdf
@@ -42,7 +42,7 @@ columns at the existing 48/72 body scale, with compact selection-box padding.
 B5-04 has two blue boxes, four blue underlines, two blue circles and three gold
 highlights. Page seven is the only dark page and deliberately has no focal mark.
 
-Two decks are generated; B5-06/09/11/13 remain briefs. Continue one requested deck
+Two decks are generated; B5-06/09/11 remain active briefs. Continue one requested deck
 at a time, not a batch inferred from this request. No account uploads, publishing
 or operational-service changes happened. Technical QA is not user preference.
 
@@ -78,3 +78,9 @@ fonts or replace baked grain with a full-page SVG turbulence filter.
 The sparse revision's earlier numbers are historical, not targets. Only assess
 rendered band span once the new source exists; it isn't actual ink coverage,
 whitespace percentage or proof that the revised design is good.
+
+2026-09-17 campaign reduction: B5-13's ungenerated fit carousel and text post
+B5-14 are retired from the active plan. The package now has thirteen posts: five
+carousels, six text posts and two videos. Keep retained IDs stable rather than
+renaming existing assets or matching scripts to contiguous post numbers. Removed
+drafts are recoverable from Git history. No generated PDF or PNG was removed.

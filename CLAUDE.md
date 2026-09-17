@@ -299,3 +299,10 @@ questions at the existing body scale. Measure selection padding plus punctuation
 keep a selected question's question mark inside its span. Use nb for short compound
 words or closing phrases to avoid split hyphens and one-word orphans without
 changing copy. Inspect circle curves against glyphs, not only their outer bounds.
+
+## Content Campaign Reductions
+
+Keep retained post IDs stable when retiring posts; publishing slots can be
+contiguous without renaming scripts or exported assets. Update active briefs,
+scripts, foundation handoffs, design maps and editorial checks together. Retired
+drafts remain recoverable in Git; dated historical counts are not current totals.

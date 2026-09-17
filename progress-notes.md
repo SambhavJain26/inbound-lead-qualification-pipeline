@@ -2088,3 +2088,30 @@ Updated production statuses, shared design guidance and separate B5-04 assessmen
 Durable question/punctuation/compound-word gotchas mirrored in AGENTS/CLAUDE.
 No runtime, applicant, account, upload, publishing or scheduling actions. Existing
 unrelated dirty changes preserved; only this task's files and append entries staged.
+
+## 2026-09-17 — Active LinkedIn campaign reduced to thirteen posts
+
+User requested removal of one carousel and one text post. Selected ungenerated
+B5-13, existing-business automation-fit worksheet, and B5-14, verification-count
+text post. Existing-tool fit remains in B5-07/B5-15; proof limits remain in the
+demo and release checks. No automation or production-blueprint scope change.
+
+Active mix: five carousels, six text posts, one full demo and one reused-footage
+short, thirteen posts total. Five decks contain 10/9/9/11/10 pages, 49 total.
+Two generated decks remain untouched; B5-06/B5-09/B5-11 are the three remaining
+exports. Retained IDs are B5-01 through B5-12 plus B5-15; publishing slots are
+one through thirteen. No asset renames or extra recording tasks.
+
+Removed the two active brief/script sections and retired B5-13's design map.
+Updated current format counts, pillar/index/cadence, release checks, README,
+foundation handoffs and assessment status. Dated older counts remain historical.
+Drafts are recoverable from Git history, including pre-reduction commit 81d4165;
+no generated PDFs or PNGs were deleted or regenerated.
+
+Editorial checker now validates stable active IDs, contiguous publishing slots,
+matching briefs, five/six/two format counts and all 49 carousel pages. It preserves
+the eight remaining non-carousel scripts. Separate comparison confirms retained
+carousel captions and slide fields unchanged. Existing generated assets have no
+diff. Syntax and whitespace checks pass; durable ID rule mirrored in AGENTS/CLAUDE.
+No uploads, publishing, scheduling, account or runtime changes. Unrelated dirty
+work preserved; only task-owned documentation/checker changes and append entries staged.

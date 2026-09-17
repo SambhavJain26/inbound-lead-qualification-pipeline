@@ -406,6 +406,9 @@ const connections = wf.connect({
   "Send Welcome Packet": [["Log Welcome Packet", "Notify Manager: Lease Signed"]],
 });
 
+const mirror = require('./lib/pipeline-mirror');
+mirror.attach(wf,nodes,connections,'Record Envelope Sent','$json.ref_token','Lease Sent');
+mirror.attach(wf,nodes,connections,'Send Welcome Packet',"$('Mark Lease Signed').first().json.ref_token",'Lease Signed');
 const workflow = wf.buildWorkflow({
   id: "wf4-lease-and-signature",
   name: "WF4 Lease And Signature",

@@ -12,6 +12,7 @@
 
 const path = require("path");
 const wf = require("./lib/wf-common");
+const applicationForm = require("./lib/application-form");
 const { REPO_ROOT } = require("./lib/env");
 
 const SCREENING_LIB = wf.inlineLib("screening-lib.js");
@@ -71,7 +72,11 @@ const normaliseCode = [
   "// Normalises the submitted form and discards the raw SSN immediately.",
   "const out = [];",
   "for (const item of $input.all()) {",
-  "  const form = item.json;",
+  "  const form = Object.assign({}, item.json);",
+  "  const displayFields = " + JSON.stringify(applicationForm.fields.map(([key, label]) => [key, label])) + ";",
+  "  for (const pair of displayFields) { if (form[pair[0]] === undefined) form[pair[0]] = form[pair[1]]; }",
+  "  const consent = form.fcra_consent;",
+  "  if (consent !== 'I authorize the synthetic demo checks' && consent !== 'I authorise these checks') throw new Error('Explicit demo verification authorization is required');",
   "",
   "  // Form Trigger field keys can arrive generically, so read defensively.",
   "  function field(names, fallback) {",
@@ -90,7 +95,8 @@ const normaliseCode = [
   "  // The raw SSN is reduced to its last four digits here and never stored.",
   "  const ssnLast4 = maskSsn(field(['ssn', 'SSN', 'Social Security Number']));",
   "",
-  "  const refToken = extractRefToken(String(field(['ref_token', 'Reference Code'], '')));",
+  "  const reference = String(field(['ref_token', 'Reference Code'], '')).trim();",
+  "  const refToken = /^R-\\d{4}$/.test(reference) ? reference : extractRefToken(reference);",
   "",
   "  out.push({",
   "    json: {",
@@ -309,53 +315,24 @@ const criteriaCode = [
 const nodes = [
   wf.formTriggerNode("Rental Application Form", {
     formPath: "rental-application",
+    version: 2.4,
     title: "Rental Application",
     description:
-      "412 Maple Street, Springfield. Applying does not commit you to anything - " +
-      "it puts you forward for consideration.",
+      "Maple Grove Residential | 412 Maple Street, Springfield. Complete one application per household. " +
+      "Required fields are marked with an asterisk. This is a demonstration: use synthetic details and documents only. " +
+      "Submitting an application is not a lease or an approval. A person reviews every rental decision.",
     // Matches the listing site the prospect just tapped through from.
-    customCss: wf.FORM_CSS,
+    customCss: wf.FORM_CSS + '\n' + [
+      '.card { max-width: 720px; padding: 32px; }',
+      'h2 { font-size: 20px; color: var(--color-header-text); margin: 32px 0 8px; padding-top: 24px; border-top: 1px solid var(--color-card-border); }',
+      'p { line-height: 1.6; }',
+      'label { color: var(--color-header-text); font-weight: 600; }',
+      'input, select, textarea { min-height: 44px; font-size: 16px; }',
+      'input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--color-focus-border); outline-offset: 2px; }',
+      '@media (max-width: 600px) { .card { padding: 20px; } }',
+    ].join('\n'),
     buttonLabel: "Submit application",
-    fields: [
-          { fieldLabel: "ref_token", fieldType: "text", requiredField: false },
-          { fieldLabel: "unit_code", fieldType: "text", requiredField: true },
-          { fieldLabel: "full_name", fieldType: "text", requiredField: true },
-          { fieldLabel: "email", fieldType: "email", requiredField: true },
-          { fieldLabel: "phone", fieldType: "text", requiredField: false },
-          { fieldLabel: "ssn", fieldType: "text", requiredField: true },
-          { fieldLabel: "current_address", fieldType: "text", requiredField: true },
-          { fieldLabel: "prior_address", fieldType: "text", requiredField: false },
-          { fieldLabel: "desired_move_in", fieldType: "date", requiredField: true },
-          { fieldLabel: "employer_name", fieldType: "text", requiredField: true },
-          { fieldLabel: "job_title", fieldType: "text", requiredField: false },
-          { fieldLabel: "claimed_monthly_income", fieldType: "number", requiredField: true },
-          { fieldLabel: "rental_assistance_amount", fieldType: "number", requiredField: false },
-          { fieldLabel: "occupants", fieldType: "number", requiredField: true },
-          { fieldLabel: "pets", fieldType: "text", requiredField: false },
-          { fieldLabel: "vehicles", fieldType: "text", requiredField: false },
-          {
-            fieldLabel: "prior_eviction", fieldType: "dropdown", requiredField: true,
-            fieldOptions: { values: [{ option: "No" }, { option: "Yes" }] },
-          },
-          {
-            fieldLabel: "broken_lease", fieldType: "dropdown", requiredField: true,
-            fieldOptions: { values: [{ option: "No" }, { option: "Yes" }] },
-          },
-          {
-            fieldLabel: "bankruptcy", fieldType: "dropdown", requiredField: true,
-            fieldOptions: { values: [{ option: "No" }, { option: "Yes" }] },
-          },
-          {
-            fieldLabel: "paystub", fieldType: "file", requiredField: true,
-            acceptFileTypes: ".pdf", multipleFiles: false,
-          },
-          {
-            // FCRA written authorisation. Without this, no verification step
-            // may legally run - which is why it is required, not optional.
-            fieldLabel: "fcra_consent", fieldType: "dropdown", requiredField: true,
-            fieldOptions: { values: [{ option: "I authorise these checks" }] },
-          },
-],
+    fields: applicationForm.buildFields(),
   }, [-720, 0]),
 
   wf.codeNode("Normalise And Mask Application", normaliseCode, [-500, 0]),
@@ -598,6 +575,9 @@ const connections = wf.connect({
   "Stop For Human Review": [["Mark Stopped For Human"]],
 });
 
+const mirror = require('./lib/pipeline-mirror');
+mirror.attach(wf,nodes,connections,'Save Verification Results','$json.ref_token','Application');
+mirror.attach(wf,nodes,connections,'Mark Stopped For Human','$json.ref_token','Review Stop');
 const workflow = wf.buildWorkflow({
   id: "wf2-application-and-verify",
   name: "WF2 Application And Verify",

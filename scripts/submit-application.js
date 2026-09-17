@@ -48,7 +48,7 @@ async function main() {
   if (!trigger) throw new Error("no form trigger in wf2 - run the build script first");
 
   const indexByLabel = new Map(
-    trigger.parameters.formFields.values.map((field, index) => [field.fieldLabel, index])
+    trigger.parameters.formFields.values.map((field, index) => [field.fieldName || field.fieldLabel, index])
   );
 
   const form = new FormData();
@@ -87,7 +87,7 @@ async function main() {
   set("phone", applicant.phone);
   // Fabricated. A real form would collect a real SSN; this one masks it to
   // last-4 on arrival and never stores the rest.
-  set("ssn", `000-00-${applicant.ssn_last4}`);
+  set("ssn", applicant.ssn_last4);
   set("current_address", applicant.current_address);
   set("prior_address", applicant.prior_address);
   set("desired_move_in", applicant.desired_move_in);
@@ -102,7 +102,7 @@ async function main() {
   set("broken_lease", applicant.disclosures.broken_lease ? "Yes" : "No");
   set("bankruptcy", applicant.disclosures.bankruptcy_7_years ? "Yes" : "No");
   set("unit_code", applicant.unit_code);
-  set("fcra_consent", "I authorise these checks");
+  set("fcra_consent", "I authorize the synthetic demo checks");
 
   form.set(
     `field-${indexByLabel.get("paystub")}`,

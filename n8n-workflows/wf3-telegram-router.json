@@ -327,6 +327,75 @@
         }
       },
       "onError": "continueRegularOutput"
+    },
+    {
+      "id": "mirror-read-pipeline-decision",
+      "name": "Mirror: Read Pipeline Decision",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4200,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
+        "options": {
+          "queryReplacement": "={{ [$json.ref_token] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "mirror-map-pipeline-decision",
+      "name": "Mirror: Map Pipeline Decision",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4420,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
+      }
+    },
+    {
+      "id": "mirror-upsert-airtable-decision",
+      "name": "Mirror: Upsert Airtable Decision",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4640,
+        0
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/__AIRTABLE_BASE_ID__/Leads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({performUpsert:{fieldsToMergeOn:['Ref Token']},typecast:true,records:[{fields:$json.fields}]}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "__AIRTABLE_CREDENTIAL_ID__",
+          "name": "Leasing Airtable (display mirror)"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
     }
   ],
   "connections": {
@@ -428,6 +497,11 @@
             "node": "Send Lease Now?",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Mirror: Read Pipeline Decision",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -455,6 +529,28 @@
         [
           {
             "node": "Confirm Decision Recorded",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Read Pipeline Decision": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Map Pipeline Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Map Pipeline Decision": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Upsert Airtable Decision",
             "type": "main",
             "index": 0
           }

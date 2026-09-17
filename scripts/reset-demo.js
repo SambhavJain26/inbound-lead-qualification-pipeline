@@ -38,13 +38,15 @@ async function clearAirtableMirror() {
   const base = `https://api.airtable.com/v0/${env.AIRTABLE_BASE_ID}/Leads`;
   const headers = { Authorization: `Bearer ${env.AIRTABLE_PAT}` };
 
-  const listed = await fetch(`${base}?pageSize=100`, { headers });
-  if (!listed.ok) {
-    console.log(`  Airtable: could not list records (HTTP ${listed.status}), skipped`);
-    return;
-  }
-
-  const { records = [] } = await listed.json();
+  const records=[];
+  let offset;
+  do {
+    const listed=await fetch(`${base}?pageSize=100${offset?'&offset='+encodeURIComponent(offset):''}`,{headers});
+    if(!listed.ok) throw new Error(`Airtable reset could not list records (HTTP ${listed.status})`);
+    const page=await listed.json();
+    records.push(...(page.records||[]));
+    offset=page.offset;
+  } while(offset);
   if (!records.length) {
     console.log("  Airtable: already empty");
     return;
@@ -56,7 +58,8 @@ async function clearAirtableMirror() {
     const batch = records.slice(i, i + 10);
     const query = batch.map((r) => `records[]=${r.id}`).join("&");
     const response = await fetch(`${base}?${query}`, { method: "DELETE", headers });
-    if (response.ok) deleted += batch.length;
+    if (!response.ok) throw new Error(`Airtable reset failed deleting a batch (HTTP ${response.status})`);
+    deleted += batch.length;
     await new Promise((r) => setTimeout(r, 250));
   }
   console.log(`  Airtable: ${deleted} mirror record(s) cleared`);

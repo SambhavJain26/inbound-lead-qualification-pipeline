@@ -150,7 +150,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// The page the browser lands on after the contact form posts.\n// Built here, not in the Respond node's parameter, so quoting, newlines and\n// prospect-supplied text never reach the expression parser.\nconst esc = (value) => String(value === null || value === undefined ? '' : value)\n  .split('&').join('&amp;')\n  .split('<').join('&lt;')\n  .split('>').join('&gt;')\n  .split('\"').join('&quot;');\n\nconst out = [];\nfor (const item of $input.all()) {\n  const lead = item.json;\n  const inquiry = $('Normalize Inquiry Form').first().json;\n  const unit = $('Find Unit For Inquiry').first().json;\n  const token = lead.ref_token || inquiry.ref_token;\n\n  // Telegram deep-link payload charset is [A-Za-z0-9_-], max 64 bytes.\n  // R-1234 is legal as-is, so the token goes through unchanged.\n  const link = 'https://t.me/__TELEGRAM_PROSPECT_BOT_USERNAME__?start=' + token;\n\n  const html = [\n    '<!doctype html>',\n    '<html lang=\"en\"><head><meta charset=\"utf-8\">',\n    '<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">',\n    '<title>Thanks - we have your message</title>',\n    '<link rel=\"stylesheet\" href=\"http://localhost:8080/styles.css\">',\n    '</head><body>',\n    '<div class=\"confirm\">',\n    '<h1>Thanks, ' + esc(inquiry.prospect_name) + '</h1>',\n    '<p>We have your message about ' + esc(unit.address) + '.</p>',\n    '<p>Your reference is <span class=\"ref\">' + esc(token) + '</span>.</p>',\n    '<p>Our leasing assistant has your question and can answer it right now, along with anything else you want to know about the home.</p>',\n    '<p><a class=\"cta\" href=\"' + link + '\">Chat with the leasing assistant</a></p>',\n    '<p class=\"small\">Opens in Telegram.</p>',\n    '<p class=\"small\">Demonstration system. Synthetic data only.</p>',\n    '<p class=\"small\"><a href=\"http://localhost:8080/\">Back to listings</a></p>',\n    '</div></body></html>',\n  ].join('\\n');\n\n  out.push({ json: { ref_token: token, telegram_link: link, confirmation_html: html } });\n}\nreturn out;"
+        "jsCode": "// The page the browser lands on after the contact form posts.\n// Built here, not in the Respond node's parameter, so quoting, newlines and\n// prospect-supplied text never reach the expression parser.\nconst esc = (value) => String(value === null || value === undefined ? '' : value)\n  .split('&').join('&amp;')\n  .split('<').join('&lt;')\n  .split('>').join('&gt;')\n  .split('\"').join('&quot;');\n\nconst out = [];\nfor (const item of $input.all()) {\n  const lead = item.json;\n  const inquiry = $('Normalize Inquiry Form').first().json;\n  const unit = $('Find Unit For Inquiry').first().json;\n  const token = lead.ref_token || inquiry.ref_token;\n\n  // Telegram deep-link payload charset is [A-Za-z0-9_-], max 64 bytes.\n  // R-1234 is legal as-is, so the token goes through unchanged.\n  const link = 'https://t.me/__TELEGRAM_PROSPECT_BOT_USERNAME__?start=' + token;\n\n  const html = [\n    '<!doctype html>',\n    '<html lang=\"en\"><head><meta charset=\"utf-8\">',\n    '<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">',\n    '<title>Thanks - we have your message</title>',\n    '<link rel=\"stylesheet\" href=\"http://localhost:8080/styles.css\">',\n    '</head><body>',\n    '<div class=\"confirm\">',\n    '<h1>Thanks, ' + esc(inquiry.prospect_name) + '</h1>',\n    '<p>We have your message about ' + esc(unit.address) + '.</p>',\n    '<p>Your reference is <span class=\"ref\">' + esc(token) + '</span>.</p>',\n    '<p>We have sent you a message with an answer to your question.</p>',\n    '<p class=\"small\">Demonstration system. Synthetic data only.</p>',\n    '<p class=\"small\"><a href=\"http://localhost:8080/\">Back to listings</a></p>',\n    '</div></body></html>',\n  ].join('\\n');\n\n  out.push({ json: { ref_token: token, telegram_link: link, confirmation_html: html } });\n}\nreturn out;"
       }
     },
     {
@@ -177,37 +177,6 @@
           }
         }
       }
-    },
-    {
-      "id": "mirror-new-lead-to-airtable",
-      "name": "Mirror New Lead To Airtable",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        980,
-        -1280
-      ],
-      "parameters": {
-        "method": "PATCH",
-        "url": "=https://api.airtable.com/v0/__AIRTABLE_BASE_ID__/Leads",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "airtableTokenApi",
-        "sendBody": true,
-        "contentType": "json",
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({\n  performUpsert: { fieldsToMergeOn: ['Ref Token'] },\n  typecast: true,\n  records: [{ fields: {\n    'Ref Token': $('Create Lead From Inquiry').item.json.ref_token,\n    'Prospect': $('Normalize Inquiry Form').item.json.prospect_name,\n    'Email': $('Normalize Inquiry Form').item.json.prospect_email,\n    'Unit': $('Normalize Inquiry Form').item.json.unit_code,\n    'Status': 'New'\n  } }]\n}) }}",
-        "options": {
-          "timeout": 10000
-        }
-      },
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "__AIRTABLE_CREDENTIAL_ID__",
-          "name": "Leasing Airtable (display mirror)"
-        }
-      },
-      "onError": "continueRegularOutput",
-      "retryOnFail": false
     },
     {
       "id": "build-rejection-page",
@@ -922,37 +891,6 @@
       }
     },
     {
-      "id": "mirror-lead-to-airtable-phase",
-      "name": "Mirror Lead To Airtable (Phase)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        3840,
-        -820
-      ],
-      "parameters": {
-        "method": "PATCH",
-        "url": "=https://api.airtable.com/v0/__AIRTABLE_BASE_ID__/Leads",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "airtableTokenApi",
-        "sendBody": true,
-        "contentType": "json",
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({\n  performUpsert: { fieldsToMergeOn: ['Ref Token'] },\n  typecast: true,\n  records: [{ fields: {\n    'Ref Token': $('Check Guardrails (Telegram)').item.json.ref_token,\n    'Prospect': $('Check Guardrails (Telegram)').item.json.prospect_name,\n    'Unit': $('Check Guardrails (Telegram)').item.json.unit_code,\n    'Status': $('Check Guardrails (Telegram)').item.json.next_status_label\n  } }]\n}) }}",
-        "options": {
-          "timeout": 10000
-        }
-      },
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "__AIRTABLE_CREDENTIAL_ID__",
-          "name": "Leasing Airtable (display mirror)"
-        }
-      },
-      "onError": "continueRegularOutput",
-      "retryOnFail": false
-    },
-    {
       "id": "reply-handing-to-a-colleague",
       "name": "Reply: Handing To A Colleague",
       "type": "n8n-nodes-base.telegram",
@@ -1038,9 +976,8 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "calcom-booking",
-        "responseMode": "lastNode",
-        "options": {},
-        "responseData": "allEntries"
+        "responseMode": "onReceived",
+        "options": {}
       },
       "webhookId": "calcom-booking"
     },
@@ -1213,7 +1150,7 @@
       ],
       "parameters": {
         "chatId": "=__TELEGRAM_CHAT_ID__",
-        "text": "=A tour was booked that does not match any lead.\n\nBooking: {{ $json.booking_uid }}\nAttendee: {{ $json.attendee_email }}\n\nNo entry code was issued and nothing was sent. The booking link was probably used without a reference token.",
+        "text": "=A booking callback could not be linked to a lead. Please review it.\n\nBooking: {{ $json.booking_uid }}\nAttendee: {{ $json.attendee_email }}\n\nThis callback did not issue another entry code or send another confirmation. Check the booking and renter record before taking action.",
         "additionalFields": {
           "appendAttribution": false,
           "parse_mode": "HTML"
@@ -1727,37 +1664,6 @@
       }
     },
     {
-      "id": "mirror-email-lead-to-airtable",
-      "name": "Mirror Email Lead To Airtable",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1420,
-        820
-      ],
-      "parameters": {
-        "method": "PATCH",
-        "url": "=https://api.airtable.com/v0/__AIRTABLE_BASE_ID__/Leads",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "airtableTokenApi",
-        "sendBody": true,
-        "contentType": "json",
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({\n  performUpsert: { fieldsToMergeOn: ['Ref Token'] },\n  typecast: true,\n  records: [{ fields: {\n    'Ref Token': $('Check Tier A Guardrails').item.json.ref_token,\n    'Prospect': $('Check Tier A Guardrails').item.json.prospect_name,\n    'Email': $('Check Tier A Guardrails').item.json.prospect_email,\n    'Unit': $('Check Tier A Guardrails').item.json.unit_code,\n    'Status': 'Engaged'\n  } }]\n}) }}",
-        "options": {
-          "timeout": 10000
-        }
-      },
-      "credentials": {
-        "airtableTokenApi": {
-          "id": "__AIRTABLE_CREDENTIAL_ID__",
-          "name": "Leasing Airtable (display mirror)"
-        }
-      },
-      "onError": "continueRegularOutput",
-      "retryOnFail": false
-    },
-    {
       "id": "alert-manager-email-reply-blocked",
       "name": "Alert Manager: Email Reply Blocked",
       "type": "n8n-nodes-base.telegram",
@@ -2044,6 +1950,480 @@
         }
       },
       "onError": "continueRegularOutput"
+    },
+    {
+      "id": "wait-for-booking-owner",
+      "name": "Allow Booking Owner To Record",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -500,
+        400
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 10,
+        "unit": "seconds"
+      },
+      "webhookId": "booking-owner-delay"
+    },
+    {
+      "id": "check-existing-booking-owner",
+      "name": "Check Existing Booking Owner",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -300,
+        400
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT EXISTS(SELECT 1 FROM leads WHERE calcom_booking_uid=$1) AS already_recorded",
+        "options": {
+          "queryReplacement": "={{ [$('Issue Lock Code (MOCK)').first().json.booking_uid ?? ''] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      }
+    },
+    {
+      "id": "booking-already-recorded",
+      "name": "Booking Already Recorded?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -100,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "json-already-recorded",
+              "leftValue": "={{ $json.already_recorded }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "restore-new-booking-payload",
+      "name": "Restore New Booking Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        100,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:$('Issue Lock Code (MOCK)').first().json}];"
+      }
+    },
+    {
+      "id": "mirror-new-lead-to-airtable",
+      "name": "Mirror New Lead To Airtable",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4000,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all();"
+      }
+    },
+    {
+      "id": "mirror-read-pipeline-new-lead",
+      "name": "Mirror: Read Pipeline New Lead",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4200,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
+        "options": {
+          "queryReplacement": "={{ [$('Create Lead From Inquiry').first().json.ref_token] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "mirror-map-pipeline-new-lead",
+      "name": "Mirror: Map Pipeline New Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4420,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
+      }
+    },
+    {
+      "id": "mirror-upsert-airtable-new-lead",
+      "name": "Mirror: Upsert Airtable New Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4640,
+        0
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/__AIRTABLE_BASE_ID__/Leads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({performUpsert:{fieldsToMergeOn:['Ref Token']},typecast:true,records:[{fields:$json.fields}]}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "__AIRTABLE_CREDENTIAL_ID__",
+          "name": "Leasing Airtable (display mirror)"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
+    },
+    {
+      "id": "mirror-lead-to-airtable-phase",
+      "name": "Mirror Lead To Airtable (Phase)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4000,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all();"
+      }
+    },
+    {
+      "id": "mirror-read-pipeline-prequalification",
+      "name": "Mirror: Read Pipeline Prequalification",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4200,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
+        "options": {
+          "queryReplacement": "={{ [$('Check Guardrails (Telegram)').first().json.ref_token] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "mirror-map-pipeline-prequalification",
+      "name": "Mirror: Map Pipeline Prequalification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4420,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
+      }
+    },
+    {
+      "id": "mirror-upsert-airtable-prequalification",
+      "name": "Mirror: Upsert Airtable Prequalification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4640,
+        0
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/__AIRTABLE_BASE_ID__/Leads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({performUpsert:{fieldsToMergeOn:['Ref Token']},typecast:true,records:[{fields:$json.fields}]}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "__AIRTABLE_CREDENTIAL_ID__",
+          "name": "Leasing Airtable (display mirror)"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
+    },
+    {
+      "id": "mirror-email-lead-to-airtable",
+      "name": "Mirror Email Lead To Airtable",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4000,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all();"
+      }
+    },
+    {
+      "id": "mirror-read-pipeline-email-lead",
+      "name": "Mirror: Read Pipeline Email Lead",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4200,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
+        "options": {
+          "queryReplacement": "={{ [$('Check Tier A Guardrails').first().json.ref_token] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "mirror-map-pipeline-email-lead",
+      "name": "Mirror: Map Pipeline Email Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4420,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
+      }
+    },
+    {
+      "id": "mirror-upsert-airtable-email-lead",
+      "name": "Mirror: Upsert Airtable Email Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4640,
+        0
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/__AIRTABLE_BASE_ID__/Leads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({performUpsert:{fieldsToMergeOn:['Ref Token']},typecast:true,records:[{fields:$json.fields}]}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "__AIRTABLE_CREDENTIAL_ID__",
+          "name": "Leasing Airtable (display mirror)"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
+    },
+    {
+      "id": "mirror-read-pipeline-public-tour",
+      "name": "Mirror: Read Pipeline Public Tour",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4200,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
+        "options": {
+          "queryReplacement": "={{ [$json.ref_token] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "mirror-map-pipeline-public-tour",
+      "name": "Mirror: Map Pipeline Public Tour",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4420,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
+      }
+    },
+    {
+      "id": "mirror-upsert-airtable-public-tour",
+      "name": "Mirror: Upsert Airtable Public Tour",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4640,
+        0
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/__AIRTABLE_BASE_ID__/Leads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({performUpsert:{fieldsToMergeOn:['Ref Token']},typecast:true,records:[{fields:$json.fields}]}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "__AIRTABLE_CREDENTIAL_ID__",
+          "name": "Leasing Airtable (display mirror)"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
+    },
+    {
+      "id": "mirror-read-pipeline-tour-completed",
+      "name": "Mirror: Read Pipeline Tour Completed",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4200,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
+        "options": {
+          "queryReplacement": "={{ [$json.ref_token] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "mirror-map-pipeline-tour-completed",
+      "name": "Mirror: Map Pipeline Tour Completed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4420,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
+      }
+    },
+    {
+      "id": "mirror-upsert-airtable-tour-completed",
+      "name": "Mirror: Upsert Airtable Tour Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4640,
+        0
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/__AIRTABLE_BASE_ID__/Leads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({performUpsert:{fieldsToMergeOn:['Ref Token']},typecast:true,records:[{fields:$json.fields}]}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "__AIRTABLE_CREDENTIAL_ID__",
+          "name": "Leasing Airtable (display mirror)"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
     }
   ],
   "connections": {
@@ -2512,7 +2892,7 @@
       "main": [
         [
           {
-            "node": "Record Tour Booking",
+            "node": "Allow Booking Owner To Record",
             "type": "main",
             "index": 0
           }
@@ -2524,6 +2904,11 @@
         [
           {
             "node": "Booking Matches A Lead?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mirror: Read Pipeline Public Tour",
             "type": "main",
             "index": 0
           }
@@ -2626,6 +3011,11 @@
         [
           {
             "node": "Application: Pick Delivery Channel",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mirror: Read Pipeline Tour Completed",
             "type": "main",
             "index": 0
           }
@@ -2901,6 +3291,194 @@
           },
           {
             "node": "Log Prequal Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Allow Booking Owner To Record": {
+      "main": [
+        [
+          {
+            "node": "Check Existing Booking Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Existing Booking Owner": {
+      "main": [
+        [
+          {
+            "node": "Booking Already Recorded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booking Already Recorded?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Restore New Booking Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore New Booking Payload": {
+      "main": [
+        [
+          {
+            "node": "Record Tour Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror New Lead To Airtable": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Read Pipeline New Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Read Pipeline New Lead": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Map Pipeline New Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Map Pipeline New Lead": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Upsert Airtable New Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror Lead To Airtable (Phase)": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Read Pipeline Prequalification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Read Pipeline Prequalification": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Map Pipeline Prequalification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Map Pipeline Prequalification": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Upsert Airtable Prequalification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror Email Lead To Airtable": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Read Pipeline Email Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Read Pipeline Email Lead": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Map Pipeline Email Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Map Pipeline Email Lead": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Upsert Airtable Email Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Read Pipeline Public Tour": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Map Pipeline Public Tour",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Map Pipeline Public Tour": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Upsert Airtable Public Tour",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Read Pipeline Tour Completed": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Map Pipeline Tour Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Map Pipeline Tour Completed": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Upsert Airtable Tour Completed",
             "type": "main",
             "index": 0
           }

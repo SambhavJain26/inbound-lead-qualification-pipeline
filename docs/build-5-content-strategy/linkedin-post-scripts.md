@@ -171,13 +171,15 @@ Happy to answer questions about a particular handoff in the recording.
 
 Record one master in S01–S12 order. The short uses only footage and audio from S08–S12. Speak the five reusable passages exactly as written below, after the relevant result is visible. Their labels are editorial directions, not spoken words.
 
+The published recording begins on the listing page. Do not show a terminal, command prompt, script execution, Docker or tunnel startup, webhook registration, n8n workflow configuration, API console, database query or credential screen. Complete technical setup before capture. When an operator-only event must be triggered, pause or cut the screen recording, perform it off-camera, and resume on the labeled business-facing result. This rule applies to both the full demo and the short edit.
+
 Use the clean-run steps in `docs/manual-testing-flow.md`, including Docker, listing server and fresh tunnel recovery. Check both bot webhooks and the current callback URLs before the take. Do not reuse a cleared reference or an old manager card.
 
 Use the actual available future Cal.com slot and verify it in property-local time. No fixed recording date is promised here. Keep asynchronous waiting in the master if useful, or cut it with an on-screen label such as “Waiting period cut.” A cut is not evidence of instant delivery.
 
 Show the action and its result. Don't advance the narration merely because a button was clicked. Capture the manager decision once, on the fresh application. Do not click Conditional to explore an alternative during this happy-path take.
 
-For each shot, leave a clean visual hold before and after speaking. Keep the cursor off important values. Show readable application windows, not raw configuration or a secrets-bearing terminal.
+For each shot, leave a clean visual hold before and after speaking. Keep the cursor off important values. Show only readable business-facing application windows, never raw configuration or a terminal.
 
 ### S01 — Scope and opening
 
@@ -1130,3 +1132,5 @@ footers and eight non-carousel posts are unchanged. Regenerated all five PDFs
 and managed previews; checked all 49 native-size final-PDF pages, five contact
 sheets and fifteen 360px mobile previews. Exact copy, geometry, text-run bounds,
 fonts, grain and arithmetic checks pass. No runtime changes or publication.
+
+2026-09-17 — Made the user's no-command-footage requirement explicit in the master recording rules. The full demo and short now exclude terminals, scripts, Docker/tunnel startup, n8n configuration, API/database screens and credentials. Operator-only triggers happen during a paused or cut segment; recording resumes on the labeled business-facing result. Narration and workflow scope are unchanged.

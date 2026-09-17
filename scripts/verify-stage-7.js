@@ -265,8 +265,8 @@ async function main() {
     "Lead is marked as a listing-site lead"
   );
 
-  const deepLink = inquiryHtml.includes(`?start=${refToken}`) && inquiryHtml.includes("t.me/");
-  check(deepLink, "Confirmation page carries the Telegram deep link", `?start=${refToken}`);
+  const receipt = inquiryHtml.includes('We have sent you a message') && !inquiryHtml.includes('t.me/');
+  check(receipt, "Confirmation uses SMS-style wording without a chat button");
 
   /* 6. a resubmit is idempotent ------------------------------------------ */
   await fetch(`${N8N}/webhook/listing-inquiry`, {

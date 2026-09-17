@@ -7,7 +7,7 @@
       "id": "rental-application-form",
       "name": "Rental Application Form",
       "type": "n8n-nodes-base.formTrigger",
-      "typeVersion": 2.2,
+      "typeVersion": 2.4,
       "position": [
         -720,
         0
@@ -15,91 +15,152 @@
       "parameters": {
         "path": "rental-application",
         "formTitle": "Rental Application",
-        "formDescription": "412 Maple Street, Springfield. Applying does not commit you to anything - it puts you forward for consideration.",
+        "formDescription": "Maple Grove Residential | 412 Maple Street, Springfield. Complete one application per household. Required fields are marked with an asterisk. This is a demonstration: use synthetic details and documents only. Submitting an application is not a lease or an approval. A person reviews every rental decision.",
         "formFields": {
           "values": [
             {
+              "fieldType": "html",
+              "html": "<h2>The home</h2><p>Select the home you toured. Your application reference is carried over from your message.</p>"
+            },
+            {
+              "fieldName": "ref_token",
               "fieldLabel": "ref_token",
-              "fieldType": "text",
+              "fieldType": "hiddenField",
               "requiredField": false
             },
             {
-              "fieldLabel": "unit_code",
-              "fieldType": "text",
-              "requiredField": true
+              "fieldName": "unit_code",
+              "fieldLabel": "Home you are applying for",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "MAPLE-2B"
+                  },
+                  {
+                    "option": "MAPLE-5A"
+                  }
+                ]
+              }
             },
             {
-              "fieldLabel": "full_name",
-              "fieldType": "text",
-              "requiredField": true
+              "fieldType": "html",
+              "html": "<h2>Your contact details</h2><p>Synthetic applicant details only. Never enter real identity or bank information.</p>"
             },
             {
-              "fieldLabel": "email",
+              "fieldName": "full_name",
+              "fieldLabel": "Full name",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "First and last name"
+            },
+            {
+              "fieldName": "email",
+              "fieldLabel": "Email address",
               "fieldType": "email",
-              "requiredField": true
+              "requiredField": true,
+              "placeholder": "Where we can contact you"
             },
             {
-              "fieldLabel": "phone",
+              "fieldName": "phone",
+              "fieldLabel": "Phone number",
               "fieldType": "text",
               "requiredField": false
             },
             {
-              "fieldLabel": "ssn",
+              "fieldName": "ssn",
+              "fieldLabel": "Demo identity code (last four digits only)",
               "fieldType": "text",
-              "requiredField": true
+              "requiredField": true,
+              "placeholder": "Use 1234. Do not enter a real SSN."
             },
             {
-              "fieldLabel": "current_address",
-              "fieldType": "text",
-              "requiredField": true
+              "fieldType": "html",
+              "html": "<h2>Residential history</h2><p>Include your apartment number and complete address.</p>"
             },
             {
-              "fieldLabel": "prior_address",
+              "fieldName": "current_address",
+              "fieldLabel": "Current address",
               "fieldType": "text",
-              "requiredField": false
+              "requiredField": true,
+              "placeholder": "Street, apartment, city, state and ZIP"
             },
             {
-              "fieldLabel": "desired_move_in",
+              "fieldName": "prior_address",
+              "fieldLabel": "Previous address",
+              "fieldType": "text",
+              "requiredField": false,
+              "placeholder": "If you moved within the past two years"
+            },
+            {
+              "fieldType": "html",
+              "html": "<h2>Move-in and income</h2><p>Report gross monthly income before taxes. These details support verification, not an automatic rental decision.</p>"
+            },
+            {
+              "fieldName": "desired_move_in",
+              "fieldLabel": "Requested move-in date",
               "fieldType": "date",
               "requiredField": true
             },
             {
-              "fieldLabel": "employer_name",
+              "fieldName": "employer_name",
+              "fieldLabel": "Employer or income provider",
               "fieldType": "text",
               "requiredField": true
             },
             {
-              "fieldLabel": "job_title",
+              "fieldName": "job_title",
+              "fieldLabel": "Job title (if applicable)",
               "fieldType": "text",
               "requiredField": false
             },
             {
-              "fieldLabel": "claimed_monthly_income",
+              "fieldName": "claimed_monthly_income",
+              "fieldLabel": "Gross monthly income ($)",
               "fieldType": "number",
-              "requiredField": true
+              "requiredField": true,
+              "placeholder": "Before taxes and deductions"
             },
             {
-              "fieldLabel": "rental_assistance_amount",
+              "fieldName": "rental_assistance_amount",
+              "fieldLabel": "Monthly rental assistance amount ($)",
               "fieldType": "number",
-              "requiredField": false
+              "requiredField": false,
+              "placeholder": "Enter 0 if not applicable"
             },
             {
-              "fieldLabel": "occupants",
-              "fieldType": "number",
-              "requiredField": true
+              "fieldType": "html",
+              "html": "<h2>Occupants, pets and parking</h2><p>Provide counts and property-related details only. Do not include ages or relationships.</p>"
             },
             {
-              "fieldLabel": "pets",
+              "fieldName": "occupants",
+              "fieldLabel": "Total number of occupants",
+              "fieldType": "number",
+              "requiredField": true,
+              "placeholder": "Count everyone who would live in the home"
+            },
+            {
+              "fieldName": "pets",
+              "fieldLabel": "Pets",
               "fieldType": "text",
-              "requiredField": false
+              "requiredField": false,
+              "placeholder": "Type, number and weight; or none"
             },
             {
-              "fieldLabel": "vehicles",
+              "fieldName": "vehicles",
+              "fieldLabel": "Vehicles needing parking",
               "fieldType": "text",
-              "requiredField": false
+              "requiredField": false,
+              "placeholder": "Number, make and model; or none"
             },
             {
-              "fieldLabel": "prior_eviction",
+              "fieldType": "html",
+              "html": "<h2>Rental disclosures</h2><p>These self-reported answers do not produce an automatic decision.</p>"
+            },
+            {
+              "fieldName": "prior_eviction",
+              "fieldLabel": "Have you had an eviction filing?",
               "fieldType": "dropdown",
               "requiredField": true,
               "fieldOptions": {
@@ -114,7 +175,8 @@
               }
             },
             {
-              "fieldLabel": "broken_lease",
+              "fieldName": "broken_lease",
+              "fieldLabel": "Have you broken a rental lease?",
               "fieldType": "dropdown",
               "requiredField": true,
               "fieldOptions": {
@@ -129,7 +191,8 @@
               }
             },
             {
-              "fieldLabel": "bankruptcy",
+              "fieldName": "bankruptcy",
+              "fieldLabel": "Have you filed bankruptcy in the past seven years?",
               "fieldType": "dropdown",
               "requiredField": true,
               "fieldOptions": {
@@ -144,20 +207,26 @@
               }
             },
             {
-              "fieldLabel": "paystub",
+              "fieldType": "html",
+              "html": "<h2>Supporting document and authorization</h2><p>Upload a synthetic PDF pay stub. Income verification uses Plaid Sandbox; identity, credit and eviction checks are MOCK. No real consumer report is requested.</p>"
+            },
+            {
+              "fieldName": "paystub",
+              "fieldLabel": "Upload your most recent pay stub (PDF)",
               "fieldType": "file",
               "requiredField": true,
               "acceptFileTypes": ".pdf",
               "multipleFiles": false
             },
             {
-              "fieldLabel": "fcra_consent",
+              "fieldName": "fcra_consent",
+              "fieldLabel": "Demo verification authorization",
               "fieldType": "dropdown",
               "requiredField": true,
               "fieldOptions": {
                 "values": [
                   {
-                    "option": "I authorise these checks"
+                    "option": "I authorize the synthetic demo checks"
                   }
                 ]
               }
@@ -166,7 +235,7 @@
         },
         "options": {
           "appendAttribution": false,
-          "customCss": ":root {\n  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n  --color-background: #f7f6f3;\n  --color-card-bg: #ffffff;\n  --color-card-border: #e3e6ea;\n  --color-card-shadow: rgba(28, 36, 48, 0.06);\n  --color-header-text: #1c2430;\n  --color-description-text: #5a6675;\n  --color-label: #5a6675;\n  --color-input-border: #e3e6ea;\n  --color-input-text: #1c2430;\n  --color-focus-border: #1f6f5c;\n  --color-submit-btn-bg: #1f6f5c;\n  --color-submit-btn-text: #ffffff;\n  --color-link: #1f6f5c;\n}\n.card { border-radius: 10px; }\nh1 { letter-spacing: -0.02em; }",
+          "customCss": ":root {\n  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n  --color-background: #f7f6f3;\n  --color-card-bg: #ffffff;\n  --color-card-border: #e3e6ea;\n  --color-card-shadow: rgba(28, 36, 48, 0.06);\n  --color-header-text: #1c2430;\n  --color-description-text: #5a6675;\n  --color-label: #5a6675;\n  --color-input-border: #e3e6ea;\n  --color-input-text: #1c2430;\n  --color-focus-border: #1f6f5c;\n  --color-submit-btn-bg: #1f6f5c;\n  --color-submit-btn-text: #ffffff;\n  --color-link: #1f6f5c;\n}\n.card { border-radius: 10px; }\nh1 { letter-spacing: -0.02em; }\n.card { max-width: 720px; padding: 32px; }\nh2 { font-size: 20px; color: var(--color-header-text); margin: 32px 0 8px; padding-top: 24px; border-top: 1px solid var(--color-card-border); }\np { line-height: 1.6; }\nlabel { color: var(--color-header-text); font-weight: 600; }\ninput, select, textarea { min-height: 44px; font-size: 16px; }\ninput:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--color-focus-border); outline-offset: 2px; }\n@media (max-width: 600px) { .card { padding: 20px; } }",
           "buttonLabel": "Submit application"
         }
       },
@@ -183,7 +252,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "/**\n * Screening logic: income comparison and the deterministic criteria engine.\n *\n * Inlined into n8n Code nodes, so it stays dependency-free and avoids backticks\n * and template literals - those are consumed before the code reaches the node.\n *\n * NOTHING HERE CALLS A MODEL. The criteria engine reads manager-configured\n * thresholds and applies them identically to every applicant, which is what\n * HUD's May 2024 guidance describes when it says a screening tool should\n * \"implement, rather than set\" the housing provider's policies.\n *\n * It emits a classification and an evidence trail. It never emits a decision,\n * a score, a rank, or a recommendation - a human does that.\n */\n\n/* --------------------------------------------------------------------- PII */\n\n/**\n * An application form collects an SSN because a real one does. We keep the last\n * four and discard the rest on arrival; the raw value is never stored.\n */\nfunction maskSsn(raw) {\n  var digits = String(raw || \"\").replace(/\\D/g, \"\");\n  if (digits.length < 4) return null;\n  return digits.slice(-4);\n}\n\n/* ------------------------------------------------------- Plaid normalisation */\n\nvar PERIODS_PER_YEAR = {\n  WEEKLY: 52,\n  BIWEEKLY: 26,\n  SEMI_MONTHLY: 24,\n  SEMIMONTHLY: 24,\n  MONTHLY: 12,\n  ANNUALLY: 1,\n  ANNUAL: 1,\n};\n\nfunction monthlyFromPeriod(amount, frequency) {\n  var perYear = PERIODS_PER_YEAR[String(frequency || \"\").toUpperCase()];\n  if (!perYear || !amount) return null;\n  return Math.round((amount * perYear) / 12 * 100) / 100;\n}\n\n/**\n * Pulls verified monthly income out of a /credit/payroll_income/get response.\n *\n * Uses the most recent pay stub and its stated frequency rather than summing\n * year-to-date, because YTD in Sandbox is not a full year and would understate\n * the figure.\n */\nfunction parsePlaidPayrollIncome(response) {\n  var result = {\n    verified_monthly_income: null,\n    employer_name: null,\n    pay_frequency: null,\n    gross_per_period: null,\n    pay_period_end: null,\n    employee_name: null,\n    source: \"plaid_sandbox\",\n    warnings: [],\n  };\n\n  var items = (response && response.items) || [];\n  var stub = null;\n  var source = null;\n\n  for (var i = 0; i < items.length && !stub; i++) {\n    var sources = items[i].payroll_income || [];\n    for (var j = 0; j < sources.length && !stub; j++) {\n      var stubs = sources[j].pay_stubs || [];\n      if (stubs.length) {\n        source = sources[j];\n        // Most recent period first.\n        stub = stubs.slice().sort(function (a, b) {\n          var ea = (a.pay_period_details || {}).end_date || \"\";\n          var eb = (b.pay_period_details || {}).end_date || \"\";\n          return eb.localeCompare(ea);\n        })[0];\n      }\n    }\n  }\n\n  if (!stub) {\n    result.warnings.push(\"no pay stubs in the Plaid response\");\n    return result;\n  }\n\n  var details = stub.pay_period_details || {};\n  result.employer_name = (source && source.employer && source.employer.name) || null;\n  result.employee_name = (stub.employee && stub.employee.name) || null;\n  result.pay_frequency = details.pay_frequency || null;\n  result.gross_per_period = details.gross_earnings === undefined ? null : details.gross_earnings;\n  result.pay_period_end = details.end_date || null;\n\n  result.verified_monthly_income = monthlyFromPeriod(result.gross_per_period, result.pay_frequency);\n  if (result.verified_monthly_income === null) {\n    result.warnings.push(\"could not derive a monthly figure from gross \" +\n      result.gross_per_period + \" at frequency \" + result.pay_frequency);\n  }\n\n  return result;\n}\n\n/* ------------------------------------------------------- income comparison */\n\n/**\n * The three numbers the demo puts side by side.\n *\n *   claimed   - what the applicant typed on the form\n *   extracted - what the model read off the uploaded pay stub\n *   verified  - what the bank actually shows\n *\n * A pay stub can be edited in a photo editor. A deposit history cannot. When\n * these disagree beyond tolerance the file is flagged for a human.\n */\nfunction computeIncomeComparison(input) {\n  var claimed = input.claimed === null || input.claimed === undefined ? null : Number(input.claimed);\n  var extracted = input.extracted === null || input.extracted === undefined ? null : Number(input.extracted);\n  var verified = input.verified === null || input.verified === undefined ? null : Number(input.verified);\n  var tolerance = Number(input.tolerancePct === undefined ? 10 : input.tolerancePct);\n\n  function variance(value) {\n    if (value === null || verified === null || verified === 0) return null;\n    return Math.round(Math.abs(value - verified) / verified * 1000) / 10;\n  }\n\n  var documentVariance = variance(extracted);\n  var claimedVariance = variance(claimed);\n\n  return {\n    claimed_monthly: claimed,\n    extracted_monthly: extracted,\n    verified_monthly: verified,\n    tolerance_pct: tolerance,\n    document_variance_pct: documentVariance,\n    claimed_variance_pct: claimedVariance,\n    document_matches: documentVariance === null ? null : documentVariance <= tolerance,\n    claimed_matches: claimedVariance === null ? null : claimedVariance <= tolerance,\n    // The single fact the manager needs at a glance.\n    mismatch_flagged:\n      (documentVariance !== null && documentVariance > tolerance) ||\n      (claimedVariance !== null && claimedVariance > tolerance),\n  };\n}\n\n/* ---------------------------------------------------------- criteria engine */\n\nfunction evidence(criterion, met, detail, source) {\n  return { criterion: criterion, met: met, detail: detail, source: source || null };\n}\n\n/**\n * Applies the manager's published criteria.\n *\n * @returns {{result: string, evidence: Array, tenant_responsible_rent: number}}\n *   result is one of meets_criteria | conditional | does_not_meet.\n */\nfunction runCriteriaEngine(input) {\n  var app = input.application || {};\n  var unit = input.unit || {};\n  var config = input.config || {};\n  var comparison = input.comparison || {};\n\n  var incomeMultiple = Number(config.income_multiple || 3);\n  var minCredit = Number(config.min_credit_score || 650);\n  var conditionalCredit = Number(config.conditional_credit_min || 600);\n  var maxEvictions = Number(config.max_eviction_filings || 0);\n\n  var rent = Number(unit.rent_amount || 0);\n  var assistance = Number(app.rental_assistance_amount || 0);\n\n  // The income multiple applies to the tenant's share of rent, not gross rent.\n  // Requiring a voucher holder to earn 3x the FULL rent is treated as\n  // source-of-income discrimination in the jurisdictions that protect it.\n  var tenantRent = Math.max(rent - assistance, 0);\n\n  var trail = [];\n  var verified = comparison.verified_monthly === undefined ? null : comparison.verified_monthly;\n\n  /* income multiple, against verified income only */\n  if (verified === null || !tenantRent) {\n    trail.push(evidence(\"income_multiple\", null,\n      \"cannot evaluate: verified income or rent is missing\", null));\n  } else {\n    var ratio = Math.round(verified / tenantRent * 100) / 100;\n    var detail = \"$\" + verified + \"/mo verified against $\" + tenantRent +\n      \" tenant-responsible rent = \" + ratio.toFixed(2) + \"x, threshold \" +\n      incomeMultiple.toFixed(2) + \"x\";\n    if (assistance > 0) {\n      detail += \" (rent $\" + rent + \" less $\" + assistance + \" rental assistance)\";\n    }\n    trail.push(evidence(\"income_multiple\", ratio >= incomeMultiple, detail, {\n      document: \"plaid_payroll_income\",\n      field: \"verified_monthly_income\",\n      value: verified,\n    }));\n  }\n\n  /* documented income vs verified income */\n  if (comparison.document_matches === null || comparison.document_matches === undefined) {\n    trail.push(evidence(\"income_document_match\", null,\n      \"cannot evaluate: no extracted document income\", null));\n  } else {\n    trail.push(evidence(\"income_document_match\", comparison.document_matches,\n      \"pay stub implies $\" + comparison.extracted_monthly + \"/mo against $\" +\n        comparison.verified_monthly + \"/mo verified, variance \" +\n        comparison.document_variance_pct + \"% (tolerance \" + comparison.tolerance_pct + \"%)\",\n      { document: \"uploaded_paystub\", field: \"gross_this_period\", value: comparison.extracted_monthly }));\n  }\n\n  /* credit - mocked data, real threshold */\n  var credit = app.credit_score === null || app.credit_score === undefined ? null : Number(app.credit_score);\n  if (credit === null) {\n    trail.push(evidence(\"credit_score\", null, \"cannot evaluate: no credit score\", null));\n  } else {\n    trail.push(evidence(\"credit_score\", credit >= minCredit,\n      credit + \" against a \" + minCredit + \" threshold\" +\n        (credit < minCredit && credit >= conditionalCredit\n          ? \", within the \" + conditionalCredit + \"-\" + (minCredit - 1) + \" conditional band\"\n          : \"\"),\n      { document: \"screening_bureau_mock\", field: \"credit_score\", value: credit }));\n  }\n\n  /* eviction filings - mocked data, real threshold */\n  var evictions = app.eviction_filings === null || app.eviction_filings === undefined\n    ? null : Number(app.eviction_filings);\n  if (evictions === null) {\n    trail.push(evidence(\"eviction_history\", null, \"cannot evaluate: no eviction data\", null));\n  } else {\n    trail.push(evidence(\"eviction_history\", evictions <= maxEvictions,\n      evictions + \" filing(s) in the last \" + (config.eviction_lookback_years || 5) +\n        \" years, maximum \" + maxEvictions,\n      { document: \"screening_bureau_mock\", field: \"eviction_filings\", value: evictions }));\n  }\n\n  /* identity - mocked */\n  if (app.identity_match === null || app.identity_match === undefined) {\n    trail.push(evidence(\"identity_check\", null, \"cannot evaluate: no identity result\", null));\n  } else {\n    trail.push(evidence(\"identity_check\", Boolean(app.identity_match),\n      app.identity_match ? \"document and applicant details matched\" : \"identity did not match\",\n      { document: \"identity_check_mock\", field: \"match\", value: app.identity_match }));\n  }\n\n  /* ------------------------------------------------------------ outcome */\n\n  var failed = trail.filter(function (e) { return e.met === false; });\n  var unknown = trail.filter(function (e) { return e.met === null; });\n\n  var result;\n  if (failed.length === 0 && unknown.length === 0) {\n    result = \"meets_criteria\";\n  } else if (failed.length === 0) {\n    // Nothing failed, but something could not be evaluated. That is a human's\n    // call, not a pass.\n    result = \"conditional\";\n  } else {\n    var onlyCreditInBand =\n      failed.length === 1 &&\n      failed[0].criterion === \"credit_score\" &&\n      credit !== null &&\n      credit >= conditionalCredit;\n    result = onlyCreditInBand ? \"conditional\" : \"does_not_meet\";\n  }\n\n  return {\n    result: result,\n    evidence: trail,\n    tenant_responsible_rent: tenantRent,\n    failed_criteria: failed.map(function (e) { return e.criterion; }),\n    unevaluated_criteria: unknown.map(function (e) { return e.criterion; }),\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/**\n * What a real FCRA adverse-action process would require. Shown to the manager\n * on the stop path so the demo makes the point explicitly.\n *\n * This build never generates any of these documents.\n */\nfunction adverseActionRequirements() {\n  return [\n    \"Pre-adverse-action notice, including a copy of the consumer report\",\n    \"A copy of the FCRA Summary of Rights\",\n    \"A waiting period for the applicant to dispute (commonly five business days)\",\n    \"A final adverse-action notice naming the bureau that supplied the report\",\n  ];\n}\n\n/**\n * Shared front-of-funnel logic.\n *\n * This file is the single source of truth for lead parsing, reference tokens,\n * Tier A guardrails, and the pre-qualification gate. The build scripts inline it\n * into n8n Code nodes, so it must stay dependency-free and must not use\n * backticks or template literals - those are consumed before reaching the node.\n *\n * Nothing here calls a model. Everything here is deterministic.\n */\n\n/* ------------------------------------------------------------------ tokens */\n\n/**\n * Reference token carried in every subject line. Replies are matched on this\n * first and on sender address only as a fallback - the model never decides\n * which lead a message belongs to.\n */\nfunction makeRefToken(prefix, seed) {\n  var n = seed === undefined ? Math.floor(Math.random() * 9000) + 1000 : seed;\n  return prefix + \"-\" + String(n).slice(0, 4);\n}\n\nfunction extractRefToken(text) {\n  if (!text) return null;\n  var match = String(text).match(/\\[([RA]-\\d{4})\\]/);\n  return match ? match[1] : null;\n}\n\nfunction subjectWithToken(subject, token) {\n  if (extractRefToken(subject)) return subject;\n  return subject + \" [\" + token + \"]\";\n}\n\n/* ------------------------------------------------------- lead email parsing */\n\n/**\n * Parses a listing-site lead notification.\n *\n * Zillow delivers these as email with an anonymised relay reply-to and no phone\n * number, so the parser must tolerate a missing phone rather than treat it as a\n * failure. Anything it cannot determine is left null and flagged, never guessed.\n */\nfunction parseLeadEmail(input) {\n  var subject = input.subject || \"\";\n  var body = input.body || \"\";\n  var replyTo = input.replyTo || input.from || \"\";\n\n  var result = {\n    prospect_name: null,\n    prospect_email: null,\n    prospect_phone: null,\n    unit_hint: null,\n    inquiry_text: null,\n    source: \"zillow_email\",\n    parse_warnings: [],\n  };\n\n  var nameMatch = body.match(/^\\s*Renter:\\s*(.+)$/m);\n  if (nameMatch) result.prospect_name = nameMatch[1].trim();\n  else result.parse_warnings.push(\"no renter name found\");\n\n  var propertyMatch = body.match(/^\\s*Property:\\s*(.+)$/m);\n  if (propertyMatch) result.unit_hint = propertyMatch[1].trim();\n  else {\n    var subjectUnit = subject.match(/:\\s*(.+)$/);\n    if (subjectUnit) result.unit_hint = subjectUnit[1].trim();\n    else result.parse_warnings.push(\"no property reference found\");\n  }\n\n  // The renter's own words, between the quotes after \"Message:\".\n  var messageMatch = body.match(/Message:\\s*\"([\\s\\S]*?)\"/);\n  if (messageMatch) result.inquiry_text = messageMatch[1].replace(/\\s+/g, \" \").trim();\n  else result.parse_warnings.push(\"no inquiry text found\");\n\n  var emailMatch = String(replyTo).match(/[\\w.+-]+@[\\w.-]+\\.\\w+/);\n  if (emailMatch) result.prospect_email = emailMatch[0];\n  else result.parse_warnings.push(\"no reply address found\");\n\n  var phoneMatch = body.match(/(\\+?1[\\s.-]?)?\\(?\\d{3}\\)?[\\s.-]\\d{3}[\\s.-]\\d{4}/);\n  if (phoneMatch) result.prospect_phone = phoneMatch[0].trim();\n\n  return result;\n}\n\n/* ------------------------------------------------- unit knowledge for the AI */\n\n/**\n * Flattens a unit row into the only facts the FAQ model is allowed to use.\n * If a fact is not in here, the correct answer is \"I don't have that\".\n */\nfunction buildUnitKnowledge(unit) {\n  if (!unit) return null;\n  var facts = unit.faq_facts || {};\n  var knowledge = {\n    unit_code: unit.unit_code,\n    address: unit.address,\n    bedrooms: unit.beds,\n    bathrooms: Number(unit.baths),\n    square_feet: unit.sqft,\n    monthly_rent: Number(unit.rent_amount),\n    security_deposit: Number(unit.deposit_amount),\n    available_from: unit.available_from,\n    lease_term_months: unit.lease_term_months,\n    pet_policy: unit.pet_policy,\n    pet_fee_monthly: unit.pet_fee_monthly === null ? null : Number(unit.pet_fee_monthly),\n    parking: unit.parking,\n    utilities: unit.utilities_included,\n    laundry: unit.laundry,\n  };\n  Object.keys(facts).forEach(function (key) {\n    knowledge[key] = facts[key];\n  });\n  return knowledge;\n}\n\n/**\n * Unit facts PLUS the figures the prospect themselves stated, for use as the\n * guardrail's allowlist during a conversation.\n *\n * The unsupported-figure rule exists to stop the model inventing a rent, a fee\n * or a deposit. It is not meant to stop it repeating a number the prospect just\n * supplied - and in a chat, confirming what someone told you (\"$5,000 a month,\n * got it\") is the natural thing to say. With only unit facts in the allowlist\n * every such reply is blocked, the prospect gets silence, and the conversation\n * stalls on the most ordinary turn there is.\n *\n * Only the recorded slot values are added, never arbitrary numbers scraped from\n * the message, so the check still catches anything the model made up.\n */\nfunction buildConversationKnowledge(unit, statedAnswers) {\n  var knowledge = buildUnitKnowledge(unit);\n  if (!knowledge) return null;\n  var answers = statedAnswers || {};\n\n  if (answers.stated_monthly_income !== null && answers.stated_monthly_income !== undefined) {\n    knowledge.prospect_stated_monthly_income = Number(answers.stated_monthly_income);\n  }\n  if (answers.vehicles !== null && answers.vehicles !== undefined) {\n    knowledge.prospect_stated_vehicles = Number(answers.vehicles);\n  }\n  if (answers.occupants !== null && answers.occupants !== undefined) {\n    knowledge.prospect_stated_occupants = Number(answers.occupants);\n  }\n  if (answers.pets !== null && answers.pets !== undefined && answers.pets !== \"\") {\n    knowledge.prospect_stated_pets = String(answers.pets);\n  }\n  if (answers.move_in_date !== null && answers.move_in_date !== undefined) {\n    knowledge.prospect_stated_move_in = String(answers.move_in_date);\n  }\n  return knowledge;\n}\n\n/**\n * Escapes text for Telegram's HTML parse mode.\n *\n * The Telegram node always sends a parse_mode, so message text is parsed for\n * entities whether you want it or not. Under the legacy Markdown default a\n * single underscore opens an italic run that never closes, and Telegram rejects\n * the whole message with \"can't parse entities\" and a byte offset - which is\n * exactly what an application link carrying ?ref_token= does. The node then\n * fails with a bare \"Bad request - please check your parameters\".\n *\n * So: send HTML parse mode and escape the three characters it cares about.\n * Underscores, asterisks and brackets are then all literal, and a URL with a\n * query string is safe.\n */\nfunction escapeTelegramHtml(text) {\n  if (text === null || text === undefined) return \"\";\n  return String(text)\n    .split(\"&\").join(\"&amp;\")\n    .split(\"<\").join(\"&lt;\")\n    .split(\">\").join(\"&gt;\");\n}\n\n/* ------------------------------------------------------------------- tours */\n\n/**\n * Turns a naive datetime into a real instant, read as PROPERTY-LOCAL time.\n *\n * The model returns \"2026-09-15T14:00\" when someone says \"Tuesday at 2pm\", and\n * they mean 2pm at the property. `new Date()` on a bare string with no zone\n * reads it in the runtime's zone - UTC in a container - so a request for 2pm\n * silently became 9:30am and the renter was booked five hours out. Nothing\n * errors; you only notice by reading the booked time.\n *\n * Anything already carrying a Z or a +/-HH:MM offset is left exactly alone.\n */\nfunction naiveLocalToUtcIso(naive, timeZone) {\n  if (!naive) return null;\n  var text = String(naive).trim();\n  if (/(Z|[+-]\\d{2}:?\\d{2})$/.test(text)) return new Date(text).toISOString();\n\n  var guess = new Date(text + \"Z\");\n  if (isNaN(guess.getTime())) return null;\n\n  // How far ahead of UTC that zone is at that instant, DST included.\n  var dtf = new Intl.DateTimeFormat(\"en-US\", {\n    timeZone: timeZone || \"UTC\", hour12: false,\n    year: \"numeric\", month: \"2-digit\", day: \"2-digit\",\n    hour: \"2-digit\", minute: \"2-digit\", second: \"2-digit\",\n  });\n  var parts = {};\n  dtf.formatToParts(guess).forEach(function (p) { parts[p.type] = p.value; });\n  var asUtc = Date.UTC(\n    Number(parts.year), Number(parts.month) - 1, Number(parts.day),\n    Number(parts.hour) % 24, Number(parts.minute), Number(parts.second)\n  );\n  var offset = asUtc - guess.getTime();\n  return new Date(guess.getTime() - offset).toISOString();\n}\n\n/**\n * Picks the real Cal.com slot closest to what the prospect asked for.\n *\n * The model turns \"Saturday morning\" into an ISO datetime; it never chooses the\n * booking. This does, deterministically, against the slots Cal.com actually\n * returned - so the assistant can only ever book a time that genuinely exists.\n *\n * `slots` is a flat array of ISO strings. Returns the nearest slot within\n * `toleranceHours`, plus the next few alternatives to offer if nothing is close.\n */\nfunction matchTourSlot(wantedIso, slots, toleranceHours) {\n  var tolerance = (toleranceHours === undefined ? 4 : toleranceHours) * 3600000;\n  var available = (slots || []).slice().sort();\n  var result = { matched: null, delta_minutes: null, alternatives: available.slice(0, 3) };\n  if (!wantedIso || !available.length) return result;\n\n  var wanted = new Date(wantedIso).getTime();\n  if (isNaN(wanted)) return result;\n\n  var best = null;\n  var bestDelta = Infinity;\n  for (var i = 0; i < available.length; i++) {\n    var delta = Math.abs(new Date(available[i]).getTime() - wanted);\n    if (delta < bestDelta) { bestDelta = delta; best = available[i]; }\n  }\n\n  // Alternatives are the slots nearest what they asked for, not simply the\n  // earliest ones - \"how about Tuesday?\" should not be answered with Monday 9am.\n  result.alternatives = available\n    .slice()\n    .sort(function (a, b) {\n      return Math.abs(new Date(a).getTime() - wanted) - Math.abs(new Date(b).getTime() - wanted);\n    })\n    .slice(0, 3)\n    .sort();\n\n  if (best !== null && bestDelta <= tolerance) {\n    result.matched = best;\n    result.delta_minutes = Math.round(bestDelta / 60000);\n  }\n  return result;\n}\n\n/**\n * Is this slot inside the manager's published tour policy, or an exception?\n *\n * Exceptions are held for a tap rather than refused. Returning reasons rather\n * than a bare boolean means the manager's card can say WHY it was held, which\n * is the difference between a useful notification and an interruption.\n *\n * `hourOverride` exists because a Code node cannot rely on the container's\n * timezone; the caller passes the local hour and weekday it computed.\n */\nfunction classifyTourRequest(slotIso, policy, nowIso, hourOverride, weekdayOverride) {\n  var reasons = [];\n  var config = policy || {};\n  var earliest = Number(config.earliest_hour === undefined ? 9 : config.earliest_hour);\n  var latest = Number(config.latest_hour === undefined ? 18 : config.latest_hour);\n  var minNotice = Number(config.min_notice_hours === undefined ? 12 : config.min_notice_hours);\n  var allowWeekends = config.allow_weekends === undefined ? true : Boolean(config.allow_weekends);\n\n  var slot = new Date(slotIso);\n  var now = new Date(nowIso || new Date().toISOString());\n  var hour = hourOverride === undefined || hourOverride === null ? slot.getUTCHours() : Number(hourOverride);\n  var weekday = weekdayOverride === undefined || weekdayOverride === null\n    ? slot.getUTCDay()\n    : Number(weekdayOverride);\n\n  if (hour < earliest || hour >= latest) {\n    reasons.push(\"outside self-guided hours (\" + earliest + \":00-\" + latest + \":00)\");\n  }\n  if (!allowWeekends && (weekday === 0 || weekday === 6)) {\n    reasons.push(\"weekend\");\n  }\n  var noticeHours = (slot.getTime() - now.getTime()) / 3600000;\n  if (noticeHours < minNotice) {\n    reasons.push(\"less than \" + minNotice + \"h notice (\" + Math.max(0, Math.round(noticeHours)) + \"h)\");\n  }\n\n  return {\n    is_exception: reasons.length > 0,\n    reasons: reasons,\n    notice_hours: Math.round(noticeHours),\n  };\n}\n\n/* -------------------------------------------------------------- guardrails */\n\n/**\n * Tier A guardrail. Runs on every message before it leaves, and again at send\n * time, because a manager may have edited the wording after it was drafted.\n *\n * Blocks: protected-class content, legal or lease commitments, rent negotiation,\n * availability promises, and invented numbers that are not in the unit facts.\n */\nvar PROTECTED_CLASS_PATTERNS = [\n  { pattern: /\\b(kids?|children|child|family friendly|families|school district)\\b/i, label: \"familial status\" },\n  { pattern: /\\b(disab|wheelchair|handicap|mental health|service animal policy)\\b/i, label: \"disability\" },\n  { pattern: /\\b(race|ethnic|nationality|immigration|citizen|visa status)\\b/i, label: \"national origin / race\" },\n  { pattern: /\\b(church|mosque|temple|synagogue|religio)\\b/i, label: \"religion\" },\n  { pattern: /\\b(marital status|married|single people|couples only)\\b/i, label: \"marital status\" },\n  { pattern: /\\b(section 8|voucher|housing assistance|welfare)\\b/i, label: \"source of income\" },\n  { pattern: /\\b(good neighborhood for|safe area for|type of people)\\b/i, label: \"steering\" },\n];\n\nvar COMMITMENT_PATTERNS = [\n  { pattern: /\\b(guarantee|guaranteed|we promise|you will be approved|pre-?approved)\\b/i, label: \"approval commitment\" },\n  { pattern: /\\b(hold (it|the unit) for you|reserved for you|it'?s yours)\\b/i, label: \"availability commitment\" },\n  { pattern: /\\b(we can lower|discount the rent|negotiate the rent|reduce the rent)\\b/i, label: \"rent negotiation\" },\n  { pattern: /\\b(legally|by law|you are entitled|your rights under)\\b/i, label: \"legal statement\" },\n  { pattern: /\\b(denied|rejected|you do not qualify|we cannot rent to you)\\b/i, label: \"adverse decision language\" },\n];\n\nfunction guardrailCheck(text, knowledge) {\n  var findings = [];\n  var body = String(text || \"\");\n\n  PROTECTED_CLASS_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"protected_class\", detail: rule.label });\n    }\n  });\n\n  COMMITMENT_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"commitment\", detail: rule.label });\n    }\n  });\n\n  // Any dollar figure in the message must appear in the unit facts. Catches the\n  // model inventing a rent, fee, or deposit.\n  if (knowledge) {\n    var allowed = [];\n    Object.keys(knowledge).forEach(function (key) {\n      var value = knowledge[key];\n      if (typeof value === \"number\") allowed.push(Math.round(value));\n      if (typeof value === \"string\") {\n        var found = value.match(/\\d[\\d,]*(\\.\\d+)?/g) || [];\n        found.forEach(function (n) { allowed.push(Math.round(Number(n.replace(/,/g, \"\")))); });\n      }\n    });\n\n    var quoted = body.match(/\\$\\s?\\d[\\d,]*(\\.\\d+)?/g) || [];\n    quoted.forEach(function (raw) {\n      var amount = Math.round(Number(raw.replace(/[$,\\s]/g, \"\")));\n      if (allowed.indexOf(amount) === -1) {\n        findings.push({\n          severity: \"block\",\n          category: \"unsupported_figure\",\n          detail: raw.trim() + \" is not in the unit facts\",\n        });\n      }\n    });\n  }\n\n  var blocking = findings.filter(function (f) { return f.severity === \"block\"; });\n  return {\n    passed: blocking.length === 0,\n    findings: findings,\n    checked_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- pre-qualification */\n\n/**\n * Scheduling triage only. This is NOT a rental decision and its output must\n * never be phrased to a prospect as a denial.\n *\n * Deliberately narrow: move-in timing, self-reported income against the\n * published multiple, pet policy, and occupancy. Nothing else is considered and\n * nothing here is verified.\n */\nfunction prequalGate(answers, unit, config) {\n  var reasons = [];\n  var missing = [];\n  var incomeMultiple = config && config.income_multiple ? Number(config.income_multiple) : 3;\n\n  if (!answers || answers.move_in_date === null || answers.move_in_date === undefined) {\n    missing.push(\"move_in_date\");\n  } else {\n    var availableFrom = new Date(unit.available_from);\n    var wanted = new Date(answers.move_in_date);\n    var daysAfter = (wanted - availableFrom) / 86400000;\n\n    if (daysAfter < -14) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"wants \" + answers.move_in_date + \", unit is available from \" + unit.available_from,\n      });\n    } else if (daysAfter > 60) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"move-in is more than 60 days after the unit is available\",\n      });\n    } else {\n      reasons.push({ criterion: \"move_in_timing\", met: true, detail: answers.move_in_date });\n    }\n  }\n\n  if (answers && (answers.stated_monthly_income === null || answers.stated_monthly_income === undefined)) {\n    missing.push(\"stated_monthly_income\");\n  } else if (answers) {\n    // Self-reported and unverified. Verification happens after an application.\n    var rent = Number(unit.rent_amount);\n    var stated = Number(answers.stated_monthly_income);\n    var ratio = stated / rent;\n    reasons.push({\n      criterion: \"stated_income\",\n      met: ratio >= incomeMultiple,\n      detail: \"$\" + stated + \"/mo stated against $\" + rent + \" rent = \" + ratio.toFixed(2) + \"x (unverified)\",\n    });\n  }\n\n  if (answers && answers.pets && String(answers.pets).toLowerCase() !== \"none\") {\n    var weightMatch = String(answers.pets).match(/(\\d+)\\s?(lb|pound)/i);\n    var overLimit = weightMatch && Number(weightMatch[1]) > 50;\n    reasons.push({\n      criterion: \"pets\",\n      met: !overLimit,\n      detail: overLimit ? \"stated pet is over the 50 lb limit\" : String(answers.pets),\n    });\n  }\n\n  var failed = reasons.filter(function (r) { return r.met === false; });\n  var result = missing.length ? \"incomplete\" : failed.length ? \"not_clear\" : \"clear\";\n\n  return {\n    result: result,\n    reasons: reasons,\n    missing: missing,\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- AI output shape */\n\n/**\n * Unwraps structured output from the OpenAI node.\n *\n * The payload arrives wrapped differently depending on node version, whether\n * simplify is on, and whether a JSON schema was applied - sometimes a parsed\n * object, sometimes a JSON string under `output`, sometimes nested one level\n * deeper. Probing for a known key is more robust than assuming a shape.\n *\n * @param {*} data       the item's json\n * @param {string} anchor a key that must exist on the real payload\n */\nfunction unwrapAiPayload(data, anchor) {\n  var value = data;\n\n  for (var depth = 0; depth < 6; depth++) {\n    if (value === null || value === undefined) break;\n\n    if (typeof value === \"string\") {\n      var trimmed = value.trim();\n      if (trimmed.charAt(0) !== \"{\" && trimmed.charAt(0) !== \"[\") break;\n      try {\n        value = JSON.parse(trimmed);\n      } catch (error) {\n        break;\n      }\n      continue;\n    }\n\n    if (Array.isArray(value)) {\n      value = value[0];\n      continue;\n    }\n\n    if (typeof value === \"object\") {\n      if (Object.prototype.hasOwnProperty.call(value, anchor)) return value;\n\n      var next =\n        value.output !== undefined ? value.output :\n        value.message !== undefined ? value.message :\n        value.content !== undefined ? value.content :\n        value.text !== undefined ? value.text :\n        value.json !== undefined ? value.json : undefined;\n\n      if (next === undefined) break;\n      value = next;\n      continue;\n    }\n\n    break;\n  }\n\n  return value;\n}\n\n/* ------------------------------------------------------------- lock code */\n\n/**\n * Self-guided tour entry code.\n *\n * MOCK. A real deployment issues this through a smart-lock platform\n * (Rently, Tour24, ButterflyMX) bound to the booking window. Here it is\n * generated locally and logged, and every record it touches is marked\n * source: \"mock\".\n */\nfunction generateLockCode() {\n  var code = String(Math.floor(Math.random() * 900000) + 100000);\n  return { code: code, source: \"mock\", issued_at: new Date().toISOString() };\n}\n\n// Normalises the submitted form and discards the raw SSN immediately.\nconst out = [];\nfor (const item of $input.all()) {\n  const form = item.json;\n\n  // Form Trigger field keys can arrive generically, so read defensively.\n  function field(names, fallback) {\n    for (const name of names) {\n      if (form[name] !== undefined && form[name] !== '') return form[name];\n    }\n    return fallback === undefined ? null : fallback;\n  }\n\n  function toNumber(value) {\n    if (value === null || value === undefined || value === '') return null;\n    const n = Number(String(value).replace(/[^0-9.\\-]/g, ''));\n    return Number.isFinite(n) ? n : null;\n  }\n\n  // The raw SSN is reduced to its last four digits here and never stored.\n  const ssnLast4 = maskSsn(field(['ssn', 'SSN', 'Social Security Number']));\n\n  const refToken = extractRefToken(String(field(['ref_token', 'Reference Code'], '')));\n\n  out.push({\n    json: {\n      lead_ref_token: refToken,\n      application_ref_token: makeRefToken('A'),\n      full_name: field(['full_name', 'Full Name']),\n      email: field(['email', 'Email']),\n      phone: field(['phone', 'Phone']),\n      ssn_last4: ssnLast4,\n      current_address: field(['current_address', 'Current Address']),\n      prior_address: field(['prior_address', 'Prior Address']),\n      desired_move_in: field(['desired_move_in', 'Desired Move-In Date']),\n      employer_name: field(['employer_name', 'Employer']),\n      job_title: field(['job_title', 'Job Title']),\n      claimed_monthly_income: toNumber(field(['claimed_monthly_income', 'Gross Monthly Income'])),\n      rental_assistance_amount: toNumber(field(['rental_assistance_amount', 'Monthly Rental Assistance'])) || 0,\n      occupants: toNumber(field(['occupants', 'Adults Living There'])),\n      pets: field(['pets', 'Pets'], 'none'),\n      vehicles: field(['vehicles', 'Vehicles'], 'none'),\n      disclosures: {\n        prior_eviction_filing: String(field(['prior_eviction', 'Prior Eviction Filing'], 'No')) === 'Yes',\n        broken_lease: String(field(['broken_lease', 'Broken Lease'], 'No')) === 'Yes',\n        bankruptcy_7_years: String(field(['bankruptcy', 'Bankruptcy In Last 7 Years'], 'No')) === 'Yes',\n      },\n      fcra_consent: true,\n      unit_code: field(['unit_code', 'Unit'], 'MAPLE-2B'),\n    },\n    // Re-key the upload to a stable name. The Form Trigger names the binary\n    // after the submitted field (field-N), not the field label, so the\n    // downstream Extract node cannot rely on a fixed key otherwise.\n    binary: (function () {\n      const incoming = item.binary || {};\n      const keys = Object.keys(incoming);\n      if (!keys.length) return {};\n      const pdfKey = keys.find(function (k) {\n        const mime = (incoming[k] || {}).mimeType || '';\n        return mime.indexOf('pdf') !== -1;\n      }) || keys[0];\n      return { paystub: incoming[pdfKey] };\n    })(),\n  });\n}\nreturn out;"
+        "jsCode": "/**\n * Screening logic: income comparison and the deterministic criteria engine.\n *\n * Inlined into n8n Code nodes, so it stays dependency-free and avoids backticks\n * and template literals - those are consumed before the code reaches the node.\n *\n * NOTHING HERE CALLS A MODEL. The criteria engine reads manager-configured\n * thresholds and applies them identically to every applicant, which is what\n * HUD's May 2024 guidance describes when it says a screening tool should\n * \"implement, rather than set\" the housing provider's policies.\n *\n * It emits a classification and an evidence trail. It never emits a decision,\n * a score, a rank, or a recommendation - a human does that.\n */\n\n/* --------------------------------------------------------------------- PII */\n\n/**\n * An application form collects an SSN because a real one does. We keep the last\n * four and discard the rest on arrival; the raw value is never stored.\n */\nfunction maskSsn(raw) {\n  var digits = String(raw || \"\").replace(/\\D/g, \"\");\n  if (digits.length < 4) return null;\n  return digits.slice(-4);\n}\n\n/* ------------------------------------------------------- Plaid normalisation */\n\nvar PERIODS_PER_YEAR = {\n  WEEKLY: 52,\n  BIWEEKLY: 26,\n  SEMI_MONTHLY: 24,\n  SEMIMONTHLY: 24,\n  MONTHLY: 12,\n  ANNUALLY: 1,\n  ANNUAL: 1,\n};\n\nfunction monthlyFromPeriod(amount, frequency) {\n  var perYear = PERIODS_PER_YEAR[String(frequency || \"\").toUpperCase()];\n  if (!perYear || !amount) return null;\n  return Math.round((amount * perYear) / 12 * 100) / 100;\n}\n\n/**\n * Pulls verified monthly income out of a /credit/payroll_income/get response.\n *\n * Uses the most recent pay stub and its stated frequency rather than summing\n * year-to-date, because YTD in Sandbox is not a full year and would understate\n * the figure.\n */\nfunction parsePlaidPayrollIncome(response) {\n  var result = {\n    verified_monthly_income: null,\n    employer_name: null,\n    pay_frequency: null,\n    gross_per_period: null,\n    pay_period_end: null,\n    employee_name: null,\n    source: \"plaid_sandbox\",\n    warnings: [],\n  };\n\n  var items = (response && response.items) || [];\n  var stub = null;\n  var source = null;\n\n  for (var i = 0; i < items.length && !stub; i++) {\n    var sources = items[i].payroll_income || [];\n    for (var j = 0; j < sources.length && !stub; j++) {\n      var stubs = sources[j].pay_stubs || [];\n      if (stubs.length) {\n        source = sources[j];\n        // Most recent period first.\n        stub = stubs.slice().sort(function (a, b) {\n          var ea = (a.pay_period_details || {}).end_date || \"\";\n          var eb = (b.pay_period_details || {}).end_date || \"\";\n          return eb.localeCompare(ea);\n        })[0];\n      }\n    }\n  }\n\n  if (!stub) {\n    result.warnings.push(\"no pay stubs in the Plaid response\");\n    return result;\n  }\n\n  var details = stub.pay_period_details || {};\n  result.employer_name = (source && source.employer && source.employer.name) || null;\n  result.employee_name = (stub.employee && stub.employee.name) || null;\n  result.pay_frequency = details.pay_frequency || null;\n  result.gross_per_period = details.gross_earnings === undefined ? null : details.gross_earnings;\n  result.pay_period_end = details.end_date || null;\n\n  result.verified_monthly_income = monthlyFromPeriod(result.gross_per_period, result.pay_frequency);\n  if (result.verified_monthly_income === null) {\n    result.warnings.push(\"could not derive a monthly figure from gross \" +\n      result.gross_per_period + \" at frequency \" + result.pay_frequency);\n  }\n\n  return result;\n}\n\n/* ------------------------------------------------------- income comparison */\n\n/**\n * The three numbers the demo puts side by side.\n *\n *   claimed   - what the applicant typed on the form\n *   extracted - what the model read off the uploaded pay stub\n *   verified  - what the bank actually shows\n *\n * A pay stub can be edited in a photo editor. A deposit history cannot. When\n * these disagree beyond tolerance the file is flagged for a human.\n */\nfunction computeIncomeComparison(input) {\n  var claimed = input.claimed === null || input.claimed === undefined ? null : Number(input.claimed);\n  var extracted = input.extracted === null || input.extracted === undefined ? null : Number(input.extracted);\n  var verified = input.verified === null || input.verified === undefined ? null : Number(input.verified);\n  var tolerance = Number(input.tolerancePct === undefined ? 10 : input.tolerancePct);\n\n  function variance(value) {\n    if (value === null || verified === null || verified === 0) return null;\n    return Math.round(Math.abs(value - verified) / verified * 1000) / 10;\n  }\n\n  var documentVariance = variance(extracted);\n  var claimedVariance = variance(claimed);\n\n  return {\n    claimed_monthly: claimed,\n    extracted_monthly: extracted,\n    verified_monthly: verified,\n    tolerance_pct: tolerance,\n    document_variance_pct: documentVariance,\n    claimed_variance_pct: claimedVariance,\n    document_matches: documentVariance === null ? null : documentVariance <= tolerance,\n    claimed_matches: claimedVariance === null ? null : claimedVariance <= tolerance,\n    // The single fact the manager needs at a glance.\n    mismatch_flagged:\n      (documentVariance !== null && documentVariance > tolerance) ||\n      (claimedVariance !== null && claimedVariance > tolerance),\n  };\n}\n\n/* ---------------------------------------------------------- criteria engine */\n\nfunction evidence(criterion, met, detail, source) {\n  return { criterion: criterion, met: met, detail: detail, source: source || null };\n}\n\n/**\n * Applies the manager's published criteria.\n *\n * @returns {{result: string, evidence: Array, tenant_responsible_rent: number}}\n *   result is one of meets_criteria | conditional | does_not_meet.\n */\nfunction runCriteriaEngine(input) {\n  var app = input.application || {};\n  var unit = input.unit || {};\n  var config = input.config || {};\n  var comparison = input.comparison || {};\n\n  var incomeMultiple = Number(config.income_multiple || 3);\n  var minCredit = Number(config.min_credit_score || 650);\n  var conditionalCredit = Number(config.conditional_credit_min || 600);\n  var maxEvictions = Number(config.max_eviction_filings || 0);\n\n  var rent = Number(unit.rent_amount || 0);\n  var assistance = Number(app.rental_assistance_amount || 0);\n\n  // The income multiple applies to the tenant's share of rent, not gross rent.\n  // Requiring a voucher holder to earn 3x the FULL rent is treated as\n  // source-of-income discrimination in the jurisdictions that protect it.\n  var tenantRent = Math.max(rent - assistance, 0);\n\n  var trail = [];\n  var verified = comparison.verified_monthly === undefined ? null : comparison.verified_monthly;\n\n  /* income multiple, against verified income only */\n  if (verified === null || !tenantRent) {\n    trail.push(evidence(\"income_multiple\", null,\n      \"cannot evaluate: verified income or rent is missing\", null));\n  } else {\n    var ratio = Math.round(verified / tenantRent * 100) / 100;\n    var detail = \"$\" + verified + \"/mo verified against $\" + tenantRent +\n      \" tenant-responsible rent = \" + ratio.toFixed(2) + \"x, threshold \" +\n      incomeMultiple.toFixed(2) + \"x\";\n    if (assistance > 0) {\n      detail += \" (rent $\" + rent + \" less $\" + assistance + \" rental assistance)\";\n    }\n    trail.push(evidence(\"income_multiple\", ratio >= incomeMultiple, detail, {\n      document: \"plaid_payroll_income\",\n      field: \"verified_monthly_income\",\n      value: verified,\n    }));\n  }\n\n  /* documented income vs verified income */\n  if (comparison.document_matches === null || comparison.document_matches === undefined) {\n    trail.push(evidence(\"income_document_match\", null,\n      \"cannot evaluate: no extracted document income\", null));\n  } else {\n    trail.push(evidence(\"income_document_match\", comparison.document_matches,\n      \"pay stub implies $\" + comparison.extracted_monthly + \"/mo against $\" +\n        comparison.verified_monthly + \"/mo verified, variance \" +\n        comparison.document_variance_pct + \"% (tolerance \" + comparison.tolerance_pct + \"%)\",\n      { document: \"uploaded_paystub\", field: \"gross_this_period\", value: comparison.extracted_monthly }));\n  }\n\n  /* credit - mocked data, real threshold */\n  var credit = app.credit_score === null || app.credit_score === undefined ? null : Number(app.credit_score);\n  if (credit === null) {\n    trail.push(evidence(\"credit_score\", null, \"cannot evaluate: no credit score\", null));\n  } else {\n    trail.push(evidence(\"credit_score\", credit >= minCredit,\n      credit + \" against a \" + minCredit + \" threshold\" +\n        (credit < minCredit && credit >= conditionalCredit\n          ? \", within the \" + conditionalCredit + \"-\" + (minCredit - 1) + \" conditional band\"\n          : \"\"),\n      { document: \"screening_bureau_mock\", field: \"credit_score\", value: credit }));\n  }\n\n  /* eviction filings - mocked data, real threshold */\n  var evictions = app.eviction_filings === null || app.eviction_filings === undefined\n    ? null : Number(app.eviction_filings);\n  if (evictions === null) {\n    trail.push(evidence(\"eviction_history\", null, \"cannot evaluate: no eviction data\", null));\n  } else {\n    trail.push(evidence(\"eviction_history\", evictions <= maxEvictions,\n      evictions + \" filing(s) in the last \" + (config.eviction_lookback_years || 5) +\n        \" years, maximum \" + maxEvictions,\n      { document: \"screening_bureau_mock\", field: \"eviction_filings\", value: evictions }));\n  }\n\n  /* identity - mocked */\n  if (app.identity_match === null || app.identity_match === undefined) {\n    trail.push(evidence(\"identity_check\", null, \"cannot evaluate: no identity result\", null));\n  } else {\n    trail.push(evidence(\"identity_check\", Boolean(app.identity_match),\n      app.identity_match ? \"document and applicant details matched\" : \"identity did not match\",\n      { document: \"identity_check_mock\", field: \"match\", value: app.identity_match }));\n  }\n\n  /* ------------------------------------------------------------ outcome */\n\n  var failed = trail.filter(function (e) { return e.met === false; });\n  var unknown = trail.filter(function (e) { return e.met === null; });\n\n  var result;\n  if (failed.length === 0 && unknown.length === 0) {\n    result = \"meets_criteria\";\n  } else if (failed.length === 0) {\n    // Nothing failed, but something could not be evaluated. That is a human's\n    // call, not a pass.\n    result = \"conditional\";\n  } else {\n    var onlyCreditInBand =\n      failed.length === 1 &&\n      failed[0].criterion === \"credit_score\" &&\n      credit !== null &&\n      credit >= conditionalCredit;\n    result = onlyCreditInBand ? \"conditional\" : \"does_not_meet\";\n  }\n\n  return {\n    result: result,\n    evidence: trail,\n    tenant_responsible_rent: tenantRent,\n    failed_criteria: failed.map(function (e) { return e.criterion; }),\n    unevaluated_criteria: unknown.map(function (e) { return e.criterion; }),\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/**\n * What a real FCRA adverse-action process would require. Shown to the manager\n * on the stop path so the demo makes the point explicitly.\n *\n * This build never generates any of these documents.\n */\nfunction adverseActionRequirements() {\n  return [\n    \"Pre-adverse-action notice, including a copy of the consumer report\",\n    \"A copy of the FCRA Summary of Rights\",\n    \"A waiting period for the applicant to dispute (commonly five business days)\",\n    \"A final adverse-action notice naming the bureau that supplied the report\",\n  ];\n}\n\n/**\n * Shared front-of-funnel logic.\n *\n * This file is the single source of truth for lead parsing, reference tokens,\n * Tier A guardrails, and the pre-qualification gate. The build scripts inline it\n * into n8n Code nodes, so it must stay dependency-free and must not use\n * backticks or template literals - those are consumed before reaching the node.\n *\n * Nothing here calls a model. Everything here is deterministic.\n */\n\n/* ------------------------------------------------------------------ tokens */\n\n/**\n * Reference token carried in every subject line. Replies are matched on this\n * first and on sender address only as a fallback - the model never decides\n * which lead a message belongs to.\n */\nfunction makeRefToken(prefix, seed) {\n  var n = seed === undefined ? Math.floor(Math.random() * 9000) + 1000 : seed;\n  return prefix + \"-\" + String(n).slice(0, 4);\n}\n\nfunction extractRefToken(text) {\n  if (!text) return null;\n  var match = String(text).match(/\\[([RA]-\\d{4})\\]/);\n  return match ? match[1] : null;\n}\n\nfunction subjectWithToken(subject, token) {\n  if (extractRefToken(subject)) return subject;\n  return subject + \" [\" + token + \"]\";\n}\n\n/* ------------------------------------------------------- lead email parsing */\n\n/**\n * Parses a listing-site lead notification.\n *\n * Zillow delivers these as email with an anonymised relay reply-to and no phone\n * number, so the parser must tolerate a missing phone rather than treat it as a\n * failure. Anything it cannot determine is left null and flagged, never guessed.\n */\nfunction parseLeadEmail(input) {\n  var subject = input.subject || \"\";\n  var body = input.body || \"\";\n  var replyTo = input.replyTo || input.from || \"\";\n\n  var result = {\n    prospect_name: null,\n    prospect_email: null,\n    prospect_phone: null,\n    unit_hint: null,\n    inquiry_text: null,\n    source: \"zillow_email\",\n    parse_warnings: [],\n  };\n\n  var nameMatch = body.match(/^\\s*Renter:\\s*(.+)$/m);\n  if (nameMatch) result.prospect_name = nameMatch[1].trim();\n  else result.parse_warnings.push(\"no renter name found\");\n\n  var propertyMatch = body.match(/^\\s*Property:\\s*(.+)$/m);\n  if (propertyMatch) result.unit_hint = propertyMatch[1].trim();\n  else {\n    var subjectUnit = subject.match(/:\\s*(.+)$/);\n    if (subjectUnit) result.unit_hint = subjectUnit[1].trim();\n    else result.parse_warnings.push(\"no property reference found\");\n  }\n\n  // The renter's own words, between the quotes after \"Message:\".\n  var messageMatch = body.match(/Message:\\s*\"([\\s\\S]*?)\"/);\n  if (messageMatch) result.inquiry_text = messageMatch[1].replace(/\\s+/g, \" \").trim();\n  else result.parse_warnings.push(\"no inquiry text found\");\n\n  var emailMatch = String(replyTo).match(/[\\w.+-]+@[\\w.-]+\\.\\w+/);\n  if (emailMatch) result.prospect_email = emailMatch[0];\n  else result.parse_warnings.push(\"no reply address found\");\n\n  var phoneMatch = body.match(/(\\+?1[\\s.-]?)?\\(?\\d{3}\\)?[\\s.-]\\d{3}[\\s.-]\\d{4}/);\n  if (phoneMatch) result.prospect_phone = phoneMatch[0].trim();\n\n  return result;\n}\n\n/* ------------------------------------------------- unit knowledge for the AI */\n\n/**\n * Flattens a unit row into the only facts the FAQ model is allowed to use.\n * If a fact is not in here, the correct answer is \"I don't have that\".\n */\nfunction buildUnitKnowledge(unit) {\n  if (!unit) return null;\n  var facts = unit.faq_facts || {};\n  var knowledge = {\n    unit_code: unit.unit_code,\n    address: unit.address,\n    bedrooms: unit.beds,\n    bathrooms: Number(unit.baths),\n    square_feet: unit.sqft,\n    monthly_rent: Number(unit.rent_amount),\n    security_deposit: Number(unit.deposit_amount),\n    available_from: unit.available_from,\n    lease_term_months: unit.lease_term_months,\n    pet_policy: unit.pet_policy,\n    pet_fee_monthly: unit.pet_fee_monthly === null ? null : Number(unit.pet_fee_monthly),\n    parking: unit.parking,\n    utilities: unit.utilities_included,\n    laundry: unit.laundry,\n  };\n  Object.keys(facts).forEach(function (key) {\n    knowledge[key] = facts[key];\n  });\n  return knowledge;\n}\n\n/**\n * Unit facts PLUS the figures the prospect themselves stated, for use as the\n * guardrail's allowlist during a conversation.\n *\n * The unsupported-figure rule exists to stop the model inventing a rent, a fee\n * or a deposit. It is not meant to stop it repeating a number the prospect just\n * supplied - and in a chat, confirming what someone told you (\"$5,000 a month,\n * got it\") is the natural thing to say. With only unit facts in the allowlist\n * every such reply is blocked, the prospect gets silence, and the conversation\n * stalls on the most ordinary turn there is.\n *\n * Only the recorded slot values are added, never arbitrary numbers scraped from\n * the message, so the check still catches anything the model made up.\n */\nfunction buildConversationKnowledge(unit, statedAnswers) {\n  var knowledge = buildUnitKnowledge(unit);\n  if (!knowledge) return null;\n  var answers = statedAnswers || {};\n\n  if (answers.stated_monthly_income !== null && answers.stated_monthly_income !== undefined) {\n    knowledge.prospect_stated_monthly_income = Number(answers.stated_monthly_income);\n  }\n  if (answers.vehicles !== null && answers.vehicles !== undefined) {\n    knowledge.prospect_stated_vehicles = Number(answers.vehicles);\n  }\n  if (answers.occupants !== null && answers.occupants !== undefined) {\n    knowledge.prospect_stated_occupants = Number(answers.occupants);\n  }\n  if (answers.pets !== null && answers.pets !== undefined && answers.pets !== \"\") {\n    knowledge.prospect_stated_pets = String(answers.pets);\n  }\n  if (answers.move_in_date !== null && answers.move_in_date !== undefined) {\n    knowledge.prospect_stated_move_in = String(answers.move_in_date);\n  }\n  return knowledge;\n}\n\n/**\n * Escapes text for Telegram's HTML parse mode.\n *\n * The Telegram node always sends a parse_mode, so message text is parsed for\n * entities whether you want it or not. Under the legacy Markdown default a\n * single underscore opens an italic run that never closes, and Telegram rejects\n * the whole message with \"can't parse entities\" and a byte offset - which is\n * exactly what an application link carrying ?ref_token= does. The node then\n * fails with a bare \"Bad request - please check your parameters\".\n *\n * So: send HTML parse mode and escape the three characters it cares about.\n * Underscores, asterisks and brackets are then all literal, and a URL with a\n * query string is safe.\n */\nfunction escapeTelegramHtml(text) {\n  if (text === null || text === undefined) return \"\";\n  return String(text)\n    .split(\"&\").join(\"&amp;\")\n    .split(\"<\").join(\"&lt;\")\n    .split(\">\").join(\"&gt;\");\n}\n\n/* ------------------------------------------------------------------- tours */\n\n/**\n * Turns a naive datetime into a real instant, read as PROPERTY-LOCAL time.\n *\n * The model returns \"2026-09-15T14:00\" when someone says \"Tuesday at 2pm\", and\n * they mean 2pm at the property. `new Date()` on a bare string with no zone\n * reads it in the runtime's zone - UTC in a container - so a request for 2pm\n * silently became 9:30am and the renter was booked five hours out. Nothing\n * errors; you only notice by reading the booked time.\n *\n * Anything already carrying a Z or a +/-HH:MM offset is left exactly alone.\n */\nfunction naiveLocalToUtcIso(naive, timeZone) {\n  if (!naive) return null;\n  var text = String(naive).trim();\n  if (/(Z|[+-]\\d{2}:?\\d{2})$/.test(text)) return new Date(text).toISOString();\n\n  var guess = new Date(text + \"Z\");\n  if (isNaN(guess.getTime())) return null;\n\n  // How far ahead of UTC that zone is at that instant, DST included.\n  var dtf = new Intl.DateTimeFormat(\"en-US\", {\n    timeZone: timeZone || \"UTC\", hour12: false,\n    year: \"numeric\", month: \"2-digit\", day: \"2-digit\",\n    hour: \"2-digit\", minute: \"2-digit\", second: \"2-digit\",\n  });\n  var parts = {};\n  dtf.formatToParts(guess).forEach(function (p) { parts[p.type] = p.value; });\n  var asUtc = Date.UTC(\n    Number(parts.year), Number(parts.month) - 1, Number(parts.day),\n    Number(parts.hour) % 24, Number(parts.minute), Number(parts.second)\n  );\n  var offset = asUtc - guess.getTime();\n  return new Date(guess.getTime() - offset).toISOString();\n}\n\n/**\n * Picks the real Cal.com slot closest to what the prospect asked for.\n *\n * The model turns \"Saturday morning\" into an ISO datetime; it never chooses the\n * booking. This does, deterministically, against the slots Cal.com actually\n * returned - so the assistant can only ever book a time that genuinely exists.\n *\n * `slots` is a flat array of ISO strings. Returns the nearest slot within\n * `toleranceHours`, plus the next few alternatives to offer if nothing is close.\n */\nfunction matchTourSlot(wantedIso, slots, toleranceHours) {\n  var tolerance = (toleranceHours === undefined ? 4 : toleranceHours) * 3600000;\n  var available = (slots || []).slice().sort();\n  var result = { matched: null, delta_minutes: null, alternatives: available.slice(0, 3) };\n  if (!wantedIso || !available.length) return result;\n\n  var wanted = new Date(wantedIso).getTime();\n  if (isNaN(wanted)) return result;\n\n  var best = null;\n  var bestDelta = Infinity;\n  for (var i = 0; i < available.length; i++) {\n    var delta = Math.abs(new Date(available[i]).getTime() - wanted);\n    if (delta < bestDelta) { bestDelta = delta; best = available[i]; }\n  }\n\n  // Alternatives are the slots nearest what they asked for, not simply the\n  // earliest ones - \"how about Tuesday?\" should not be answered with Monday 9am.\n  result.alternatives = available\n    .slice()\n    .sort(function (a, b) {\n      return Math.abs(new Date(a).getTime() - wanted) - Math.abs(new Date(b).getTime() - wanted);\n    })\n    .slice(0, 3)\n    .sort();\n\n  if (best !== null && bestDelta <= tolerance) {\n    result.matched = best;\n    result.delta_minutes = Math.round(bestDelta / 60000);\n  }\n  return result;\n}\n\n/**\n * Is this slot inside the manager's published tour policy, or an exception?\n *\n * Exceptions are held for a tap rather than refused. Returning reasons rather\n * than a bare boolean means the manager's card can say WHY it was held, which\n * is the difference between a useful notification and an interruption.\n *\n * `hourOverride` exists because a Code node cannot rely on the container's\n * timezone; the caller passes the local hour and weekday it computed.\n */\nfunction classifyTourRequest(slotIso, policy, nowIso, hourOverride, weekdayOverride) {\n  var reasons = [];\n  var config = policy || {};\n  var earliest = Number(config.earliest_hour === undefined ? 9 : config.earliest_hour);\n  var latest = Number(config.latest_hour === undefined ? 18 : config.latest_hour);\n  var minNotice = Number(config.min_notice_hours === undefined ? 12 : config.min_notice_hours);\n  var allowWeekends = config.allow_weekends === undefined ? true : Boolean(config.allow_weekends);\n\n  var slot = new Date(slotIso);\n  var now = new Date(nowIso || new Date().toISOString());\n  var hour = hourOverride === undefined || hourOverride === null ? slot.getUTCHours() : Number(hourOverride);\n  var weekday = weekdayOverride === undefined || weekdayOverride === null\n    ? slot.getUTCDay()\n    : Number(weekdayOverride);\n\n  if (hour < earliest || hour >= latest) {\n    reasons.push(\"outside self-guided hours (\" + earliest + \":00-\" + latest + \":00)\");\n  }\n  if (!allowWeekends && (weekday === 0 || weekday === 6)) {\n    reasons.push(\"weekend\");\n  }\n  var noticeHours = (slot.getTime() - now.getTime()) / 3600000;\n  if (noticeHours < minNotice) {\n    reasons.push(\"less than \" + minNotice + \"h notice (\" + Math.max(0, Math.round(noticeHours)) + \"h)\");\n  }\n\n  return {\n    is_exception: reasons.length > 0,\n    reasons: reasons,\n    notice_hours: Math.round(noticeHours),\n  };\n}\n\n/* -------------------------------------------------------------- guardrails */\n\n/**\n * Tier A guardrail. Runs on every message before it leaves, and again at send\n * time, because a manager may have edited the wording after it was drafted.\n *\n * Blocks: protected-class content, legal or lease commitments, rent negotiation,\n * availability promises, and invented numbers that are not in the unit facts.\n */\nvar PROTECTED_CLASS_PATTERNS = [\n  { pattern: /\\b(kids?|children|child|family friendly|families|school district)\\b/i, label: \"familial status\" },\n  { pattern: /\\b(disab|wheelchair|handicap|mental health|service animal policy)\\b/i, label: \"disability\" },\n  { pattern: /\\b(race|ethnic|nationality|immigration|citizen|visa status)\\b/i, label: \"national origin / race\" },\n  { pattern: /\\b(church|mosque|temple|synagogue|religio)\\b/i, label: \"religion\" },\n  { pattern: /\\b(marital status|married|single people|couples only)\\b/i, label: \"marital status\" },\n  { pattern: /\\b(section 8|voucher|housing assistance|welfare)\\b/i, label: \"source of income\" },\n  { pattern: /\\b(good neighborhood for|safe area for|type of people)\\b/i, label: \"steering\" },\n];\n\nvar COMMITMENT_PATTERNS = [\n  { pattern: /\\b(guarantee|guaranteed|we promise|you will be approved|pre-?approved)\\b/i, label: \"approval commitment\" },\n  { pattern: /\\b(hold (it|the unit) for you|reserved for you|it'?s yours)\\b/i, label: \"availability commitment\" },\n  { pattern: /\\b(we can lower|discount the rent|negotiate the rent|reduce the rent)\\b/i, label: \"rent negotiation\" },\n  { pattern: /\\b(legally|by law|you are entitled|your rights under)\\b/i, label: \"legal statement\" },\n  { pattern: /\\b(denied|rejected|you do not qualify|we cannot rent to you)\\b/i, label: \"adverse decision language\" },\n];\n\nfunction guardrailCheck(text, knowledge) {\n  var findings = [];\n  var body = String(text || \"\");\n\n  PROTECTED_CLASS_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"protected_class\", detail: rule.label });\n    }\n  });\n\n  COMMITMENT_PATTERNS.forEach(function (rule) {\n    if (rule.pattern.test(body)) {\n      findings.push({ severity: \"block\", category: \"commitment\", detail: rule.label });\n    }\n  });\n\n  // Any dollar figure in the message must appear in the unit facts. Catches the\n  // model inventing a rent, fee, or deposit.\n  if (knowledge) {\n    var allowed = [];\n    Object.keys(knowledge).forEach(function (key) {\n      var value = knowledge[key];\n      if (typeof value === \"number\") allowed.push(Math.round(value));\n      if (typeof value === \"string\") {\n        var found = value.match(/\\d[\\d,]*(\\.\\d+)?/g) || [];\n        found.forEach(function (n) { allowed.push(Math.round(Number(n.replace(/,/g, \"\")))); });\n      }\n    });\n\n    var quoted = body.match(/\\$\\s?\\d[\\d,]*(\\.\\d+)?/g) || [];\n    quoted.forEach(function (raw) {\n      var amount = Math.round(Number(raw.replace(/[$,\\s]/g, \"\")));\n      if (allowed.indexOf(amount) === -1) {\n        findings.push({\n          severity: \"block\",\n          category: \"unsupported_figure\",\n          detail: raw.trim() + \" is not in the unit facts\",\n        });\n      }\n    });\n  }\n\n  var blocking = findings.filter(function (f) { return f.severity === \"block\"; });\n  return {\n    passed: blocking.length === 0,\n    findings: findings,\n    checked_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- pre-qualification */\n\n/**\n * Scheduling triage only. This is NOT a rental decision and its output must\n * never be phrased to a prospect as a denial.\n *\n * Deliberately narrow: move-in timing, self-reported income against the\n * published multiple, pet policy, and occupancy. Nothing else is considered and\n * nothing here is verified.\n */\nfunction prequalGate(answers, unit, config) {\n  var reasons = [];\n  var missing = [];\n  var incomeMultiple = config && config.income_multiple ? Number(config.income_multiple) : 3;\n\n  if (!answers || answers.move_in_date === null || answers.move_in_date === undefined) {\n    missing.push(\"move_in_date\");\n  } else {\n    var availableFrom = new Date(unit.available_from);\n    var wanted = new Date(answers.move_in_date);\n    var daysAfter = (wanted - availableFrom) / 86400000;\n\n    if (daysAfter < -14) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"wants \" + answers.move_in_date + \", unit is available from \" + unit.available_from,\n      });\n    } else if (daysAfter > 60) {\n      reasons.push({\n        criterion: \"move_in_timing\",\n        met: false,\n        detail: \"move-in is more than 60 days after the unit is available\",\n      });\n    } else {\n      reasons.push({ criterion: \"move_in_timing\", met: true, detail: answers.move_in_date });\n    }\n  }\n\n  if (answers && (answers.stated_monthly_income === null || answers.stated_monthly_income === undefined)) {\n    missing.push(\"stated_monthly_income\");\n  } else if (answers) {\n    // Self-reported and unverified. Verification happens after an application.\n    var rent = Number(unit.rent_amount);\n    var stated = Number(answers.stated_monthly_income);\n    var ratio = stated / rent;\n    reasons.push({\n      criterion: \"stated_income\",\n      met: ratio >= incomeMultiple,\n      detail: \"$\" + stated + \"/mo stated against $\" + rent + \" rent = \" + ratio.toFixed(2) + \"x (unverified)\",\n    });\n  }\n\n  if (answers && answers.pets && String(answers.pets).toLowerCase() !== \"none\") {\n    var weightMatch = String(answers.pets).match(/(\\d+)\\s?(lb|pound)/i);\n    var overLimit = weightMatch && Number(weightMatch[1]) > 50;\n    reasons.push({\n      criterion: \"pets\",\n      met: !overLimit,\n      detail: overLimit ? \"stated pet is over the 50 lb limit\" : String(answers.pets),\n    });\n  }\n\n  var failed = reasons.filter(function (r) { return r.met === false; });\n  var result = missing.length ? \"incomplete\" : failed.length ? \"not_clear\" : \"clear\";\n\n  return {\n    result: result,\n    reasons: reasons,\n    missing: missing,\n    evaluated_at: new Date().toISOString(),\n  };\n}\n\n/* ------------------------------------------------------- AI output shape */\n\n/**\n * Unwraps structured output from the OpenAI node.\n *\n * The payload arrives wrapped differently depending on node version, whether\n * simplify is on, and whether a JSON schema was applied - sometimes a parsed\n * object, sometimes a JSON string under `output`, sometimes nested one level\n * deeper. Probing for a known key is more robust than assuming a shape.\n *\n * @param {*} data       the item's json\n * @param {string} anchor a key that must exist on the real payload\n */\nfunction unwrapAiPayload(data, anchor) {\n  var value = data;\n\n  for (var depth = 0; depth < 6; depth++) {\n    if (value === null || value === undefined) break;\n\n    if (typeof value === \"string\") {\n      var trimmed = value.trim();\n      if (trimmed.charAt(0) !== \"{\" && trimmed.charAt(0) !== \"[\") break;\n      try {\n        value = JSON.parse(trimmed);\n      } catch (error) {\n        break;\n      }\n      continue;\n    }\n\n    if (Array.isArray(value)) {\n      value = value[0];\n      continue;\n    }\n\n    if (typeof value === \"object\") {\n      if (Object.prototype.hasOwnProperty.call(value, anchor)) return value;\n\n      var next =\n        value.output !== undefined ? value.output :\n        value.message !== undefined ? value.message :\n        value.content !== undefined ? value.content :\n        value.text !== undefined ? value.text :\n        value.json !== undefined ? value.json : undefined;\n\n      if (next === undefined) break;\n      value = next;\n      continue;\n    }\n\n    break;\n  }\n\n  return value;\n}\n\n/* ------------------------------------------------------------- lock code */\n\n/**\n * Self-guided tour entry code.\n *\n * MOCK. A real deployment issues this through a smart-lock platform\n * (Rently, Tour24, ButterflyMX) bound to the booking window. Here it is\n * generated locally and logged, and every record it touches is marked\n * source: \"mock\".\n */\nfunction generateLockCode() {\n  var code = String(Math.floor(Math.random() * 900000) + 100000);\n  return { code: code, source: \"mock\", issued_at: new Date().toISOString() };\n}\n\n// Normalises the submitted form and discards the raw SSN immediately.\nconst out = [];\nfor (const item of $input.all()) {\n  const form = Object.assign({}, item.json);\n  const displayFields = [[\"ref_token\",\"ref_token\"],[\"unit_code\",\"Home you are applying for\"],[\"full_name\",\"Full name\"],[\"email\",\"Email address\"],[\"phone\",\"Phone number\"],[\"ssn\",\"Demo identity code (last four digits only)\"],[\"current_address\",\"Current address\"],[\"prior_address\",\"Previous address\"],[\"desired_move_in\",\"Requested move-in date\"],[\"employer_name\",\"Employer or income provider\"],[\"job_title\",\"Job title (if applicable)\"],[\"claimed_monthly_income\",\"Gross monthly income ($)\"],[\"rental_assistance_amount\",\"Monthly rental assistance amount ($)\"],[\"occupants\",\"Total number of occupants\"],[\"pets\",\"Pets\"],[\"vehicles\",\"Vehicles needing parking\"],[\"prior_eviction\",\"Have you had an eviction filing?\"],[\"broken_lease\",\"Have you broken a rental lease?\"],[\"bankruptcy\",\"Have you filed bankruptcy in the past seven years?\"],[\"paystub\",\"Upload your most recent pay stub (PDF)\"],[\"fcra_consent\",\"Demo verification authorization\"]];\n  for (const pair of displayFields) { if (form[pair[0]] === undefined) form[pair[0]] = form[pair[1]]; }\n  const consent = form.fcra_consent;\n  if (consent !== 'I authorize the synthetic demo checks' && consent !== 'I authorise these checks') throw new Error('Explicit demo verification authorization is required');\n\n  // Form Trigger field keys can arrive generically, so read defensively.\n  function field(names, fallback) {\n    for (const name of names) {\n      if (form[name] !== undefined && form[name] !== '') return form[name];\n    }\n    return fallback === undefined ? null : fallback;\n  }\n\n  function toNumber(value) {\n    if (value === null || value === undefined || value === '') return null;\n    const n = Number(String(value).replace(/[^0-9.\\-]/g, ''));\n    return Number.isFinite(n) ? n : null;\n  }\n\n  // The raw SSN is reduced to its last four digits here and never stored.\n  const ssnLast4 = maskSsn(field(['ssn', 'SSN', 'Social Security Number']));\n\n  const reference = String(field(['ref_token', 'Reference Code'], '')).trim();\n  const refToken = /^R-\\d{4}$/.test(reference) ? reference : extractRefToken(reference);\n\n  out.push({\n    json: {\n      lead_ref_token: refToken,\n      application_ref_token: makeRefToken('A'),\n      full_name: field(['full_name', 'Full Name']),\n      email: field(['email', 'Email']),\n      phone: field(['phone', 'Phone']),\n      ssn_last4: ssnLast4,\n      current_address: field(['current_address', 'Current Address']),\n      prior_address: field(['prior_address', 'Prior Address']),\n      desired_move_in: field(['desired_move_in', 'Desired Move-In Date']),\n      employer_name: field(['employer_name', 'Employer']),\n      job_title: field(['job_title', 'Job Title']),\n      claimed_monthly_income: toNumber(field(['claimed_monthly_income', 'Gross Monthly Income'])),\n      rental_assistance_amount: toNumber(field(['rental_assistance_amount', 'Monthly Rental Assistance'])) || 0,\n      occupants: toNumber(field(['occupants', 'Adults Living There'])),\n      pets: field(['pets', 'Pets'], 'none'),\n      vehicles: field(['vehicles', 'Vehicles'], 'none'),\n      disclosures: {\n        prior_eviction_filing: String(field(['prior_eviction', 'Prior Eviction Filing'], 'No')) === 'Yes',\n        broken_lease: String(field(['broken_lease', 'Broken Lease'], 'No')) === 'Yes',\n        bankruptcy_7_years: String(field(['bankruptcy', 'Bankruptcy In Last 7 Years'], 'No')) === 'Yes',\n      },\n      fcra_consent: true,\n      unit_code: field(['unit_code', 'Unit'], 'MAPLE-2B'),\n    },\n    // Re-key the upload to a stable name. The Form Trigger names the binary\n    // after the submitted field (field-N), not the field label, so the\n    // downstream Extract node cannot rely on a fixed key otherwise.\n    binary: (function () {\n      const incoming = item.binary || {};\n      const keys = Object.keys(incoming);\n      if (!keys.length) return {};\n      const pdfKey = keys.find(function (k) {\n        const mime = (incoming[k] || {}).mimeType || '';\n        return mime.indexOf('pdf') !== -1;\n      }) || keys[0];\n      return { paystub: incoming[pdfKey] };\n    })(),\n  });\n}\nreturn out;"
       }
     },
     {
@@ -607,6 +676,144 @@
           "name": "Leasing Postgres"
         }
       }
+    },
+    {
+      "id": "mirror-read-pipeline-application",
+      "name": "Mirror: Read Pipeline Application",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4200,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
+        "options": {
+          "queryReplacement": "={{ [$json.ref_token] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "mirror-map-pipeline-application",
+      "name": "Mirror: Map Pipeline Application",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4420,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
+      }
+    },
+    {
+      "id": "mirror-upsert-airtable-application",
+      "name": "Mirror: Upsert Airtable Application",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4640,
+        0
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/__AIRTABLE_BASE_ID__/Leads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({performUpsert:{fieldsToMergeOn:['Ref Token']},typecast:true,records:[{fields:$json.fields}]}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "__AIRTABLE_CREDENTIAL_ID__",
+          "name": "Leasing Airtable (display mirror)"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
+    },
+    {
+      "id": "mirror-read-pipeline-review-stop",
+      "name": "Mirror: Read Pipeline Review Stop",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4200,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM (SELECT l.ref_token, l.prospect_name, l.prospect_email, u.unit_code,\n l.status AS lead_status, l.move_in_date, l.stated_monthly_income, l.tour_starts_at,\n a.ref_token AS application_ref, a.status AS application_status, a.decision,\n a.lease_status, a.verified_monthly_income,\n a.income_comparison->>'mismatch_flagged' AS mismatch_flagged,\n a.income_comparison->>'document_variance_pct' AS variance_pct,\n GREATEST(l.updated_at,COALESCE(a.updated_at,l.updated_at)) AS updated_at\n FROM leads l JOIN units u ON u.id=l.unit_id\n LEFT JOIN LATERAL (SELECT * FROM applications WHERE lead_id=l.id ORDER BY id DESC LIMIT 1) a ON true\n UNION ALL\n SELECT a.ref_token,a.full_name,a.email,u.unit_code,'applied',a.desired_move_in,\n a.claimed_monthly_income,NULL,a.ref_token,a.status,a.decision,a.lease_status,\n a.verified_monthly_income,a.income_comparison->>'mismatch_flagged',\n a.income_comparison->>'document_variance_pct',a.updated_at\n FROM applications a JOIN units u ON u.id=a.unit_id WHERE a.lead_id IS NULL) p WHERE p.ref_token=$1 OR p.application_ref=$1",
+        "options": {
+          "queryReplacement": "={{ [$json.ref_token] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__POSTGRES_CREDENTIAL_ID__",
+          "name": "Leasing Postgres"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "mirror-map-pipeline-review-stop",
+      "name": "Mirror: Map Pipeline Review Stop",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4420,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const toFields=function toFields(row) {\n  const labels = {new:'New',engaged:'Engaged',prequalified:'Prequalified',tour_booked:'Tour Booked',toured:'Toured',applied:'Applied',closed:'Decided'};\n  let status = labels[row.lead_status] || 'New';\n  if (row.application_status) status='Applied';\n  if (row.decision) status='Decided';\n  if (row.application_status==='stopped_for_human' || row.decision==='sent_to_review') status='Stopped For Review';\n  if (row.lease_status==='sent') status='Lease Sent';\n  if (row.lease_status==='signed') status='Leased';\n  const actions = {New:'Reply to inquiry',Engaged:'Collect prequalification',Prequalified:'Schedule tour','Tour Booked':'Attend tour',Toured:'Submit application',Applied:'Manager review',Decided:row.decision==='conditional'?'Manager follow-up':'Prepare lease','Stopped For Review':'Human review — no automated outcome message','Lease Sent':'Await signature',Leased:'Complete move-in handoff'};\n  const stamp = value => value ? new Date(value).toISOString() : '';\n  return {'Ref Token':row.ref_token,Prospect:row.prospect_name||'',Email:row.prospect_email||'',Unit:row.unit_code||'',Status:status,\n   'Move In':row.move_in_date||null,'Stated Income':row.stated_monthly_income?Math.round(Number(row.stated_monthly_income)):null,\n   'Verified Income':row.verified_monthly_income?Math.round(Number(row.verified_monthly_income)):null,\n   'Income Flag':String(row.mismatch_flagged)==='true'?'MISMATCH '+Math.round(Number(row.variance_pct))+'% over verified':row.verified_monthly_income?'Verified, documents agree':'',\n   Tour:stamp(row.tour_starts_at),Updated:stamp(row.updated_at),'Application Reference':row.application_ref||'',\n   'Next Action':actions[status]||'Human review','Lease Status':row.lease_status||'not_sent','Last Synced At':new Date().toISOString(),'Demo Data':true};\n}; return $input.all().filter(i=>i.json.ref_token && i.json.unit_code && i.json.lead_status).map(i=>({json:{fields:toFields(i.json)}}));"
+      }
+    },
+    {
+      "id": "mirror-upsert-airtable-review-stop",
+      "name": "Mirror: Upsert Airtable Review Stop",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4640,
+        0
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/__AIRTABLE_BASE_ID__/Leads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({performUpsert:{fieldsToMergeOn:['Ref Token']},typecast:true,records:[{fields:$json.fields}]}) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "__AIRTABLE_CREDENTIAL_ID__",
+          "name": "Leasing Airtable (display mirror)"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
     }
   ],
   "connections": {
@@ -760,6 +967,11 @@
             "node": "Meets Criteria Or Conditional?",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Mirror: Read Pipeline Application",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -787,6 +999,61 @@
         [
           {
             "node": "Mark Stopped For Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Read Pipeline Application": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Map Pipeline Application",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Map Pipeline Application": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Upsert Airtable Application",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Stopped For Human": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Read Pipeline Review Stop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Read Pipeline Review Stop": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Map Pipeline Review Stop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror: Map Pipeline Review Stop": {
+      "main": [
+        [
+          {
+            "node": "Mirror: Upsert Airtable Review Stop",
             "type": "main",
             "index": 0
           }

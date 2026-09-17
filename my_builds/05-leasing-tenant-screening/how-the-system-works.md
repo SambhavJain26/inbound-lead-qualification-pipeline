@@ -1,233 +1,315 @@
-# How The Leasing & Tenant Screening System Works
+# How The Leasing And Tenant-Screening System Works
 
-Last updated: 2026-09-12
+Last updated: 2026-09-17
 
-A plain-language description of what this build does, how it does it, and which problem it
-solves. Written for a property manager or owner rather than a developer. Nothing here
-requires knowing what n8n is.
+This is the business-facing explanation of the finished local demo. It describes what a
+property manager, leasing employee and renter experience without asking the reader to
+understand workflow nodes or APIs.
 
-## The Problem
+There is no client deployment behind this document. Every renter, property, document and
+screening result is synthetic. The build proves that the coordination pattern can run; the
+production blueprint explains what a contracted company deployment would require.
 
-**Problem statement:** The path from rental inquiry to signed lease is a chain of manual
-handoffs, and every day it takes costs the owner rent while exposing the property to a kind
-of fraud that has grown much faster than the process defending against it.
+## The Business Problem
 
-Two costs sit at opposite ends of the same funnel, and they pull against each other.
+Leasing looks like one process from the outside. Inside a property-management company, it is
+a chain of small handoffs:
 
-At the front, **being slow loses the lease**. A renter browsing at 10:30pm is usually looking
-at four or five listings at once, and whoever answers first tends to win. But most inquiries
-arrive outside office hours, and the unit sits empty in the meantime.
+- answer the inquiry;
+- find the right property facts;
+- collect enough information to schedule a useful tour;
+- locate a real appointment;
+- follow up after the showing;
+- collect the application and documents;
+- prepare the evidence;
+- wait for a manager;
+- prepare and send the lease;
+- track the signature and the next handoff.
 
-At the back, **the documents people send are often fake**. The pay stub attached to an
-application can be produced in a few seconds with a free tool, and the person reviewing it is
-doing so between phone calls.
+Each task is manageable. The volume is the problem. When dozens or hundreds of households
+move through the process at once, small delays become unanswered messages, duplicate work,
+missing documents and applications nobody clearly owns.
 
-These two pressures work against each other. Move fast and you risk letting in someone who
-cannot pay. Move carefully and a competitor rents their unit first.
+The screening side creates a second problem. A number typed into a form, a number printed on
+a paystub and a number reported by an outside verification source are not the same kind of
+evidence. Treating them as interchangeable makes discrepancies hard to see.
 
-## Is This A Real Industry Problem?
+This build connects those handoffs while keeping the consequential decision with a person.
+It prepares work. It doesn't choose the tenant.
 
-Yes. Three separate bodies of evidence support three distinct parts of it.
+## The Division Of Responsibility
 
-### Application Fraud Is No Longer An Edge Case
+Three parts do different jobs:
 
-This is the strongest evidence, and it comes from the industry's own trade association.
+| Part | Responsibility |
+|---|---|
+| AI | Interpret a renter's message, answer from approved property facts, extract cited fields from a synthetic paystub and prepare bounded wording |
+| Fixed controls | Match records, choose the next fixed question, check tour policy, apply configured criteria, prevent duplicate actions and stop unsupported messages |
+| Human employee | Resolve exceptions, review the application evidence, make the rental decision and authorize the lease path |
 
-A National Multifamily Housing Council survey found that **93%** of rental housing providers
-experienced fraud in the previous twelve months, and **85%** had received falsified or
-fabricated pay stubs or other income documentation. **75%** named fake pay stubs as their
-single largest fraud concern, and **70%** said fraud had become more frequent over that
-period.
-[NMHC survey findings, reported by Multifamily Dive](https://www.multifamilydive.com/news/how-to-combat-paystub-fraud-renter/722022/)
+The distinction matters. An AI-generated summary isn't a rental decision. A criteria label
+isn't a rental decision either. The manager reviews the file and records the decision.
 
-The downstream cost is not hypothetical. Respondents traced **23.8%** of their eviction
-filings to fraudulent applications, and large operators attributed close to a quarter of
-their bad debt — averaging around **$4 million written off per respondent in a single year** —
-to nonpayment that began with a fraudulent application.
-[NMHC Pulse Survey on rental application fraud and bad debt](https://www.nmhc.org/research-insight/research-report/nmhc-pulse-survey-analyzing-the-operational-impact-of-rental-application-fraud-and-bad-debt/)
+## The Complete Maya Path
 
-### Vacancy Is Metered In Days
+### 1. Maya starts on the listing
 
-RealPage reported the average apartment sat vacant **34.4 days** at the end of 2024, up from
-roughly 30 days in early 2020, and RentCafe's 2025 data puts the US average time-to-lease at
-**41 days**. Against a national average rent near $1,740/month, each vacant day costs roughly
-**$55–60** in rent that is simply gone.
-[Industry summary of RealPage and RentCafe data](https://lula.life/articles/how-to-reduce-days-vacant-on-rental-properties)
+Maya opens the generated listing page for MAPLE-2B. The rent, deposit, availability, pet
+policy, parking and other facts come from the same unit record the conversation will use.
+That keeps the public listing and the permitted answer set aligned.
 
-Lost rent is also the largest single component of turnover cost. One apartment turn runs
-roughly **$3,900–4,000 per unit**, with vacancy loss accounting for **30–60%** of that.
-[Apartment turnover cost breakdown](https://rapideyeinspections.com/research/apartment-turnover-cost-statistics/)
+The site uses six synthetic property images created for the two demo units. It doesn't use a
+live listing-service feed or claim to represent a real property.
 
-### The Regulator Has Already Described The Right Architecture
+Maya submits this question through the listing's native contact form:
 
-In May 2024, HUD issued Fair Housing Act guidance covering algorithmic and AI-driven tenant
-screening. Its central instruction reads almost like a specification:
+> Is parking included, and do you allow a small dog?
 
-> Tenant screening companies should serve to **implement, rather than set**, a housing
-> provider's screening policies, and should offer customizability as to criteria, standards,
-> and weights.
+The system creates one lead reference and associates it with the selected unit. The receipt
+page says that a message has been sent. It doesn't name Telegram, advertise an assistant or
+display an app-launch button.
 
-[HUD press release, May 2024](https://archives.hud.gov/news/2024/pr24-098.cfm)
+### 2. The demo conversation is activated
 
-The guidance is equally clear that a housing provider cannot hand its Fair Housing obligation
-to a vendor or a model, and that a decision being algorithmic does not shield it from
-civil-rights law.
+Telegram stands in for a production messaging channel such as approved business SMS. A
+Telegram bot cannot initiate a new private conversation before the user starts it, so the
+operator activates the fresh reference in the renter chat as a disclosed demo setup step.
 
-Separately, the Fair Credit Reporting Act imposes a formal two-step adverse-action process on
-any denial based on a consumer report. Class actions against apartment operators over exactly
-that process are active.
+The reference is resolved by fixed record logic. The language model never chooses which lead
+or unit Maya belongs to.
 
-**This is why the system is built the way it is.** The manager sets the criteria. A
-deterministic engine applies them identically to everyone, with the evidence recorded. A
-person makes every decision. That is not a compliance compromise — it is the architecture the
-regulator described.
+Once the reference is bound, Maya receives an answer based on the unit record. If the system
+doesn't hold a requested fact, it says so and asks a person to follow up. It can't invent a
+different rent, fee, deposit or availability date and send it unchecked.
 
-## What The System Does
+### 3. The conversation collects only what is still needed
 
-Told as one renter's journey.
+The system collects Maya's requested move-in date, stated gross monthly income, occupant
+count, pet details and vehicle count. The messages can be natural. Maya can provide several
+facts in one sentence instead of completing a rigid questionnaire in chat.
 
-### 1. A renter gets in touch
+Two controls keep this bounded:
 
-Someone sees the listing on Zillow at 10:30pm and sends a message. It arrives in the property
-manager's inbox, and the system picks it up.
+1. The model extracts what Maya said and answers permitted factual questions.
+2. A fixed collection order decides which question remains and supplies its exact wording.
 
-### 2. It answers their questions — accurately
+The model doesn't decide what to ask next.
 
-The renter asks about parking and whether a small dog is allowed. The system answers using
-**only the recorded facts for that specific unit**.
+This stage uses self-reported information. It is labelled unverified and exists to support
+the scheduling path. Clearing it is not application approval. A renter who doesn't clear the
+gate isn't sent a rental denial; the system offers appropriate next help or routes the case
+to a person.
 
-This is not a stylistic preference. Every figure in an outgoing message is checked against the
-unit's record before it sends, and a message containing a number that is not there is blocked
-and routed to a person. The system cannot invent a rent, a fee, or a deposit, because a
-message that does never leaves.
+### 4. Maya asks for a tour in ordinary language
 
-It also cannot answer questions it should not. Ask whether it is a good building for families
-and it gives the factual property details instead, and logs that it declined.
+Maya can say:
 
-### 3. It asks a few qualifying questions
+> Can I come by next Tuesday at 2pm?
 
-Move-in date, approximate income, pets, vehicles, occupancy.
+The system reads actual Cal.com availability, interprets the request in the property's local
+time and selects an available slot. It states the time it booked. If the exact request is not
+available, it must not quietly replace it without saying so.
 
-Nobody is turned down here. This is unverified, self-reported information, and it exists only
-to decide whether booking a tour makes sense. The wording the renter sees says so explicitly:
-*to check which units fit, rather than make a decision*.
+Tour policy lives in a separate configuration record. A request inside the published hours
+and notice window can book without interrupting the manager. An out-of-policy request is held
+for a manager decision. While it is held, nothing is booked and the renter isn't told that it
+is confirmed.
 
-### 4. It books the tour
+The one-time entry code is a labelled mock. A production self-guided tour would use an
+approved identity and access provider, or the company would retain a staff-guided showing.
 
-The renter picks a time. Shortly before the slot they receive a one-time entry code for a
-self-guided tour.
+### 5. Tour completion is a disclosed operator event
 
-### 5. After the tour, the application goes out
+The demo does not conduct a physical showing. After the calendar booking, the operator records
+a synthetic tour-completed event off-camera. The event is clearly labelled in the recording.
 
-No pressure, no obligation. If they liked it, they can apply immediately instead of waiting
-for someone to email them tomorrow.
+That event changes the lead to toured and sends Maya the application link for the same lead
+and unit. The system doesn't infer attendance because a calendar appointment passed.
 
-### 6. They apply
+### 6. Maya completes a realistic rental application
 
-The application collects what a real one collects: identity, address history, employer and
-income, occupants, pets, vehicles, the standard disclosures, and the written consent that
-makes background checks legal at all. Plus their recent pay stubs.
+The application contains seven sections:
 
-The Social Security number is reduced to its last four digits the moment it arrives. The full
-number is never stored.
+- home and carried reference;
+- contact details;
+- residential history;
+- move-in and income;
+- occupants, pets and parking;
+- rental disclosures;
+- supporting document and authorization.
 
-### 7. The system reads their documents
+For the demo, Maya enters synthetic information and uploads
+`fixtures/paystub-maya.pdf`. The form requests a four-digit demo identity code, not a full
+Social Security number. No date of birth, real bank credential or government identity
+document is required.
 
-It pulls the figures off the uploaded pay stub — employer, pay period, gross amount — and
-records the exact line it read each one from, so a person can check it.
+The application is not the lease. It collects information and a synthetic authorization for
+the test verification path. Submitting it doesn't approve Maya or create a contract.
 
-### 8. It verifies their income for real
+### 7. The system prepares the review file
 
-This is the important step.
+The paystub-reading step extracts the requested fields and keeps source evidence with the
+values. It doesn't decide whether the document is trustworthy or whether Maya should qualify.
 
-Instead of trusting the uploaded document, the applicant connects their bank account and the
-system reads their **actual payroll deposits**. A pay stub can be edited in a photo editor. A
-deposit history cannot.
+The build then calls Plaid's real Sandbox API. Plaid returns canned test payroll information
+through its Payroll Income response. Maya does not connect a real bank or payroll account,
+and the build contains no Plaid Link screen. The API interaction, response shape, parsing and
+comparison are real; the person and financial data are not.
 
-### 9. It applies the manager's criteria
+The review file separates three figures:
 
-Now it compares everything against the rules the property manager set — income multiple,
-credit threshold, eviction history.
+| Source | Meaning in this demo |
+|---|---|
+| Claimed income | What Maya entered on the application |
+| Document income | What the extraction step read from the synthetic paystub |
+| Plaid Sandbox income | What the canned Payroll Income response reported |
 
-These are **their** rules, stored in their settings, applied the same way to every single
-applicant. The system does not invent criteria and does not weigh anyone differently. Every
-result records which document, which field, and which value produced it.
+The credit, eviction and identity results are separate mock fixtures. They are labelled as
+mock data and never presented as a real consumer report or identity verification.
 
-One detail worth knowing: the income multiple is applied to the **tenant's share** of rent,
-not the full rent. Requiring someone with a housing voucher to earn three times the whole
-rent from their own income is treated as source-of-income discrimination in the 19 states,
-DC, and 100+ localities that protect it — including six of the ten largest US cities.
+### 8. Fixed criteria organize the evidence
 
-### 10. A human decides
+The criteria engine reads the manager-configured thresholds and the prepared evidence. It
+doesn't call a language model. It produces one of three internal classifications:
 
-The property manager gets a message on their phone with the complete picture, and decides.
-Approve, approve with conditions, or send it for a closer look.
+- `meets_criteria`;
+- `conditional`;
+- `does_not_meet`.
 
-The system never makes this call.
+Each criterion includes the value and source behind it. Missing evidence remains missing.
+The engine doesn't silently invent a value or convert uncertainty into approval.
 
-### 11. The lease goes out and comes back signed
+The income multiple is calculated against tenant-responsible rent when rental assistance is
+recorded. That arithmetic is part of the test suite. The demo does not claim that its example
+criteria are lawful or appropriate for every company or jurisdiction.
 
-On approval, the lease is filled in from verified data and sent for signature. When it comes
-back signed, the unit is marked leased and the new resident gets their welcome information.
+### 9. A manager makes the rental decision
 
-In testing, the welcome packet went out **23 seconds** after the signature completed.
+The manager receives a separate Telegram card. The renter and manager never share a bot or
+conversation.
 
-## The Moment That Matters Most
+The card shows the application reference, unit, income sources, evidence for each configured
+criterion and the engine's classification. Nothing has been sent to the applicant at this
+point.
 
-An applicant submits a pay stub showing **$7,800 a month**. His bank deposits show
-**$4,996 a month**.
+For Maya's verified path, the operator reviews the synthetic file and taps **Approve** in the
+manager role. The decision record stores the action, actor and time. A repeated tap cannot
+create a second lease envelope.
 
-| What he typed | What his pay stub says | What his bank shows |
-|---|---|---|
-| $7,800 | $7,800 | **$4,996** |
+### 10. The approved lease goes to DocuSign Sandbox
 
-On paper he clears four times the rent and would have been approved. Verified against his
-actual deposits he is at 2.56 times — below the threshold — with a 56% overstatement on top.
+The system fills a fixed lease template with authorized variable fields and sends it to
+DocuSign's developer sandbox. The model doesn't write lease clauses or choose the rent.
 
-Then the system does something that surprises people: **nothing**. It stops, sends him
-nothing at all, and hands the file to a human along with a note explaining what a lawful
-decline actually requires.
+Sending and signing are separate states. The record first shows that the test envelope was
+sent. Maya then opens the sandbox signing link, completes the required fields and presses
+Finish.
 
-That stop is deliberate. Declining someone over a background report is a formal legal process
-involving a pre-notice, a copy of the report, a waiting period, and a final notice. Automating
-that is how property companies end up in class actions.
+### 11. The callback closes the demonstrated path
 
-## What The System Never Does
+DocuSign sends a completion callback. The workflow matches the envelope to the application,
+marks the lease signed, changes the synthetic unit to leased, sends the welcome email and
+notifies the manager.
 
-- **It never decides.** It gathers, reads, checks, organises, and hands over.
-- **It never scores or ranks anyone.** There is no AI judgement about whether someone seems
-  like a good tenant. The rules are arithmetic against published thresholds.
-- **It never sends a rejection.**
-- **It never asks or records anything about a protected class**, and refuses to answer renter
-  questions that would require it to.
+Postgres holds the authoritative demo state. Airtable receives a phase-boundary mirror for
+visibility. The mirror can fail without stopping the leasing path, and the automation never
+reads operational truth back from Airtable.
 
-## What It Costs To Run
+The demonstrated endpoint is a confirmed sandbox signature and delivered welcome email.
+It is not payment clearance, property readiness, key release, possession or a completed
+physical move-in.
 
-The AI, and nothing else — a few dollars.
+## The Devon Stop Path
 
-Everything else is open source, a free tier, or a developer sandbox: the automation engine,
-the database, email, the application form, tour booking, bank-based income verification, and
-e-signature.
+The same screening workflow can process Devon's synthetic application. His form and paystub
+report $7,800 per month, while Plaid Sandbox returns approximately $4,996.33 per month. For
+the higher-rent MAPLE-5A fixture, the configured engine returns `does_not_meet` and records a
+56.1% document variance.
 
-## What A Real Deployment Changes
+That mismatch is a review fact, not proof of fraud. It could reflect the wrong source,
+different income periods, incomplete coverage, a document problem or another explanation.
 
-- Credit and eviction checks become a real bureau account
-- The database connects to their existing property software
-- Text messaging is added once carrier registration completes
-- Self-guided tours connect to real smart locks
-- A proper FCRA decline process is added for the cases that need one
+The demo takes no applicant-facing action. It records `stopped_for_human`, sends no lease and
+doesn't generate, draft or send an adverse-action notice. An authorized human process would
+own any real decision, applicant communication, report dispute or legally required notice.
 
-The shape of the system does not change. The demo runs the real structure with test-mode
-parts plugged in, and the architecture diagram shows exactly which is which.
+## What AI Does
 
-## Who This Is For
+- Understands the renter's wording and extracts stated fields.
+- Answers from the approved unit record.
+- Reads requested facts from the synthetic paystub with source evidence.
+- Prepares bounded wording that still passes fixed controls.
 
-Property management companies, roughly 50 to 500 units.
+## What AI Never Does
 
-Below that the volume does not justify it. Above that they are usually on an enterprise
-platform already. In between sits a large group running all of this on spreadsheets, a shared
-inbox, and a screening website — which is the gap this fills.
+- Resolve identity or select a database record.
+- Set screening or tour policy.
+- Decide which question comes next.
+- Approve, deny, rank, score or recommend an applicant.
+- Infer a protected characteristic.
+- Write lease clauses or legal notices.
+- Send a post-screening outcome on its own.
 
-And unlike the enterprise platforms, there is nothing here for the team to learn. No new
-dashboard, no migration, no per-seat licence. It works through the inbox and the messaging app
-they already have open.
+## How Work Stays Visible
+
+The renter's messages, phase changes, application status, manager action, envelope and
+signature state all attach to stable references. Prospect-facing correspondence is logged in
+delivery order. Airtable shows one upserted row per lead rather than one row per event.
+
+The visible pipeline milestones include New, Prequalified, Tour Booked, Toured, Applied,
+manager decision, Lease Sent and Lease Signed. Optional custom Airtable views were skipped;
+the existing Grid is enough for the demo.
+
+Failure does not mean silence. A blocked or malformed conversational reply sends a safe
+handoff message and alerts the manager. An unknown signature callback alerts the manager
+instead of trying to send welcome information without an application. External actions are
+recorded separately from attempted actions.
+
+## What Is Real, Test-Mode And Mocked
+
+| Capability | Demo status |
+|---|---|
+| Generated listing site and native inquiry form | Real local software using synthetic unit data |
+| Telegram conversations and manager controls | Real messages through two separate bots; Telegram stands in for production messaging |
+| OpenAI extraction and bounded conversation work | Real API calls on synthetic information |
+| Cal.com availability and booking | Real cloud service and test appointment |
+| Plaid Payroll Income | Real Sandbox API calls returning canned test data; no applicant connection screen |
+| Credit, eviction and identity results | Mock fixtures |
+| Tour entry code | Mock fixture |
+| Rental application and paystub upload | Real local form with synthetic inputs and file |
+| Criteria engine and human decision record | Real demo logic and recorded manager action |
+| DocuSign | Real developer-sandbox envelope, signature and callback |
+| Welcome email | Real delivery to the controlled test inbox |
+| Airtable pipeline | Real display mirror; never the source of truth |
+
+## What A Production Company Would Change
+
+A production deployment would fit around the company's existing PMS, CRM, communications,
+calendar, application, screening, signature, accounting and operations tools. It would not
+ask the company to replace its whole stack with this demo.
+
+Production work includes contracted provider access, secure applicant connection screens,
+real screening and identity processes, approved messaging permissions, durable hosting,
+monitoring, backups, role-based access and recovery. It must also handle multiple adults,
+guarantors, competing applications, reservation controls, all required signers, payment
+status, property readiness and possession.
+
+Those additions are not a matter of changing one Sandbox URL. They require operating policy,
+provider agreements, record authority, security review and acceptance testing.
+
+The complete production design is documented in
+[production-leasing-tenant-screening-blueprint.md](production-leasing-tenant-screening-blueprint.md).
+
+## What The Verified Demo Proves
+
+A genuine browser-entered Maya run completed the following path:
+
+listing inquiry → referenced renter conversation → grounded answer → self-reported
+pre-qualification → real Cal.com booking → labelled simulated tour completion → realistic
+application and synthetic paystub → OpenAI extraction → Plaid Sandbox Payroll Income →
+mocked screening evidence → fixed criteria → genuine manager approval tap → DocuSign sandbox
+signature → callback → signed state → welcome delivery.
+
+That proves the connected demo path works on synthetic data. It does not prove customer
+savings, screening accuracy across a population, legal compliance, production reliability or
+market demand. Those require a scoped pilot, measured baselines and the company's own review.

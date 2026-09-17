@@ -50,10 +50,11 @@ She taps **Send message**.
 
 > **Involved:** the listing site · **Telegram** (the leasing assistant) · **OpenAI** (writes the reply) · the property record · **Airtable** (the lead appears on the board as *New*)
 
-The page that comes back has a reference number and a button: *Open the leasing assistant*.
+The page that comes back has a reference number and confirms: *We have sent you a message
+with an answer to your question.*
 
-She taps it. Telegram opens on a chat with the leasing assistant, she hits Start — and the
-answer to the question she just typed is **already waiting for her**:
+She opens her messages. The answer to the question she just typed is **already waiting for
+her**:
 
 > One assigned surface parking space is included; a second space is $50/month if available.
 > Small dogs are welcome under the 50-lb limit, with breed restrictions applying. The unit is

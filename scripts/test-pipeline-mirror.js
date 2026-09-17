@@ -1,0 +1,14 @@
+const assert=require('node:assert/strict');
+const {toFields,SQL}=require('./lib/pipeline-mirror');
+const row={ref_token:'R-1234',lead_status:'prequalified'};
+assert.equal(toFields(row).Status,'Prequalified');
+assert.equal(toFields({...row,application_status:'awaiting_decision'}).Status,'Applied');
+assert.equal(toFields({...row,decision:'approved'}).Status,'Decided');
+assert.equal(toFields({...row,application_status:'stopped_for_human'}).Status,'Stopped For Review');
+assert.equal(toFields({...row,lease_status:'sent'}).Status,'Lease Sent');
+assert.equal(toFields({...row,lease_status:'signed'}).Status,'Leased');
+assert.equal(toFields({...row,application_ref:'A-5678'})['Application Reference'],'A-5678');
+assert.equal(toFields(row)['Demo Data'],true);
+assert.match(SQL,/LEFT JOIN LATERAL/);
+assert.match(SQL,/ORDER BY id DESC LIMIT 1/);
+console.log('10 pipeline mirror checks passed');

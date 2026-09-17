@@ -1,6 +1,6 @@
-# Repository Guidelines (Codex)
+# Repository Guidelines (Claude Code)
 
-This file is the Codex counterpart of `CLAUDE.md`. Both files carry the same guidance; `CLAUDE.md` is the Claude Code-facing copy. Keep them in sync — any rule added to one must be added to the other.
+This file is the Claude Code counterpart of `AGENTS.md`. Both files carry the same guidance; `AGENTS.md` is the Codex-facing copy. Keep them in sync — any rule added to one must be added to the other.
 
 This repository is the planning and implementation workspace for a local-first n8n **leasing / tenant-screening coordination demo**. Treat it as an automation project, not a SaaS app or compiled software product. Core behavior lives in n8n workflow exports, a Postgres state store, synthetic fixtures, prompts/schemas, and helper scripts.
 

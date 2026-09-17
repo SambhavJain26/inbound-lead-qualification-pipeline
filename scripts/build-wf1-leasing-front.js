@@ -366,9 +366,7 @@ const confirmationPageCode = [
   "    '<h1>Thanks, ' + esc(inquiry.prospect_name) + '</h1>',",
   "    '<p>We have your message about ' + esc(unit.address) + '.</p>',",
   "    '<p>Your reference is <span class=\"ref\">' + esc(token) + '</span>.</p>',",
-  "    '<p>Our leasing assistant has your question and can answer it right now, along with anything else you want to know about the home.</p>',",
-  "    '<p><a class=\"cta\" href=\"' + link + '\">Chat with the leasing assistant</a></p>',",
-  "    '<p class=\"small\">Opens in Telegram.</p>',",
+  "    '<p>We have sent you a message with an answer to your question.</p>',",
   "    '<p class=\"small\">Demonstration system. Synthetic data only.</p>',",
   "    '<p class=\"small\"><a href=\"http://localhost:8080/\">Back to listings</a></p>',",
   "    '</div></body></html>',",
@@ -1531,7 +1529,7 @@ const nodes = [
   ),
 
   /* ---- entry 3: Cal.com booking ---------------------------------------- */
-  wf.webhookNode("Receive Tour Booking (Cal.com)", "calcom-booking", [-780, 120]),
+  wf.webhookNode("Receive Tour Booking (Cal.com)", "calcom-booking", [-780, 120], {responseMode:'onReceived'}),
 
   wf.codeNode("Issue Lock Code (MOCK)", lockCodeCode, [-560, 120]),
 
@@ -1627,11 +1625,11 @@ const nodes = [
     {
       chatId: "=__TELEGRAM_CHAT_ID__",
       text:
-        "=A tour was booked that does not match any lead.\n\n" +
+        "=A booking callback could not be linked to a lead. Please review it.\n\n" +
         "Booking: {{ $json.booking_uid }}\n" +
         "Attendee: {{ $json.attendee_email }}\n\n" +
-        "No entry code was issued and nothing was sent. The booking link was " +
-        "probably used without a reference token.",
+        "This callback did not issue another entry code or send another confirmation. " +
+        "Check the booking and renter record before taking action.",
     },
     [-175, 300]
   ),
@@ -2122,6 +2120,31 @@ const connections = wf.connect({
   "Send Alternatives Offer": [["Notify Manager: Email Prequal Needs Review", "Log Prequal Email"]],
 });
 
+const mirror = require('./lib/pipeline-mirror');
+// API bookings are recorded by WF5. Allow that write to finish before checking
+// a metadata-free callback; duplicates must not rotate the code or send again.
+nodes.push({id:'wait-for-booking-owner',name:'Allow Booking Owner To Record',type:'n8n-nodes-base.wait',typeVersion:1.1,position:[-500,400],parameters:{resume:'timeInterval',amount:10,unit:'seconds'},webhookId:'booking-owner-delay'});
+nodes.push(wf.postgresNode('Check Existing Booking Owner','SELECT EXISTS(SELECT 1 FROM leads WHERE calcom_booking_uid=$1) AS already_recorded',[-300,400],{queryOptions:{queryReplacement:"={{ [$('Issue Lock Code (MOCK)').first().json.booking_uid ?? ''] }}"}}));
+nodes.push(wf.ifNode('Booking Already Recorded?',[wf.booleanCondition('={{ $json.already_recorded }}',true)],[-100,400]));
+nodes.push(wf.codeNode('Restore New Booking Payload',"return [{json:$('Issue Lock Code (MOCK)').first().json}];",[100,400]));
+connections['Issue Lock Code (MOCK)']={main:[[{node:'Allow Booking Owner To Record',type:'main',index:0}]]};
+connections['Allow Booking Owner To Record']={main:[[{node:'Check Existing Booking Owner',type:'main',index:0}]]};
+connections['Check Existing Booking Owner']={main:[[{node:'Booking Already Recorded?',type:'main',index:0}]]};
+connections['Booking Already Recorded?']={main:[[],[{node:'Restore New Booking Payload',type:'main',index:0}]]};
+connections['Restore New Booking Payload']={main:[[{node:'Record Tour Booking',type:'main',index:0}]]};
+// Replace the legacy partial writers without changing their upstream gates.
+for (const [old,token,suffix] of [
+  ['Mirror New Lead To Airtable',"$('Create Lead From Inquiry').first().json.ref_token",'New Lead'],
+  ['Mirror Lead To Airtable (Phase)',"$('Check Guardrails (Telegram)').first().json.ref_token",'Prequalification'],
+  ['Mirror Email Lead To Airtable',"$('Check Tier A Guardrails').first().json.ref_token",'Email Lead']
+]) {
+  const index=nodes.findIndex(n=>n.name===old);
+  nodes.splice(index,1);
+  nodes.push(wf.codeNode(old,'return $input.all();',[4000,0]));
+  mirror.attach(wf,nodes,connections,old,token,suffix);
+}
+mirror.attach(wf,nodes,connections,'Record Tour Booking','$json.ref_token','Public Tour');
+mirror.attach(wf,nodes,connections,'Mark Lead Toured','$json.ref_token','Tour Completed');
 const workflow = wf.buildWorkflow({
   id: "wf1-leasing-front",
   name: "WF1 Leasing Front",

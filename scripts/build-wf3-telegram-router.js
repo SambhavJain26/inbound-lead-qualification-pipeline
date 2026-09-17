@@ -257,6 +257,7 @@ const connections = wf.connect({
   "Start Lease Workflow": [["Confirm Decision Recorded"]],
 });
 
+require('./lib/pipeline-mirror').attach(wf,nodes,connections,'Record Decision','$json.ref_token','Decision');
 const workflow = wf.buildWorkflow({
   id: "wf3-telegram-router",
   name: "WF3 Telegram Router",

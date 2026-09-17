@@ -1731,6 +1731,152 @@ a lawful decline actually requires.
    the renter sees on the booking page.
 4. Record the demo.
 
+---
+
+## 2026-09-14 — Renter Browser Run And Application Presentation Upgrade
+
+Six AI-generated synthetic property photos now populate the two listing pages (no
+placeholders). Cal.com event name verified as Unit Tour. Operator chose to keep the
+current prospect Gmail and clear visible mail manually before recording.
+
+The inquiry receipt now says "We have sent you a message with an answer to your
+question." No messaging-app name, assistant name or chat button. Telegram remains
+the demo transport standing in for SMS; initial chat activation is a demo setup step,
+not evidence that a new Telegram contact can be messaged before starting the bot.
+
+Genuine browser-typed renter run R-6343: listing inquiry, /start, grounded FAQ,
+prequalification, and real Cal.com booking 5JeXEdKpWcjLm4uwcDR8wR. Thursday September
+17 at 2pm property time stored as 18:00 UTC. Lock code source remains mock. A simulated
+tour-completed event delivered the application link to the same renter chat.
+
+Application presentation upgraded in the existing n8n Form Trigger (version 2.4,
+supported by the installed n8n runtime): seven sections,
+human-readable labels, document guidance, explicit synthetic verification authorization,
+and no request for a full SSN. Reference is hidden and carried by ref_token in the URL.
+No new tool, consumer-report product or screening criterion introduced.
+
+Fixed plain R-xxxx reference parsing and replaced unconditional consent acceptance with
+explicit value validation. Shared application-form definitions keep the fixture submitter
+and label normalization aligned, including HTML section field indices.
+
+Verification: 32 leasing + 19 screening + 8 application-form tests pass. Live multipart
+submission A-9215 linked to R-6343, claimed 5000, extracted and Plaid Sandbox verified
+4996.33, meets_criteria, awaiting_decision. This proves submission through screening,
+not a completed lease/signature cycle. The latest application's manager decision and
+DocuSign completion still need verification; do not call the whole recording flow done.
+
+---
+
+## 2026-09-14 — Live Sandbox Signature And Welcome Delivery Verified
+
+Latest application A-6686 linked to R-6343 was approved using the genuine manager
+Telegram button. WF3 execution 220 and lease-send execution 221 succeeded.
+Envelope 8de32210-6cb4-848f-800d-ca973f920e16 arrived in the prospect mailbox.
+Opened its actual email signing link and, with operator's explicit confirmation,
+adopted Maya Restrepo / MR (not the saved operator signature) and selected Finish.
+
+Real DocuSign Connect callback execution 222 succeeded. Postgres now shows
+A-6686 status=lease_signed, lease_status=signed and MAPLE-2B status=leased.
+Welcome email [A-6686] was independently found in the prospect IMAP inbox, and
+the final manager notification was visibly received. No simulated signature callback
+was used. The happy path is verified through final delivery.
+
+Demo state has intentionally NOT been reset: three application iterations remain,
+including older A-8084 with an unsigned envelope and A-9215 awaiting a decision.
+Reset Postgres/Airtable before the operator's clean rehearsal; old mail, Telegram
+history and Cal.com bookings need separate cleanup.
+
+Recording caveat found in the live manager chat: the successful API-created tour
+also produced an unmatched-booking alert when Cal.com's metadata-free webhook
+arrived. The API path still recorded the correct booking and issued its mock code,
+but this noisy contradictory manager alert should be corrected before recording.
+
+---
+
+## 2026-09-14 — Approved Pipeline Mirror Revision (In Progress)
+
+Operator approved steps 1–7: booking alert correction, complete live milestone
+mirroring, duplicate-safe rebuild, five display fields, three board views,
+verification, and a clean Postgres/Airtable reset after preserving evidence.
+No permission to delete mailbox, Telegram history, bookings or sandbox envelopes.
+
+Plan revision: mirror lease-sent and lease-signed in addition to lead, prequalification,
+tour-booked, tour-completed, application and manager-decision boundaries (about eight
+writes per happy-path lead, not five). No per-chat-turn mirroring. Postgres remains
+the sole state store; Airtable failures remain non-blocking and visible in execution
+records. One shared projection selects the latest application per lead. Application
+Reference, Next Action, Lease Status, Last Synced At and Demo Data are display fields,
+not new screening criteria. Schema expansion and leased snapshot are verified live.
+
+Airtable browser is signed out; view setup requires operator sign-in. Remaining work
+must not be called complete until live-node verification and final reset are checked.
+
+## 2026-09-14 — Mirror Verification And Clean Rehearsal Reset
+
+Steps 1–4, 6 and 7 are implemented and verified. Step 5 remains blocked by the
+Airtable browser sign-in page; operator was asked to sign in. Pipeline Kanban,
+Needs Attention and Leased view settings are documented in docs/pipeline-board.md.
+Do not claim those views exist yet.
+
+Live inquiry R-7759: WF1 execution 223 succeeded and its Airtable row appeared
+as New with Demo Data checked. Multipart application A-2972 linked to that lead;
+WF2 execution 224 succeeded and the same row became Applied with verified income
+and Application Reference. A scripted manager review tap (not a genuine user tap)
+produced WF3 execution 225 and Stopped For Review on the same row. No extra lease
+was sent. Duplicate metadata-free Cal.com callback execution 226 succeeded,
+skipped the unmatched alert and confirmation paths, and retained R-6343's original
+booking uid and code 565119. Callback response is immediate; ownership lookup waits
+ten seconds for WF5's write. Truly unresolved callbacks still request human review
+without claiming that no other workflow issued a code or sent a confirmation.
+
+Temporary verification-only n8n probe used the same Postgres projection, mapper,
+credential and Airtable upsert as production nodes. Executions 227–231 succeeded
+for Lease Signed, Lease Sent, Prequalified, Tour Booked and Toured stored states.
+These are synthetic mirror-node tests, not additional real tours or signatures.
+Probe is inactive after the final restart; all five demo workflows are active.
+
+Recoverable pre-reset Postgres dump saved in ignored local directory:
+tmp/evidence-2026-09-14T12-55-15-441Z/postgres-before-reset.sql.
+Reset cleared four Airtable mirror records and recreated the synthetic database:
+two available units, zero leads, applications and messages. No mail, Telegram
+history, bookings or sandbox envelopes were deleted. Existing n8n execution
+evidence remains. Reset helper now handles Airtable pagination and reports failed
+deletions rather than silently announcing readiness.
+
+Final checks: Stage 2 PASS; 32 leasing + 19 screening + 8 form + 10 mirror checks
+PASS. Listing regenerated with six supplied images and zero placeholders; listing
+and tunnel-hosted form both HTTP 200, Airtable list HTTP 200 with zero rows, both
+Telegram webhooks registered. Begin rehearsal with a NEW listing inquiry: old
+R-6343 application links no longer identify a lead after reset.
+
+## 2026-09-14 — Optional Views Skipped; Agreed Work Complete
+
+Operator explicitly chose to skip step 5 (the three Airtable presentation views).
+No sign-in or view creation is required. Retain the existing Grid view; live
+mirroring and the added fields are unchanged. Steps 1–4, 6 and 7 remain verified
+as documented above, so the revised work is complete and ready for a fresh
+operator rehearsal. No further reset or external cleanup was performed.
+
+## 2026-09-14 — Complete Operator Testing Guide Written
+
+Added docs/manual-testing-flow.md at operator's request: full manual Maya journey,
+exact synthetic inputs and all form fields, expected messages/states, read-only
+SQL checks, real sandbox signing, optional exception tests, troubleshooting and
+preserve/reset sequence. Explicitly distinguishes Telegram /start activation,
+operator-triggered mock tour completion, Sandbox/Mock evidence and future move-in
+handoff from implemented behavior. Devon's quick fixture test uses --standalone
+to avoid attaching him to Maya's latest lead. No test was run and no live state
+changed while writing this guide. Full-output-enforcement skill used for completeness.
+
+## 2026-09-14 — Cold-Start Rehearsal Added
+
+Expanded Section 2 of docs/manual-testing-flow.md with operator-requested cold
+start: open Docker Desktop, enter the project directory, Compose up, establish
+tunnel, import workflows, restart n8n, register Cal.com callback, build/serve the
+listing, and verify health. Includes per-step expectations, activation delay,
+new-link guidance and explicit warning that startup does not reset stored data.
+Documentation only; no services were started/stopped and no live data changed.
+
 ## 2026-09-16 — Business-Level Production Blueprint Written
 
 Actor: Codex, at the operator's request. Added
@@ -2228,3 +2374,34 @@ remain intact. No automation runtime, external account, reference repository,
 publication or paid dependency was changed by this task. Technical QA is not
 user design approval. Preserve earlier unrelated dirty work; stage only this
 append, the matching AGENTS append and task-owned carousel files.
+
+## 2026-09-17 — Complete the three-document Build 05 reference package
+
+The user asked to bring Build 05 to the same three-file reference structure as
+the four completed builds. Rewrote `how-the-system-works.md` around the verified
+Maya path and Devon stop path, and refreshed `build-technical-notes.md` with the
+current implementation, constraints, failure lessons and verification evidence.
+Copied the existing production blueprint into the Build 05 folder without
+changing its source; the two blueprint copies have matching SHA-256 hashes.
+
+The final package now contains exactly three Markdown files: 315-line business
+explanation, 536-line technical notes and 1,006-line production blueprint. The
+technical snapshot records five workflows, 196 exported nodes, six Postgres
+tables and 69 passing local checks. The documents consistently distinguish real
+test-mode integrations from synthetic inputs and mocks. They state that Telegram
+is the SMS stand-in, tour completion is operator-triggered, Plaid returns canned
+Sandbox Payroll Income with no Link flow, Postgres is authoritative, Airtable is
+a display mirror and the manager makes every rental decision.
+
+Final QA found no broken local Markdown links or whitespace errors. Targeted
+searches found no stale four-workflow, 71-node or 38-test claims, and no claim
+that the demo uses real bank connections, real applicants or AI rental decisions.
+The technical notes preserve one presentation issue: the manager card still says
+`Bank verified` even though the underlying value is Plaid Sandbox Payroll Income;
+the runtime label should be corrected before treating the card as production
+language. General Copywriter and Syntax Polish guided the writing and final pass.
+
+No workflow, database, external account, provider configuration, generated
+carousel or production-blueprint source file was changed. No new durable rule was
+introduced, so AGENTS/CLAUDE did not require an update. Unrelated dirty work was
+preserved.

@@ -257,14 +257,14 @@ function plaidNode(name, endpoint, bodyExpression, position) {
  * such as httpMethod stop the POST one from registering at all - the form page
  * still renders, so it looks fine until a submission silently 404s.
  */
-function formTriggerNode(name, { formPath, title, description, fields, customCss, buttonLabel }, position) {
+function formTriggerNode(name, { formPath, title, description, fields, customCss, buttonLabel, version = 2.2 }, position) {
   const options = {};
   // Without this n8n stamps its own attribution on the form the prospect sees.
   options.appendAttribution = false;
   if (customCss) options.customCss = customCss;
   if (buttonLabel) options.buttonLabel = buttonLabel;
 
-  return node(name, "n8n-nodes-base.formTrigger", 2.2, {
+  return node(name, "n8n-nodes-base.formTrigger", version, {
     path: formPath,
     formTitle: title,
     formDescription: description,

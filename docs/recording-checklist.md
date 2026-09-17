@@ -2,6 +2,12 @@
 
 What to have open, what to run, and what to say. The whole run is about seven minutes.
 
+**Hard recording rule:** every command in this checklist is preparation or an off-camera operator action. Start screen capture on the listing page. Never include a terminal, command prompt, script execution, Docker/tunnel startup, n8n editor, webhook setup, API console, database query or credential screen in the published video. Pause capture for an operator-only trigger, perform it off-camera, and resume on the labeled business-facing result.
+
+For exact manual rehearsal inputs, current demo setup boundaries and outcome
+checks, use [Full manual testing flow](manual-testing-flow.md). This recording
+outline is not a substitute for that testing guide.
+
 ---
 
 ## Before you start
@@ -16,7 +22,9 @@ docker compose restart n8n
 node scripts/register-calcom-webhook.js
 node scripts/build-listing-site.js
 node scripts/serve-listing-site.js --detach
+node scripts/preserve-demo-evidence.js
 node scripts/reset-demo.js --with-airtable
+node scripts/build-listing-site.js
 ```
 
 The tunnel hostname changes on every run, which is why the import and the Cal.com
@@ -25,6 +33,9 @@ nowhere and **Cal.com will not tell you** — it fails silently.
 
 The listing site does **not** depend on the tunnel: its contact form posts to local n8n. Only
 rebuild it if you changed a unit.
+
+Reset restores unit availability, so rebuild the listing site after a reset too.
+See `docs/pipeline-board.md` for the board fields, views and mirror recovery.
 
 **Verify before you hit record**
 
@@ -46,8 +57,7 @@ working — with no error anywhere.
 - Browser: have the listing site open at `http://localhost:8080` on a clean tab.
 - Cal.com: rename the event type to **Unit Tour** if you have not already — the prospect
   sees that title on the booking page.
-- Close the n8n editor unless you plan to show it. A wall of nodes impresses engineers and
-  loses property managers.
+- Close the n8n editor before recording. It is not part of the LinkedIn demo.
 
 **Windows to arrange**
 
@@ -57,7 +67,6 @@ working — with no error anywhere.
 | Telegram — leasing assistant | The renter's side of the conversation |
 | Telegram — manager bot | The decision card, and any out-of-hours tour request |
 | Airtable board | The lead moving through the pipeline |
-| Terminal | Only if you want to show the commands |
 
 The two Telegram chats are the heart of the demo, and keeping them visibly separate is the
 point: the renter and the manager never share a conversation. If you are recording on one
@@ -83,8 +92,8 @@ Hit **Send and continue on Telegram**.
 
 ### 2. The handoff — the first real beat
 
-The confirmation page comes back with a reference and a button. Tap **Open the leasing
-assistant**, then Start.
+The confirmation page comes back with a reference and confirms that a message has been sent.
+Switch to the renter's messages to continue.
 
 > "The answer is already there. Nobody was awake."
 
@@ -145,19 +154,17 @@ Show the card on the manager bot, tap **Approve tour**, show the confirmation ar
 > "Ordinary bookings never wait for anyone. Only the unusual one does, and the rule deciding
 > which is which was written down in advance."
 
-Then:
-
-```bash
-curl -X POST "$TUNNEL/webhook/tour-completed" -H "Content-Type: application/json" -d '{"ref_token":"R-xxxx"}'
-```
+Pause screen capture, trigger the simulated tour-completed event using the manual testing
+runbook, then resume on the clearly labeled result and the application link. Do not show the
+operator command or terminal.
 
 > "Tour's done, and the application link goes out on its own — same chat."
 
 ### 5. The application
 
-```bash
-node scripts/submit-application.js maya
-```
+Open Maya's application link and complete the seven-section form on screen with the synthetic
+values from the manual testing flow. Upload `fixtures/paystub-maya.pdf`. Do not use or show the
+submission helper script in the recording.
 
 > "Identity, address history, employer, income, occupants, pets, vehicles, the disclosures,
 > and the FCRA consent that makes any of the checks legal. Plus a pay stub."

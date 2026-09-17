@@ -40,6 +40,7 @@ const FIELDS = [
         { name: "Toured", color: "yellowLight2" },
         { name: "Applied", color: "orangeLight2" },
         { name: "Decided", color: "greenLight2" },
+        { name: "Lease Sent", color: "tealLight2" },
         { name: "Leased", color: "greenBright" },
         { name: "Stopped For Review", color: "redLight2" },
       ],
@@ -51,6 +52,11 @@ const FIELDS = [
   { name: "Income Flag", type: "singleLineText" },
   { name: "Tour", type: "singleLineText" },
   { name: "Updated", type: "singleLineText" },
+  { name: "Application Reference", type: "singleLineText" },
+  { name: "Next Action", type: "singleLineText" },
+  { name: "Lease Status", type: "singleLineText" },
+  { name: "Last Synced At", type: "singleLineText" },
+  { name: "Demo Data", type: "checkbox", options: { icon: "check", color: "greenBright" } },
 ];
 
 async function airtable(url, options = {}) {

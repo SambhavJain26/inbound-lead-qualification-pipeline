@@ -464,11 +464,13 @@ Assets: none; the written blueprint already exists. Share it only through a revi
 
 Use the [manual testing flow](../manual-testing-flow.md) for the cold start: Docker/services, new tunnel, workflow import/restart, callback settings, health checks, listing rebuild/server and fresh inquiry. This plan doesn't replace that runbook or require recording the setup as another video.
 
+All technical preparation is off-camera. The master begins on the listing page and contains no terminal, command prompt, script execution, Docker or tunnel startup, n8n editor, webhook configuration, API console, database query or credential screen. Pause capture for any operator-only trigger and resume on its clearly labeled user-facing result. Neither final export may contain command-line footage.
+
 Rehearse the complete flow once before capturing the master. Use a fresh reference, fictional applicant and synthetic documents. Old application links won't work after reset; don't reuse R-6343 as a live submission link.
 
 The operator already chose to keep the current Gmail for the demo. Before filming, isolate the demo messages and ensure unrelated personal messages aren't visible. This plan doesn't authorize deleting mail, Telegram history, bookings or envelopes.
 
-Avoid password managers, credential panels, browser account menus, notification previews and terminal output containing secrets. Use the existing Airtable Grid; optional board views were skipped and aren't recording prerequisites.
+Avoid password managers, credential panels, browser account menus and notification previews. Use the existing Airtable Grid; optional board views were skipped and aren't recording prerequisites.
 
 ### Source-shot inventory
 
@@ -481,7 +483,7 @@ Capture the following in the ONE original demo recording, with its original narr
 | S03 | Prospect activation and factual reply | Demo /start requirement, answer grounded in approved facts | Full video; B5-06 frame |
 | S04 | Fixed pre-qualification collection | Self-reported answers and scheduling purpose | Full video; B5-03 background evidence |
 | S05 | Cal.com booking | Requested property-local time and actual confirmed booking | Full video; B5-01 frame |
-| S06 | Simulated tour-completed event | Operator action and resulting application link; explicit mock label | Full video only; no physical-tour claim |
+| S06 | Simulated tour-completed event | Labeled event result and resulting application link; operator trigger remains off-camera | Full video only; no physical-tour claim |
 | S07 | Application form and synthetic upload | Seven sections, authorization and submitted evidence | Full video; no raw sensitive values in frames |
 | S08 | Evidence preparation / review card | Extracted value, source, provider Sandbox label and deterministic criteria | Full video; B5-04/B5-09 frames; short context |
 | S09 | Genuine manager decision | Evidence before tap, authorized action and its result | Full video; B5-04 frame; short decision beat |
@@ -631,3 +633,5 @@ External product/process interpretations rely on primary sources already registe
 2026-09-17 — Lightly trimmed only B5-06/B5-09/B5-11 slide bodies at the user's request. Their 9/11/10-page counts, reader deliverables, captions, titles, footers, examples and worksheet fields remain. Main-copy averages now 26.8/28.2/27.7 words per page. Both completed decks and all text/video scripts are unchanged; this is copy preparation, not new PDF generation or visual acceptance.
 
 2026-09-17 — At the user's subsequent request, applied the same light trim to B5-01/B5-04 and regenerated their matching PDFs and previews. Combined title/body words fell from 583 to 500 (14.2%); ten/nine pages and all handoff fields/review questions remain. Captions, titles, footers, focal marks, shared CSS, other carousel bodies and all text/video scripts are unchanged. Both exports passed copy/layout/final-PDF checks and full-page/mobile visual review. Three active decks still await generation; no publication.
+
+2026-09-17 — Added a hard off-camera technical-preparation rule for both video exports. The master begins on the listing page; terminals, commands, scripts, Docker/tunnel startup, n8n configuration, API/database screens and credentials are excluded. S06 retains the labeled simulated event and resulting application link while its operator trigger happens during a paused or cut segment.

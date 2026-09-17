@@ -59,6 +59,10 @@ Four tables in `db/schema.sql`:
 
 Airtable mirrors the `leads` table so the demo has a visible board. Postgres stays the source
 of truth; the mirror is fire-and-forget at phase boundaries only. `scripts/sync-airtable.js`
+uses the same latest-application projection as live writes. Approved 2026-09-14
+revision adds tour-completed, lease-sent and lease-signed visibility: about eight
+happy-path writes per lead. Five additional fields show the application reference,
+next action, lease status, last sync and synthetic-demo marker. The sync script
 rebuilds the board from Postgres before a take.
 
 Fixtures: one unit, two applicants (above), one Zillow-format lead email, two paystub PDFs

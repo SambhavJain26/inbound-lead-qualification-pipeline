@@ -532,6 +532,9 @@ const connections = wf.connect({
   "Tell Prospect: Another Time": [["Log Prospect Telegram Message"]],
 });
 
+const mirror = require('./lib/pipeline-mirror');
+mirror.attach(wf,nodes,connections,'Record Direct Booking','$json.ref_token','Direct Tour');
+mirror.attach(wf,nodes,connections,'Record Approved Booking','$json.ref_token','Approved Tour');
 const workflow = wf.buildWorkflow({
   id: "wf5-tour-booking",
   name: "WF5 Tour Booking",

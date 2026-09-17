@@ -272,3 +272,25 @@ contact-sheet thumbnail. Scope footers wrap on two pages instead of shrinking.
 Technical checks and my visual inspection do not establish user design acceptance,
 engagement or client results. The next step is feedback on this proof. The other
 five PDFs remain ungenerated; nothing was uploaded, scheduled or published.
+
+## 2026-09-17 — Subsequent light-copy update
+
+The user requested the two generated decks receive the same light trim as the
+remaining scripts. B5-01 title/body words fell from 296 to 254 (14.2%), averaging
+25.4 per page. All eight audit checks and seven handoff-record fields remain;
+captions, titles, footers and focal phrases are unchanged. Shared CSS and original
+teaching type sizes are untouched. Current export: ten pages, 123,940 bytes.
+
+Inspected all ten updated final-PDF pages, the contact sheet and 360px cover,
+human-boundary and worksheet previews. No clipped text, wrapped pen phrase,
+annotation collision or footer/byline overlap was found. The worksheet retains
+its full labels, not cryptic abbreviations. Renderer and final-PDF verifier pass
+exact copy, dimensions, loaded fonts, embedding and one shared grain image.
+
+Compared the updated contact sheet with the preserved vendor COI first-deck
+render. Blue selection/pen and gold marker still mix across the whole document;
+the dark page preserves the separate human role. Leasing remains a more detailed
+teaching document than the vendor's opinion-led pages. Grouped lesson repetition
+and the three-column worksheet remain trade-offs; this edit is not a wholesale
+redesign or evidence of user design acceptance. Current campaign has five decks;
+two are exported and three remain. No upload, publication or runtime changes.

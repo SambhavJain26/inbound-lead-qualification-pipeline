@@ -38,7 +38,7 @@ The audit is about finding unfinished work and unclear ownership. It isn't an AI
 
 Title: Eight checks for your leasing handoffs
 
-Body: Use this audit to find missing owners, vague statuses and work that looks complete before the next team can act.
+Body: Find missing owners, vague statuses and work marked complete before the next team can act.
 
 Footer: Process audit · Based on a synthetic demo
 
@@ -48,7 +48,7 @@ Visual: cover layout. Blue box: “handoffs”. Gold highlight: “Eight checks�
 
 Title: 1. Keep one household reference
 
-Body: Attach the inquiry, booking, application and signing record to the same reference. If two records don't clearly match, pause for review instead of letting AI choose.
+Body: Link the inquiry, booking, application and signing record through one reference. Ambiguous matches need human review, not an AI choice.
 
 Footer: Check identity before acting
 
@@ -58,7 +58,7 @@ Visual: reference layout. Blue underline: “one household reference”. Use onl
 
 Title: 2. Name the source of each answer
 
-Body: Use approved property facts for replies. Check who updates them when policies change; a polished message still fails if it quotes yesterday's information.
+Body: Use approved property facts for replies. Name who updates them after policy changes; polished wording doesn't fix outdated information.
 
 Footer: Facts need an owner and a current source
 
@@ -68,7 +68,7 @@ Visual: statement layout. Blue circle: “source”. Use only these focal marks;
 
 Title: 3. Separate booked from attended
 
-Body: A calendar confirmation proves an appointment exists. Record tour completion separately, with an owner and timestamp, before treating the showing as finished.
+Body: A calendar confirmation proves a booking, not attendance. Record tour completion separately, with an owner and timestamp, before marking the showing finished.
 
 Footer: Demo tour completion is simulated
 
@@ -78,7 +78,7 @@ Visual: contrast layout. Blue circle: “booked”. Blue underline: “Record to
 
 Title: 4. Define an application-ready file
 
-Body: Agree which information and documents the reviewer needs. Missing evidence creates a follow-up task; submitting a form doesn't make the file complete or approve the renter.
+Body: Define the information and documents reviewers need. Missing evidence needs follow-up; form submission doesn't complete the file or approve the renter.
 
 Footer: Application ≠ approval
 
@@ -88,7 +88,7 @@ Visual: checklist layout. Gold highlight: “Missing evidence”. Use only these
 
 Title: 5. Separate evidence from the decision
 
-Body: AI extracts sourced facts. Configured rules check criteria. The authorized manager records the rental decision. A criteria result must never masquerade as that person's approval.
+Body: AI extracts sourced facts. Configured rules check criteria. The authorized manager records the rental decision. Criteria results aren't that person's approval.
 
 Footer: Synthetic evidence · Human rental decision
 
@@ -98,7 +98,7 @@ Visual: roles layout. Blue underline: “authorized manager”. Use only this fo
 
 Title: 6. Use confirmation, not assumption
 
-Body: Lease sent and lease signed need different statuses. Update completion only when the signing service confirms the event for the correct application.
+Body: Lease sent and signed need different statuses. Mark completion only after the signing service confirms the correct application's event.
 
 Footer: Demo signing uses DocuSign sandbox
 
@@ -108,7 +108,7 @@ Visual: contrast layout. Blue circle: “sent”. Use only these focal marks; pr
 
 Title: 7. Give waiting work an owner
 
-Body: For an unsigned lease or missing document, record who acts next and when to follow up. Failed delivery needs an exception, not another silent waiting status.
+Body: For unsigned leases or missing documents, record who acts next and when. Failed delivery needs an exception, not silent waiting.
 
 Footer: Production follow-up design · Not a tested SLA
 
@@ -118,7 +118,7 @@ Visual: exception layout. Blue underline: “who acts next”. Use only these fo
 
 Title: 8. Don't collapse signing into move-in
 
-Body: Keep required funds, unit readiness and authorized access separate from signatures. Define applicable conditions with your operations team; the demo doesn't perform these possession checks.
+Body: Keep required funds, unit readiness and authorized access separate from signatures. Agree applicable conditions with operations; the demo excludes these possession checks.
 
 Footer: Proposed production controls · Move-in excluded
 
@@ -128,7 +128,7 @@ Visual: boundary layout. Blue underline: “separate from signatures”. Use onl
 
 Title: Use this handoff record
 
-Body: Household reference. Current stage. Completion evidence. Next action. Owner. Follow-up time. Exception. Fill it in for one recent file; an empty field shows what to investigate.
+Body: Household reference. Current stage. Completion evidence. Next action. Owner. Follow-up time. Exception. Fill one recent file's record; investigate empty fields.
 
 Footer: Reusable template · No sensitive applicant data needed
 
@@ -429,7 +429,7 @@ The checklist describes operational controls. It doesn't certify a screening pol
 
 Title: What belongs in a reviewable application file?
 
-Body: A useful packet lets the manager trace each value, inspect the configured criteria and see unresolved evidence before recording a rental decision.
+Body: Let managers trace each value, inspect configured criteria and see unresolved evidence before recording a rental decision.
 
 Footer: Review-file checklist · Synthetic demo basis
 
@@ -439,7 +439,7 @@ Visual: cover layout. Blue box: “reviewable”. Gold highlight: “trace each 
 
 Title: Start with a stable identity
 
-Body: Match the household and property through trusted references before processing documents. An ambiguous match goes to a person; a language model must not assign evidence to an applicant.
+Body: Match household and property through trusted references before processing documents. Ambiguous matches need human review; a model mustn't assign applicant evidence.
 
 Footer: Identity matching is deterministic
 
@@ -449,7 +449,7 @@ Visual: reference layout. Blue underline: “trusted references”. Use only the
 
 Title: Keep the amount beside its source
 
-Body: For each extracted value, retain the document, field or location, income basis and period. The reviewer should be able to check the original, not trust a floating number.
+Body: Retain the document, field or location, income basis and period for each value. Let reviewers check the original, not a detached number.
 
 Footer: Extraction prepares evidence, not truth certification
 
@@ -459,7 +459,7 @@ Visual: evidence layout. Blue underline: “document”. Gold highlight: “inco
 
 Title: Show the rule and its evidence
 
-Body: Record the configured criterion, relevant value and resulting classification together. Separate this from the manager's decision; a model shouldn't invent a threshold or recommend an outcome.
+Body: Record the configured criterion, value and classification together. Keep the manager's decision separate; models mustn't invent thresholds or recommend outcomes.
 
 Footer: Policy review remains a business responsibility
 
@@ -469,7 +469,7 @@ Visual: roles layout. Blue underline: “rule”. Use only these focal marks; pr
 
 Title: Make missing evidence explicit
 
-Body: List what is missing, who owns the follow-up and which approved evidence route is available. Don't fill a blank with an inference to make the summary look finished.
+Body: List missing evidence, its follow-up owner and the approved evidence route. Don't fill blanks with inference to make a summary look finished.
 
 Footer: Screening-stage requests require human approval
 
@@ -479,7 +479,7 @@ Visual: exception layout. Blue circle: “missing”. Use only these focal marks
 
 Title: Keep conflicting values visible
 
-Body: Preserve both sources and their definitions. A gross-versus-net mismatch needs explanation; replacing them with one tidy number hides the reason the file requires review.
+Body: Preserve both sources and their definitions. Explain gross-versus-net differences; combining them into one number hides why the file needs review.
 
 Footer: Difference ≠ dishonesty
 
@@ -489,7 +489,7 @@ Visual: contrast layout. Blue underline: “both sources”. Blue circle: “def
 
 Title: Log the human action separately
 
-Body: Record the authorized reviewer, time, decision and relevant approved conditions in the restricted application record. Reading output and criteria classifications do not count as human approval.
+Body: Record the authorized reviewer, time, decision and approved conditions in the restricted application record. Reading output and criteria results aren't human approval.
 
 Footer: No AI decision, ranking or recommendation
 
@@ -499,7 +499,7 @@ Visual: payoff layout. Quiet page: use hierarchy, spacing and rules without a fo
 
 Title: Build the review packet around questions
 
-Body: Which household? What evidence? Which rule? What's unresolved? Who acts next? Where is the decision recorded? Put those answers together without exposing sensitive documents in routine chat.
+Body: Which household? What evidence? Which rule? What's unresolved? Who acts next? Where is the decision recorded? Keep answers together; don't expose sensitive documents in routine chat.
 
 Footer: Template, not a screenshot of a real applicant
 
@@ -509,7 +509,7 @@ Visual: template layout. Blue box: “What's unresolved”. Use only these focal
 
 Title: Test whether the file is reviewable
 
-Body: Pick one synthetic or properly redacted example. Trace a value to its source, explain a rule result and find the human action. Any missing link becomes a process fix.
+Body: Use one synthetic or properly redacted example. Trace a value's source, explain a rule result and locate the human action. Any missing link needs a process fix.
 
 Footer: Reusable review test · No consumer-report collection
 
@@ -1109,3 +1109,5 @@ The copy uses the existing offer-positioning matrix, a before/after/bridge struc
 2026-09-17 — Removed B5-13's existing-business fit carousel and B5-14's verification-count text post from the active package at the user's request for thirteen posts. Five decks now total 49 pages; six text posts and the two-video/single-recording contract remain. Kept stable IDs and all retained captions, slide fields, text and narration unchanged. Removed drafts remain recoverable in Git history; generated B5-01/B5-04 assets are untouched.
 
 2026-09-17 — User requested a little less text in the three remaining decks. Trimmed B5-06/B5-09/B5-11 bodies while preserving titles, footers, captions, focal phrases, page counts and useful instructions. Main copy across their thirty pages fell from 953 to 828 words (13.1%); averages now 26.8/28.2/27.7 words per page. Both worked income examples remain labeled; the annualization calculation page is unchanged. Worksheet fields, individual approval, final-message checks and production/demo boundaries remain. Both completed decks and eight non-carousel scripts are unchanged. No PDF export or visual QA claimed in this pass.
+
+2026-09-17 — User subsequently requested the two generated decks be updated too. Trimmed B5-01/B5-04 bodies; title/body copy fell from 583 to 500 words (14.2%), averaging 25.4/27.3 per page. Preserved ten/nine pages, handoff fields, review questions, identity/source checks, human authority and demo boundaries. Captions, titles, footers and focal marks are unchanged. Regenerated both HTML sources, PDFs and page previews; exact-copy, layout and final-PDF checks pass. Inspected all nineteen pages, contact sheets and representative 360px previews. Shared CSS, the three other decks and all eight non-carousel posts are unchanged; no publication or runtime action.

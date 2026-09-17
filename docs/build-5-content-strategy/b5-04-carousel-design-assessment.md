@@ -103,3 +103,26 @@ carousel-kit/verify-carousel.py with the same slug using the bundled Python.
 Final outputs live under output/pdf/ and output/carousels/; scratch layout checks
 and mobile previews live in ignored tmp/carousel-qa/. Upload title, if publishing
 later: What belongs in a reviewable application file? Use the canonical caption.
+
+## 2026-09-17 — Subsequent light-copy update
+
+B5-04 title/body words fell from 287 to 246 (14.3%), averaging 27.3 per page.
+All source/basis/period checks, missing/conflicting-evidence instructions, human
+decision fields, six complete review questions and the trace-to-source test remain.
+Captions, titles, footers and focal phrases are unchanged. The source now matches
+the trimmed canonical script; current PDF is nine pages, 116,116 bytes.
+
+Inspected all nine updated final-PDF pages, contact sheet and 360px cover,
+human-action and question-worksheet previews. All text and scope notes remain
+legible at the existing scale, with no clipping, wrapped pen phrase, lost field
+or footer/byline overlap. Copy, dimensions, mark clearance, fonts/embedding and
+the single baked grain image checks pass. Editorial checker validates the current
+49 carousel pages and preserves all eight non-carousel posts.
+
+The six-question template remains the fullest page; its two-column layout keeps
+written questions rather than reducing them to vague labels. Compared against
+the preserved vendor COI first-deck contact sheet, the mark vocabulary and one
+dark boundary page remain coherent, while this review checklist stays more
+instructional. Shared CSS and type sizes are unchanged; repeated lesson skeletons
+remain a limitation, not solved by a word-count reduction. No publication or
+runtime changes; technical/visual QA does not establish user preference.

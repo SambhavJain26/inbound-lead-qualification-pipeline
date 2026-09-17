@@ -2139,3 +2139,30 @@ Updated canonical scripts, content-plan log, design guidance and carousel-kit
 README together. Existing repository rules cover this edit; no new durable rule
 or AGENTS/CLAUDE change is required. No runtime, account, upload or publishing
 changes. Unrelated dirty work preserved; only task-owned edits staged.
+
+## 2026-09-17 — Trim and regenerate both completed carousels
+
+User extended the light-copy request to the two generated decks. Updated only
+B5-01/B5-04 slide bodies and matching HTML; regenerated both PDFs, nineteen page
+PNGs and two contact sheets. Title/body copy fell from 583 to 500 words (14.2%).
+Deck averages are 25.4/27.3 words per page. Counts remain ten/nine pages; campaign
+remains thirteen posts, five decks and 49 carousel pages.
+
+Preserved all handoff fields, complete review questions, trace-to-source checks,
+human decision authority, mock/sandbox and proposed-production distinctions.
+Captions, titles, footers, focal phrases and shared CSS/type sizes are unchanged.
+The three other carousel scripts and all eight non-carousel posts are unchanged.
+
+General Copywriter, Social and Syntax Polish guided the body trim; PDF skill
+required regeneration and final visual QA. Renderer, editorial checker and both
+final-PDF verifiers pass. Inspected all nineteen full pages, contact sheets and
+representative 360px cover/human-boundary/worksheet previews, with no clipping or
+overlap. Compared against the preserved vendor COI reference render; repeated
+lesson layouts and full worksheet labels remain documented trade-offs. No claim
+of user design approval. Final PDFs are 123,940 and 116,116 bytes respectively.
+
+Updated design assessments, blueprint, plan/script logs and kit status together.
+Previous exports remain recoverable in Git; only renderer-managed page previews
+were replaced. No runtime, account, publishing or upload action. Existing rules
+cover this request; no new AGENTS/CLAUDE rule. Unrelated dirty changes preserved;
+only task-owned files and this progress append staged. Three decks remain pending.

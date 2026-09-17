@@ -8,7 +8,7 @@ were rewritten after the user's second design review. Current counts are
 practical examples and reusable worksheets, not the rejected sparse statements.
 
 The current b5-01-inquiry-to-lease.html and output/pdf/b5-01-inquiry-to-lease.pdf
-now match the ten-page first-deck script. The PDF is 124,532 bytes. All ten final
+now match the ten-page first-deck script. The latest PDF is 123,940 bytes. All ten final
 PDF pages, the contact sheet and representative 360px-wide previews were inspected.
 Copy, layout, font embedding and the single shared grain image checks pass.
 This is a design proof, not user approval or authorization to publish.
@@ -32,7 +32,7 @@ one gold underline on its dark page. These are observations, not quotas.
 
 The user subsequently requested the next carousel. B5-04 is now rendered as
 b5-04-reviewable-application-file.html and output/pdf/b5-04-reviewable-application-file.pdf:
-nine pages, 116,563 bytes. All final-PDF pages, its contact sheet and representative
+nine pages, now 116,116 bytes. All final-PDF pages, its contact sheet and representative
 360px cover/human-action/review-packet previews were inspected. Exact copy, layout,
 fonts and the single grain-image checks pass. Its separate assessment is
 ../docs/build-5-content-strategy/b5-04-carousel-design-assessment.md.
@@ -90,3 +90,12 @@ copy combined, with unchanged 9/11/10-page counts, captions, titles, footers and
 annotation phrases. Calculations and worksheet fields remain complete. Use the
 latest canonical bodies when generating those three sources; no PDF was exported
 for this writing pass and both completed decks remain unchanged.
+
+2026-09-17 subsequent request: lightly trimmed B5-01/B5-04 and regenerated both
+HTML sources, PDFs and managed page previews. Their title/body copy fell from
+583 to 500 words (14.2%), with unchanged ten/nine-page counts, worksheet fields,
+review questions, captions, titles, footers and annotation phrases. Shared CSS
+and type sizes are unchanged. Inspected all nineteen final-PDF pages, both contact
+sheets and 360px cover/human-boundary/worksheet previews; exact-copy and final-PDF
+checks pass. The prior exports remain recoverable in Git. Three decks remain
+ungenerated; no publication or runtime change.

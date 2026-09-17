@@ -1,5 +1,9 @@
 # Remaining carousel export assessment
 
+Historical assessment. The all-five second-sweep exports supersede the designs
+and export sizes below. See
+[the current assessment](second-sweep-carousel-design-assessment.md).
+
 Date: 2026-09-17. The user explicitly requested the remaining three decks together.
 This records production QA, not user preference approval or publication.
 

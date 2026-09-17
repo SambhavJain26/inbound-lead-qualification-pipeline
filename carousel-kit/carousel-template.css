@@ -773,6 +773,39 @@ html, body {
 .lesson-fields--wide > li { font-size: var(--size-lesson-body); font-weight: 600; }
 .lesson-fields--wide .sel { margin-left: 0; margin-right: 0; padding-left: .06em; padding-right: .06em; }
 
+/* Second-sweep editorial structures. Shared sizes; no slide-specific fitting. */
+.lesson-pair, .lesson-triad { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 48px; }
+.lesson-triad { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 24px; }
+.lesson-title + .lesson-pair, .lesson-title + .lesson-triad,
+.lesson-title + .lesson-record, .lesson-title + .lesson-stack { margin-top: 48px; }
+.lesson-pair > div, .lesson-triad > p { border-top: var(--w-mark) solid var(--ink); padding-top: 24px; }
+.lesson-pair + .lesson-copy, .lesson-triad + .lesson-copy,
+.lesson-copy + .lesson-pair, .lesson-copy + .lesson-triad { margin-top: 24px; }
+.lesson-stack > .lesson-copy + .lesson-copy { margin-top: 24px; }
+.lesson-record { list-style: none; }
+.lesson-record > li { border-bottom: var(--w-hair) solid var(--rule); padding: 24px 0; }
+.lesson-record > li:first-child { border-top: var(--w-mark) solid var(--ink); }
+.lesson-record > li + li { margin-top: 0; }
+.lesson-record + .lesson-copy { margin-top: 24px; }
+.lesson-state { display: block; font-weight: 800; font-size: 72px; line-height: 96px; letter-spacing: -0.032em; }
+.lesson-result { display: block; font-weight: 800; font-size: 72px; line-height: 96px; letter-spacing: -0.04em; }
+.lesson-result--monthly { font-size: 60px; line-height: 96px; }
+.lesson-serif { font-family: var(--serif); font-weight: 800; font-style: italic; letter-spacing: -0.04em; }
+.body--worksheet-record { bottom: 288px; }
+.lesson-fields--handoff { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lesson-fields--handoff > li { font-size: var(--size-lesson-body); }
+.lesson-fields--handoff > li:last-child { grid-column: 1 / -1; }
+.lesson-fields--matrix { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 0; }
+.lesson-fields--matrix > li { font-size: var(--size-lesson-body); font-weight: 600; }
+.lesson-fields--criterion { grid-template-columns: 1fr; row-gap: 0; }
+.lesson-fields--criterion > li { font-size: var(--size-lesson-body); }
+.lesson-fields--matrix .sel { margin: 0; padding-left: .06em; padding-right: .06em; }
+.lesson-copy + .lesson-fields--matrix { margin-top: 0; }
+.lesson-copy .hl { padding: 0 .06em; margin: 0; }
+.slide--teach.slide--invert .lesson-pair > div,
+.slide--teach.slide--invert .lesson-triad > p,
+.slide--teach.slide--invert .lesson-record > li { border-color: rgba(253, 240, 214, .22); }
+
 /* New layouts include their inverted colors in the same implementation. */
 .slide--teach.slide--invert::before {
   background-image:

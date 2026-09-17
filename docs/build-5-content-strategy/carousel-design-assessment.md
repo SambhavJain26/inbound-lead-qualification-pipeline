@@ -1,5 +1,9 @@
 # First carousel: vendor COI comparison and redesign assessment
 
+Historical assessment. The all-five second-sweep exports supersede the designs
+and pending-deck statuses below. See
+[the current assessment](second-sweep-carousel-design-assessment.md).
+
 Current status: the ten-page first proof is rendered and inspected; user design
 approval is pending. It supersedes both rejected seven-page proofs assessed below.
 Earlier measurements remain historical observations, not targets or approval.

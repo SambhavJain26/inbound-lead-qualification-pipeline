@@ -44,6 +44,42 @@ It reduces selection-box padding without shrinking text or abbreviating fields.
 Only the newly exported income and readiness worksheets use it; existing decks
 are unaffected. Each new deck has one dark emphasis page and selective annotations.
 
+### Five-deck second-sweep layouts — 2026-09-17
+
+This pass supersedes the first proof's repeated grouped paragraphs and
+three-column handoff worksheet, not its useful explanatory copy or disclosure
+scale. Use layout according to the relationship being taught:
+
+- `.lesson-pair`: two ruled columns, 48px column gap and 24px rhythm, for status,
+  signer and income comparisons. It is a reading aid, not an interface mockup.
+- `.lesson-record`: full-width ruled source, permission or approval records;
+  semantic rows keep their own spacing rather than paragraph sibling margins.
+- `.lesson-stack`: a short introduction, structured fields and a separate action
+  or limitation paragraph; retain DOM reading order for PDF text verification.
+- `.lesson-state` and `.lesson-result`: shared 72/96 emphasis for statuses and
+  figures. `.lesson-result--monthly` uses 60/96 for figures including `/month`;
+  this is a fixed shared unit-bearing result style, not per-page shrink-to-fit.
+- `.lesson-fields--handoff`: seven complete fields in two columns at 48/72;
+  the final exception field spans both columns. `.body--worksheet-record` ends
+  288px above the page bottom and retains the closing byline and footer clearance.
+- `.lesson-fields--matrix`: two-column permission/source labels at 48/72 with
+  zero extra row gap. `.lesson-fields--criterion`: a one-column criterion,
+  value and classification record at the same scale.
+- `.lesson-serif`: Zodiak italic, inheriting the title's 78/96 scale. Each deck
+  uses it on one navy boundary page. Do not substitute the reference's giant
+  192px payoff word when it would push useful instructions off the page.
+
+The body-only `.lesson-copy .hl` uses `.06em` horizontal padding and no negative
+margin. It keeps a selected phrase's following glyph clear without changing
+cover highlights or making an entire paragraph gold. Shared inverted colors
+exist for the new rules; every page need not use every device.
+
+The renderer now measures actual text-run rectangles, including page furniture,
+against the reading column. A parent grid fitting its bounds does not prove a
+long result or nonbreaking compound fits. Keep compounds together with `nb` when
+needed; fix layouts and exports, never relax the exact-PDF verifier to accept
+split words. Native-size and mobile visual inspection still follow these checks.
+
 ## Reference system
 
 ### Implemented teaching layouts — first proof, 2026-09-17

@@ -1,5 +1,9 @@
 # Application review-file checklist: production self-assessment
 
+Historical assessment. The all-five second-sweep exports supersede the designs
+and pending-deck statuses below. See
+[the current assessment](second-sweep-carousel-design-assessment.md).
+
 Reviewed 2026-09-17. The user requested the next carousel after the first proof.
 Only B5-04 was generated in this pass. After the subsequent campaign reduction,
 B5-06/09/11 remain active and ungenerated; B5-13 and text post B5-14 are retired.

@@ -1,6 +1,39 @@
 # Leasing carousel production status
 
-## Current generated decks; individual review
+## Current exports — five-deck second sweep, 2026-09-17
+
+All five decks have been updated following the comparison with the Build 01
+vendor COI and Build 02 maintenance references. Current sources, canonical copy,
+PDFs and PDF-derived previews agree. The campaign remains thirteen posts.
+
+| Deck | Pages | PDF bytes |
+| --- | ---: | ---: |
+| b5-01-inquiry-to-lease | 10 | 126,232 |
+| b5-04-reviewable-application-file | 9 | 118,084 |
+| b5-06-message-permissions | 9 | 118,428 |
+| b5-09-income-reconciliation | 11 | 134,208 |
+| b5-11-post-signature-readiness | 10 | 126,128 |
+
+Comparisons, ruled evidence records, larger numerical results and clearer field
+worksheets now supplement the quieter explanatory pages. Each deck retains one
+navy boundary page, with a selected Zodiak italic title word. Blue remains the
+structural accent; gold identifies selected phrases rather than filling pages.
+Four bodies received small status/field-label rewrites, not a broad copy cut.
+All five captions, slide titles and scope footers are unchanged. The eight
+non-carousel posts are preserved.
+
+Inspected all 49 native-size final-PDF page previews, paired whole-page previews,
+five contact sheets and fifteen 360px mobile previews. Exact copy, geometry,
+text-run bounds, annotation clearance, fonts, arithmetic and one shared grain
+image checks pass. Technical QA is not user design approval or permission to
+publish. No operational workflows or external accounts were changed by this task.
+
+See [the second-sweep assessment](../docs/build-5-content-strategy/second-sweep-carousel-design-assessment.md)
+for the comparison, page changes and remaining trade-offs. The older export
+sequence below is retained as history; its sizes and pending-deck statuses are
+not the current state.
+
+## Historical export sequence; individual review
 
 The five active carousel sections in ../docs/build-5-content-strategy/linkedin-post-scripts.md
 were rewritten after the user's second design review. Current counts are

@@ -8,7 +8,30 @@ Earlier seven-page PDF/PNG proofs are rejected and superseded. The first ten-pag
 proof is now rendered and inspected. The user requested the next deck, so the
 nine-page B5-04 review-file checklist is also rendered and inspected; the other
 three were subsequently exported after the user's explicit batch request.
-See the first, B5-04 and remaining-deck self-assessments.
+The five-deck second sweep now supersedes those initial designs. See
+[the current assessment](second-sweep-carousel-design-assessment.md); the first,
+B5-04 and remaining-deck self-assessments remain historical records.
+
+### Applied second-sweep compositions
+
+All five decks are updated at the same 49-page total. Layouts now reflect the
+information: B5-01 pages 4/7 use status comparisons and page 10 a two-column
+handoff record; B5-04 pages 3/4 use evidence/criteria records and page 6 preserves
+sources beside their definitions; B5-06 pages 3/6 use ruled records, page 5 an
+approval-lane split and page 9 complete permission fields; B5-09 pages 2/3 label
+sources/bases, page 4 foregrounds the two amounts and page 6 shows labeled math
+with prominent monthly results; B5-11 separates cover checkpoints, required
+signers/completion on page 4 and funds states on page 5. Existing review questions
+and readiness signoff fields stay complete. These are reference-document
+compositions, not screenshots or fillable form features.
+
+Each navy boundary page gains one italic serif title word at the normal title
+scale. The gold phrase on B5-06 page 7 is now only “earlier”, avoiding a crowded
+wrap. Four canonical bodies were lightly rewritten as status/field labels on
+B5-01 page 7, B5-04 page 4, B5-06 page 9 and B5-09 page 2. Captions, titles,
+footers, teaching substance and proof boundaries are unchanged. The following
+annotation maps remain authoritative; composition names describe the teaching
+role, while these applied structures and shared CSS describe the actual export.
 
 ## 1. What these documents must do for the reader
 
@@ -254,9 +277,9 @@ Reader outcome: Write a message permission matrix that depends on stage, final c
 | 4 | checklist | circle: “delivery” |
 | 5 | boundary | underline: “individual”; highlight: “screening messages” |
 | 6 | reference | underline: “which final draft” |
-| 7 — dark | contrast | underline: “current facts”; highlight: “earlier checks” |
+| 7 — dark | contrast | underline: “current facts”; highlight: “earlier” |
 | 8 | exception | circle: “silence”; underline: “alert its owner” |
-| 9 | template | box: “failure owner” |
+| 9 | template | box: “Failure owner” |
 
 ### B5-09 — Income evidence reconciliation worksheet
 
@@ -322,6 +345,18 @@ loaded fonts, equal page dimensions, embedding and the single shared grain tile.
 Those tests do not establish that the user likes the design.
 
 ## 10. Current production status and next step
+
+The user authorized applying the second-sweep comparison to all five decks.
+Matching sources, canonical labels, PDFs and managed previews are now updated.
+All 49 native-size final-PDF page previews, contact sheets and fifteen 360px
+mobile previews were inspected. Exact copy, text-run bounds, content/footer
+clearance, annotations, dimensions, embedded fonts and one shared grain image
+checks pass. The unchanged calculations also pass the editorial arithmetic checks.
+See [the current assessment](second-sweep-carousel-design-assessment.md) for
+export sizes, page changes and trade-offs. User preference approval, recording
+and publication remain separate steps. No account or automation-runtime changes.
+
+### Earlier production sequence — historical
 
 The new ten-page B5-01 proof is rendered. It uses its identity/reference page,
 booked-versus-attended comparison, review boundary and final worksheet to test the

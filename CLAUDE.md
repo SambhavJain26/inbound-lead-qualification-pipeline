@@ -306,3 +306,12 @@ Keep retained post IDs stable when retiring posts; publishing slots can be
 contiguous without renaming scripts or exported assets. Update active briefs,
 scripts, foundation handoffs, design maps and editorial checks together. Retired
 drafts remain recoverable in Git; dated historical counts are not current totals.
+
+## Structured Carousel Text Checks
+
+Measure actual text-run bounds as well as outer containers, especially grids,
+unit-bearing figures and page furniture. A fitting parent does not prove its
+text fits. Keep canonical scripts and sources aligned when prose becomes status
+or field labels; preserve semantic reading order. Keep compounds together with
+nb rather than weakening exact-PDF verification. Use named shared result/record
+styles, never per-page shrink-to-fit; inspect native-size and mobile PDF previews.

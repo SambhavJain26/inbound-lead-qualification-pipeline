@@ -2,6 +2,13 @@
 
 Written 2026-09-17; active package reduced to thirteen posts on 2026-09-17. This is a writing package, not a publication log. All five carousel PDFs are now exported and checked (49 pages); recording and publication still need their own verification.
 
+The five-deck second visual sweep is applied. Current sources and PDFs use the
+comparison, evidence-record, calculation and worksheet structures documented in
+[the current assessment](second-sweep-carousel-design-assessment.md). Four bodies
+were lightly rewritten as explicit status/field labels; captions, titles,
+footers and all eight non-carousel posts are unchanged. Each export passed
+exact-copy and final-PDF checks plus native-size and representative mobile review.
+
 ## How to use this file
 
 Copy only the text under **LinkedIn post** when preparing a caption or text post. Slide titles, bodies and footers below are the current rewritten copy; visual directions and production notes are instructions, not publishing copy. Source links sit beside the claims they support. For LinkedIn, preserve the source URLs when converting Markdown links to plain text.
@@ -98,7 +105,7 @@ Visual: roles layout. Blue underline: “authorized manager”. Use only this fo
 
 Title: 6. Use confirmation, not assumption
 
-Body: Lease sent and signed need different statuses. Mark completion only after the signing service confirms the correct application's event.
+Body: Keep separate statuses: Lease sent. Lease signed. Mark completion only after the signing service confirms the correct application's event.
 
 Footer: Demo signing uses DocuSign sandbox
 
@@ -140,7 +147,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Use the synthetic demo as the pattern's evidence, not as a client-results claim. No real consumer reports, protected-class inference, AI decisions, rankings or outcome recommendations. The worksheet is an operational aid, not legal advice or a universal screening policy.
 
-The matching ten-page first-carousel PDF proof was rendered and inspected on 2026-09-17. Exact wording, layout and final-PDF checks pass. Earlier seven-page previews are superseded. The user subsequently requested B5-04 individually; the remaining three active decks were subsequently exported under an explicit batch request. Technical QA is not user design approval or authorization to publish.
+The current ten-page PDF is the second-sweep export: 126,232 bytes. Pages 4/7 use status comparisons, page 6 a restrained serif boundary title and page 10 a two-column handoff record. All final-PDF pages and representative 360px previews were inspected; exact-copy and technical checks pass. Earlier proofs remain recoverable in Git. Technical QA is not user design approval or authorization to publish.
 
 ## B5-02 — Full current-build demo
 
@@ -459,7 +466,7 @@ Visual: evidence layout. Blue underline: “document”. Gold highlight: “inco
 
 Title: Show the rule and its evidence
 
-Body: Record the configured criterion, value and classification together. Keep the manager's decision separate; models mustn't invent thresholds or recommend outcomes.
+Body: Record together: Configured criterion. Value. Classification. Keep the manager's decision separate; models mustn't invent thresholds or recommend outcomes.
 
 Footer: Policy review remains a business responsibility
 
@@ -521,7 +528,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Use the synthetic demo as the pattern's evidence, not as a client-results claim. No real consumer reports, protected-class inference, AI decisions, rankings or outcome recommendations. The worksheet is an operational aid, not legal advice or a universal screening policy.
 
-Generated individually on 2026-09-17 after the user's next-carousel request. Matching source: carousel-kit/b5-04-reviewable-application-file.html. Final PDF: output/pdf/b5-04-reviewable-application-file.pdf, nine pages, 116,563 bytes. Every final-PDF page and representative mobile previews inspected; exact title/body/footer wording, layout, dimensions, embedded used fonts and one grain image checks pass. The written-question worksheet uses the shared two-column variant; page seven remains a quiet navy human-action boundary. See [b5-04-carousel-design-assessment.md](b5-04-carousel-design-assessment.md). No publication or approval of the remaining three active decks is implied.
+The current nine-page PDF is the second-sweep export: 118,084 bytes. Pages 3/4 use source and criteria records, page 6 a source/definition split and page 7 a restrained serif boundary title. The complete written-question worksheet remains. Every final-PDF page and representative 360px previews were inspected; exact-copy and technical checks pass. See [the current assessment](second-sweep-carousel-design-assessment.md). No publication or user design approval is implied.
 
 ## B5-05 — The booking worked. The time was wrong.
 
@@ -637,7 +644,7 @@ Body: Check approved text against current facts and stage before sending. After 
 
 Footer: Send-time check follows approval
 
-Visual: contrast layout. Blue underline: “current facts”. Gold highlight: “earlier checks”. Use only these focal marks; preserve unmarked supporting copy.
+Visual: contrast layout. Blue underline: “current facts”. Gold highlight: “earlier”. Use only these focal marks; preserve unmarked supporting copy.
 
 #### Slide 8
 
@@ -653,11 +660,11 @@ Visual: exception layout. Blue circle: “silence”. Blue underline: “alert i
 
 Title: Use this permission worksheet
 
-Body: Record stage, allowed facts, automatic or approved lane, approver, send-time check, delivery evidence and failure owner per message type. Review before enabling sends.
+Body: For each message type, record: Stage. Allowed facts. Automatic or approved lane. Approver. Send-time check. Delivery evidence. Failure owner. Review before enabling sends.
 
 Footer: Reusable matrix · Adapt with authorized staff
 
-Visual: template layout. Blue box: “failure owner”. Use only these focal marks; preserve unmarked supporting copy.
+Visual: template layout. Blue box: “Failure owner”. Use only these focal marks; preserve unmarked supporting copy.
 
 ### Production notes
 
@@ -665,7 +672,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Use the synthetic demo as the pattern's evidence, not as a client-results claim. No real consumer reports, protected-class inference, AI decisions, rankings or outcome recommendations. The worksheet is an operational aid, not legal advice or a universal screening policy.
 
-This deck now has a matching PDF export. Exact canonical copy, font embedding, layout and final-PDF checks pass. Every page and representative mobile previews were inspected on 2026-09-17. See remaining-carousel-design-assessment.md. Technical QA is not user approval or authorization to publish.
+The current nine-page permission PDF is the second-sweep export: 118,428 bytes. Factual/approval records and the seven-field worksheet give the permission lanes different structures; page 7 keeps the final-send check prominent. Every final-PDF page and representative 360px previews were inspected; exact-copy and technical checks pass. See [the current assessment](second-sweep-carousel-design-assessment.md). Technical QA is not user approval or authorization to publish.
 
 ## B5-07 — Start with the software the company already has
 
@@ -779,7 +786,7 @@ Visual: cover layout. Blue box: “meaning”. Gold highlight: “source, basis�
 
 Title: Keep three sources separate
 
-Body: Label self-reported income, document values and provider output separately. Preserve the originals; one unexplained amount makes differences harder to review.
+Body: Label each source separately: Self-reported income. Document values. Provider output. Preserve the originals; one unexplained amount makes differences harder to review.
 
 Footer: Reported · Document · Provider
 
@@ -881,7 +888,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Provider definitions rechecked 2026-09-17: [Plaid Bank Income](https://plaid.com/docs/income/bank-income/) and [Plaid Payroll Income](https://plaid.com/docs/income/payroll-income/). The two numerical examples are constructed teaching examples, not stored fixture outputs, real applicants or recommended screening thresholds. The frequency calculation assumes regular pay over a year, not a guaranteed monthly cash receipt. Plaid directs new US integrations toward its applicable consumer-report products; production selection needs separate eligibility, permission and policy review. No automated adverse-action or fraud verdict. [FTC landlord guidance](https://www.ftc.gov/business-guidance/resources/using-consumer-reports-what-landlords-need-know).
 
-This deck now has a matching PDF export. Exact canonical copy, font embedding, layout and final-PDF checks pass. Every page and representative mobile previews were inspected on 2026-09-17. See remaining-carousel-design-assessment.md. Technical QA is not user approval or authorization to publish.
+The current eleven-page income PDF is the second-sweep export: 134,208 bytes. Source labels, gross/net definitions, compared amounts and monthly calculations use distinct structures. Both illustrative examples and their limitations are unchanged. Every final-PDF page and representative 360px previews were inspected; exact-copy and technical checks pass. See [the current assessment](second-sweep-carousel-design-assessment.md). Technical QA is not user approval or authorization to publish.
 
 ## B5-10 — Five rows didn't mean five prospects
 
@@ -1035,7 +1042,7 @@ Rewritten 2026-09-17 following the user's balanced-text and reference-document d
 
 Keep the proposed-production boundary on every page. These worksheets describe a production design, not deployed client integrations or additional implemented demo features. Applicable requirements, access, retention and authority belong to the company's authorized process. No universal integration, legal compliance or ROI claim.
 
-This deck now has a matching PDF export. Exact canonical copy, font embedding, layout and final-PDF checks pass. Every page and representative mobile previews were inspected on 2026-09-17. See remaining-carousel-design-assessment.md. Technical QA is not user approval or authorization to publish.
+The current ten-page readiness PDF is the second-sweep export: 126,128 bytes. Separate cover checkpoints, signer/completion evidence and pending/received/cleared states precede the retained readiness-signoff worksheet. All production-only disclosures remain. Every final-PDF page and representative 360px previews were inspected; exact-copy and technical checks pass. See [the current assessment](second-sweep-carousel-design-assessment.md). Technical QA is not user approval or authorization to publish.
 
 ## B5-12 — A blocked reply still needs a response
 
@@ -1090,7 +1097,7 @@ One invitation only: a DM about a non-sensitive operational gap. Don't append a 
 - All thirteen captions remain aligned with their evidence and scope. The current five carousels contain 10, 9, 9, 11 and 10 slides respectively, 49 total. The user-authorized range is 7–11 pages based on value.
 - The full demo is one master recording. The short uses only its original footage and audio, with its own visible test disclosures.
 - Video captions are checked against the final recorded events. Primary and fallback short versions are alternatives, not two posts.
-- Two carousel PDFs are generated; three active decks and video exports remain production work. Inspect legibility, captions, disclosures and privacy before uploading.
+- All five carousel PDFs are generated and second-sweep checked. Video recording/exports and publication remain separate work. Review the latest designs, captions, disclosures and privacy before uploading.
 - No mock becomes a real verification claim. No criteria result becomes an AI rental decision. No signing event becomes a physical move-in claim.
 - No automation generates or sends an adverse-action notice. Production obligations remain an authorized human process.
 - External definitions retain their primary-source links. Before upload, verify the current composer accepts the intended files; [LinkedIn document guidance](https://www.linkedin.com/help/linkedin/answer/a519831) supports document posting, not a promised reach advantage.
@@ -1111,3 +1118,15 @@ The copy uses the existing offer-positioning matrix, a before/after/bridge struc
 2026-09-17 — User requested a little less text in the three remaining decks. Trimmed B5-06/B5-09/B5-11 bodies while preserving titles, footers, captions, focal phrases, page counts and useful instructions. Main copy across their thirty pages fell from 953 to 828 words (13.1%); averages now 26.8/28.2/27.7 words per page. Both worked income examples remain labeled; the annualization calculation page is unchanged. Worksheet fields, individual approval, final-message checks and production/demo boundaries remain. Both completed decks and eight non-carousel scripts are unchanged. No PDF export or visual QA claimed in this pass.
 
 2026-09-17 — User subsequently requested the two generated decks be updated too. Trimmed B5-01/B5-04 bodies; title/body copy fell from 583 to 500 words (14.2%), averaging 25.4/27.3 per page. Preserved ten/nine pages, handoff fields, review questions, identity/source checks, human authority and demo boundaries. Captions, titles, footers and focal marks are unchanged. Regenerated both HTML sources, PDFs and page previews; exact-copy, layout and final-PDF checks pass. Inspected all nineteen pages, contact sheets and representative 360px previews. Shared CSS, the three other decks and all eight non-carousel posts are unchanged; no publication or runtime action.
+
+2026-09-17 — Applied the user-authorized second visual sweep to all five decks
+after comparing the Build 01 vendor COI and Build 02 maintenance references.
+Added shared comparison, ruled-record, unit-bearing result and worksheet layouts,
+restrained serif boundary titles and cleaner body highlight spacing. Rephrased
+only B5-01 slide 7, B5-04 slide 4, B5-06 slide 9 and B5-09 slide 2 bodies as
+explicit labels. Shortened B5-06 slide 7's gold focal phrase to “earlier” and
+matched the worksheet focal phrase's capitalization. All captions, titles,
+footers and eight non-carousel posts are unchanged. Regenerated all five PDFs
+and managed previews; checked all 49 native-size final-PDF pages, five contact
+sheets and fifteen 360px mobile previews. Exact copy, geometry, text-run bounds,
+fonts, grain and arithmetic checks pass. No runtime changes or publication.

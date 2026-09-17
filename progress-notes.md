@@ -2194,3 +2194,37 @@ and proposed-production/demo boundaries remain explicit. No runtime, account,
 upload, publishing or paid-dependency change. Existing carousel rules cover this
 task; no new AGENTS/CLAUDE rule. Preserve unrelated dirty work and stage only this
 append plus task-owned files. No active carousel exports remain pending.
+
+## 2026-09-17 — Apply the five-deck second visual sweep
+
+The user authorized updating all five carousels after the comparison with the
+Build 01 vendor COI and Build 02 maintenance decks. Added shared status/income
+comparisons, ruled evidence/approval records, clearer permission/handoff fields,
+prominent monthly calculation results, restrained serif boundary-title words and
+cleaner body highlight spacing. Preserved the thirteen-post package, 10/9/9/11/10
+page counts, useful methods, all captions/titles/footers, both illustrative income
+examples and the eight non-carousel scripts. Four bodies received small explicit
+status/field-label rewrites: B5-01 p7, B5-04 p4, B5-06 p9 and B5-09 p2.
+
+Regenerated all five PDFs and managed final-PDF previews. Final sizes:
+B5-01 126,232; B5-04 118,084; B5-06 118,428; B5-09 134,208; B5-11 126,128 bytes.
+All named renders and final-PDF verifiers pass exact canonical copy, geometry,
+content/footer clearance, fonts, annotation fit and the single shared grain
+image. Added actual text-run horizontal bounds to catch overflow that parent
+container checks miss. Fixed exposed compound/result wrapping without weakening
+the PDF verifier. Synced the durable structured-text rule in AGENTS and CLAUDE.
+
+Inspected all 49 native-size final-PDF page previews, five contact sheets,
+paired whole-page comparisons and fifteen 360px mobile previews. Editorial QA
+passes thirteen posts, five carousels, six text posts, two videos, 49 pages,
+matching annotation maps, preserved non-carousel posts and illustrative arithmetic;
+no length warnings. Updated kit/design/plan/script status and recorded comparison,
+page changes, remaining wrapped-label/full-approval-page trade-offs and publication
+boundaries in second-sweep-carousel-design-assessment.md. Prior assessments are
+explicitly historical; previous exports remain recoverable in Git.
+
+Human rental authority, synthetic/test data and proposed-production disclosures
+remain intact. No automation runtime, external account, reference repository,
+publication or paid dependency was changed by this task. Technical QA is not
+user design approval. Preserve earlier unrelated dirty work; stage only this
+append, the matching AGENTS append and task-owned carousel files.

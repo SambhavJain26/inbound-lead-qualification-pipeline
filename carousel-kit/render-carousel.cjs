@@ -65,6 +65,21 @@ for (const dir of [pdfDir, previewDir, scratch]) fs.mkdirSync(dir, { recursive: 
         const violations = [];
         if (top < band.top - 1 || bottom > band.bottom + 1) violations.push('Content exceeds its band');
         if (bottom > (byline ? byline.top : footer.top) - 24) violations.push('Footer/byline clearance');
+        // Containers can fit while a nowrap word or emphasized result overflows.
+        // Inspect text runs and page furniture, not only outer block rectangles.
+        for (const region of [body, slide.querySelector('.eyebrow'), slide.querySelector('.footer'), slide.querySelector('.byline')].filter(Boolean)) {
+          const walker = document.createTreeWalker(region, NodeFilter.SHOW_TEXT);
+          while (walker.nextNode()) {
+            const text = walker.currentNode;
+            if (!/\S/.test(text.textContent) || text.parentElement.closest('svg')) continue;
+            const range = document.createRange();
+            range.selectNodeContents(text);
+            for (const r of range.getClientRects()) {
+              if (r.left < origin.left + 95 || r.right > origin.left + 985)
+                violations.push('Text exceeds reading column: ' + text.textContent.trim());
+            }
+          }
+        }
         for (const pen of slide.querySelectorAll('.pen')) {
           const r = pen.getBoundingClientRect(), css = getComputedStyle(pen);
           const maxHeight = parseFloat(css.fontSize) * (pen.classList.contains('pay') ? 1.15 : 1.55);

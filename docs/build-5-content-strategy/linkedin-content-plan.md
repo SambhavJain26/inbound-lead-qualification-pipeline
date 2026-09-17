@@ -4,6 +4,16 @@ Created: 2026-09-16. Carousel briefs revised: 2026-09-17 after user feedback. Cu
 
 Thirteen posts: one full demo video, one short video cut from that same recording, five document carousels and six text posts. No standalone image posts. One recording, two video posts.
 
+2026-09-17 second visual sweep: all five PDFs were updated after comparison with
+the Build 01 vendor COI and Build 02 maintenance carousels. Page counts remain
+10/9/9/11/10. The new layouts make comparisons, evidence records, calculations
+and worksheets more visible without a blanket text reduction. Four slide bodies
+received small field/status-label rewrites; all captions, titles, footers and
+the eight text/video scripts remain unchanged. All 49 final-PDF pages and fifteen
+mobile previews were inspected, and technical checks pass. See
+[the second-sweep assessment](second-sweep-carousel-design-assessment.md).
+This is an export update, not publication or user design acceptance.
+
 The demo video follows the build that exists now: listing inquiry, factual conversation, self-reported pre-qualification, real tour booking, simulated tour completion, application, evidence preparation, human review, DocuSign sandbox signing and welcome delivery. It doesn't show a production PM deployment or completed physical move-in.
 
 Current captions, slide copy and narration belong in `linkedin-post-scripts.md`. Working titles below identify subjects, not necessarily the final cover hooks.

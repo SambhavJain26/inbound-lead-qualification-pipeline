@@ -2560,3 +2560,9 @@ Whole-file normalized text equals the pre-change source. Editorial checks pass f
 changed or fresh PDF rendering was claimed. Social guidance informed the separation
 of publishing copy and instructions; copywriting guidance did not override the user's
 formatting-only scope. Durable formatting rules are identical in AGENTS/CLAUDE.
+
+## 2026-09-20 — Build 5 social-copy revision against Builds 2 and 3
+
+Rewrote all thirteen LinkedIn captions in the scene-led, specific operational style of the maintenance-triage Build 2 and make-ready Build 3 scripts. Added five distinct LinkedIn PDF document-upload titles (all under 50 characters) and a full-demo YouTube title/description. Chapter timestamps remain for the actual edit rather than being invented. Updated the recording script to show the Sambhav Jain rehearsal, manager-approved booking, manager-recorded synthetic tour completion and separate welcome approval. Video claims remain gated on the eventual recording. The 49 carousel slide faces and existing PDFs did not change; no new visual QA or video completion is claimed.
+
+Updated the content plan and editorial checks. The copy check passes for thirteen posts, five titled documents and 49 preserved slide pages. Synchronized the renewal-retention collection reference and retained its canonical links. The manual-testing runbook still contains an expired October 5 example and names a paystub file currently deleted in the user's working tree; the scripts warn to refresh and verify those fixtures before recording. This copy pass did not reset the demo, touch the user's paystub changes or test live services. Social, General Copywriter and Syntax Polish guided the revision.

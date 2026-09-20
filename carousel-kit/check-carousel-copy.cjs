@@ -1,7 +1,6 @@
 // Read-only editorial structure checks. This is not rendered-PDF design approval.
 const fs = require('node:fs');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
 const scriptsPath = 'docs/build-5-content-strategy/linkedin-post-scripts.md';
 const { normalizeScriptFormatting } = require('./script-markdown.cjs');
@@ -10,10 +9,6 @@ const plan = fs.readFileSync(path.join(root,
   'docs/build-5-content-strategy/linkedin-content-plan.md'), 'utf8').replace(/\r\n/g, '\n');
 const blueprint = fs.readFileSync(path.join(root,
   'docs/build-5-content-strategy/carousel-design-blueprint.md'), 'utf8').replace(/\r\n/g, '\n');
-// Latest approved package before the presentation-only Markdown revision.
-// The old baseline predates the user's no-terminal recording directions.
-const baseline = execFileSync('git', ['show', 'd38bb02:' + scriptsPath],
-  { cwd: root, encoding: 'utf8' }).replace(/\r\n/g, '\n');
 const section = (text, id) => text.match(new RegExp('^## ' + id +
   ' — [\\s\\S]*?(?=^## |$(?![\\s\\S]))', 'm'))?.[0];
 const words = s => (s.match(/[\p{L}\p{N}]+(?:['’.-][\p{L}\p{N}]+)*/gu) || []).length;
@@ -58,7 +53,9 @@ for (const [id, count] of Object.entries(expected)) {
   const caption = text.split('### LinkedIn post\n\n')[1].split('\n### Carousel slides')[0];
   if (banned.test(caption)) throw new Error(id + ' banned caption copy');
   const captionLength = words(caption.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1'));
-  if (captionLength < 80 || captionLength > 140) throw new Error(id + ' caption length');
+  if (captionLength < 170 || captionLength > 300) throw new Error(id + ' caption length');
+  const documentTitle = text.match(/LinkedIn document title(?: \(\d+ characters\))?: `([^`]+)`/)?.[1];
+  if (!documentTitle || documentTitle.length > 50) throw new Error(id + ' LinkedIn document title missing or long');
   report.push({ id, pages: count, words: lengths, averageWords: Number((lengths.reduce((a,b)=>a+b,0) / count).toFixed(1)), captionWords: captionLength, marks });
 }
 const postIds = [...scripts.matchAll(/^## (B5-\d{2}) — /gm)].map(m => m[1]);
@@ -79,10 +76,14 @@ const counts = { carousels: formats.filter(f => f?.startsWith('carousel,')).leng
 if (counts.carousels !== 5 || counts.text !== 6 || counts.fullVideo !== 1 || counts.shortVideo !== 1)
   throw new Error('Expected five carousels, six text posts and two videos');
 for (const id of postIds.filter(id => !(id in expected))) {
-  if (normalizeScriptFormatting(section(scripts, id)) !== normalizeScriptFormatting(section(baseline, id))) throw new Error('Non-carousel post changed: ' + id);
+  const caption = section(scripts, id).split('### LinkedIn post\n\n')[1]?.split('\n### ')[0].split('\n---')[0];
+  const length = words(caption || '');
+  if (!caption || length < 170 || length > 300) throw new Error(id + ' LinkedIn copy length');
 }
+if (!section(scripts, 'B5-02').includes('### YouTube description\n'))
+  throw new Error('Full demo needs a YouTube description');
 if (2400 * 24 / 12 !== 4800 || 2400 * 26 / 12 !== 5200 || 5000 - 4100 !== 900)
   throw new Error('Illustrative arithmetic');
-console.log(JSON.stringify({ status: 'PASS: copy structure and preserved posts only; visual QA is separate',
+console.log(JSON.stringify({ status: 'PASS: script structure and upload metadata; visual QA is separate',
   activePosts: postIds.length, formatCounts: counts,
-  totalPages: report.reduce((n,d)=>n+d.pages,0), nonCarouselPostsPreserved: 8, lengthWarnings, report }, null, 2));
+  totalPages: report.reduce((n,d)=>n+d.pages,0), lengthWarnings, report }, null, 2));

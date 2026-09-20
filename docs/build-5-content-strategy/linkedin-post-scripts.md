@@ -5,13 +5,12 @@ Written 2026-09-17; active package reduced to thirteen posts on 2026-09-17. This
 The five-deck second visual sweep is applied. Current sources and PDFs use the
 comparison, evidence-record, calculation and worksheet structures documented in
 [the current assessment](second-sweep-carousel-design-assessment.md). Four bodies
-were lightly rewritten as explicit status/field labels; captions, titles,
-footers and all eight non-carousel posts are unchanged. Each export passed
+were lightly rewritten as explicit status/field labels. This later editorial pass rewrites the thirteen captions and adds document titles and YouTube metadata; the 49 slide faces and PDFs are unchanged. Each export passed
 exact-copy and final-PDF checks plus native-size and representative mobile review.
 
 ## How to use this file
 
-Copy only the text under **LinkedIn post** when preparing a caption or text post. Slide titles, bodies and footers below are the current rewritten copy; visual directions and production notes are instructions, not publishing copy. Source links sit beside the claims they support. For LinkedIn, preserve the source URLs when converting Markdown links to plain text.
+Copy only the blockquote under **LinkedIn post** when preparing a caption or text post. Document titles are for LinkedIn PDF upload, not caption text. Slide titles, bodies and footers are PDF copy; visual directions and production notes are instructions. Preserve source URLs when converting Markdown links to plain text.
 
 The active package contains five carousels with 49 slides, six text posts, one full demo video and one short cut from that same recording: thirteen posts total. There are no standalone image posts. Follow the content plan's thirteen publishing slots. IDs B5-13 and B5-14 are retired; B5-15 remains the closing invitation, not a fifteenth active post.
 
@@ -29,17 +28,21 @@ Captions describing video events are release-gated: record and verify those even
 
 **Saveable asset:** Leasing handoff audit. The pages deliver the method and template themselves; the caption is supporting context, not a substitute for information missing from the slides.
 
+**LinkedIn document title (38 characters):** `Eight checks for your leasing handoffs`
+
 ### LinkedIn post
 
-> A fast reply doesn't tell you whether the leasing work is under control.
+> A prospect asks about parking. Someone replies in a minute. On the dashboard, the lead looks handled.
 >
-> The useful audit is what happens between stages: which record carries the household, what proves a tour happened, who reviews the application, and what confirms signing.
+> But who owns the next step when the prospect asks to tour? Does “booked” mean a calendar event exists, or that someone requested a time? If a showing is marked complete, who recorded it? And when an application arrives, is the reviewer looking at evidence or a summary with no source attached?
 >
-> I've turned the coordination pattern behind my demo into eight checks and a handoff-record template. You can use them to walk through one recent leasing file, even without adding software.
+> Each question sounds small until a team has dozens of households at different stages. The same lead can look finished to one person and be waiting on another person's approval.
 >
-> The demo behind this pattern uses synthetic applicants, simulated tour completion, mocked checks and sandbox signing. It stops at a test signature and welcome message, not possession.
+> I made this ten-page audit around eight handoffs. For each one, write down the household reference, current state, evidence for that state, owner, next action and the event that will close it. The last page gives you a record to use on one recent file. You don't need to buy anything to find the gaps.
 >
-> The audit is about finding unfinished work and unclear ownership. It isn't an AI tenant-selection method.
+> One distinction matters most to me: a message sent is not a tour approved; a tour booked is not a tour attended; an application summarized is not a rental decision; a lease sent is not a lease signed.
+>
+> The underlying build is a synthetic leasing demo, with mocked checks and sandbox signing. This document is an operations audit, not a method for selecting tenants. Pick one household file and see how many of its “done” statuses you can prove.
 
 ### Carousel slides
 
@@ -159,17 +162,39 @@ The current ten-page PDF is the second-sweep export: 126,232 bytes. Pages 4/7 us
 
 ### LinkedIn post
 
-> I built a leasing demo from first inquiry to sandbox lease signing.
+> A leasing inquiry is easy to answer. Keeping the same household attached to the right tour, application, review, signature and follow-up is the harder part.
 >
-> In this recording, fictional renter Maya asks about a listing, books a tour, submits a rental application and reaches a manager review. After the manager approves, the build sends a fixed lease template to DocuSign's developer sandbox and waits for signature confirmation.
+> I followed one prospect through that entire path in a local demo. A question about the listing becomes a referenced conversation. A requested showing goes to the manager before a calendar booking or demo access code is released. The manager records tour completion in the same conversation, and the application link follows.
 >
-> AI handles bounded reading and communication work. Configured rules check criteria. A person makes the rental decision.
+> The application is where the boundaries get more important. The system gathers the submitted information and shows the reviewer where a value came from. Configured criteria can organize evidence, but the model does not score people or decide who gets a home. The manager reviews the file and records the decision.
 >
-> This is an operator-run test with synthetic data. Telegram stands in for messaging, Plaid income verification uses Sandbox, and the credit, eviction and identity checks are mocks. I simulate the tour-completed event; I don't claim that a showing happened.
+> Only after that approval does the fixed lease template go to DocuSign's developer sandbox. Sending is not signing: the workflow waits for the sandbox completion event. A separate manager approval controls the welcome email.
 >
-> The endpoint is a confirmed test signature and delivered welcome email, not payment clearance, keys or move-in.
+> This is a controlled test, not a client deployment. Telegram stands in for resident and manager messaging; Plaid is in Sandbox; identity, credit and eviction checks are mocks. Tour attendance is recorded by the operator, not detected from a physical visit. No real consumer report or move-in is shown.
 >
-> Happy to answer questions about a particular handoff in the recording.
+> The video is about the handoffs and the stops, not an AI choosing a tenant. If one of those handoffs is fragile in your process, I'd be interested in how your team currently catches it.
+
+### YouTube title
+
+> Leasing Automation Demo: Inquiry, Tour Approval, Application and Test Lease
+
+### YouTube description
+
+The opening two lines should stand alone in the collapsed preview. Add chapter timestamps only after the final recording is cut; do not publish invented timestamps or promise an event absent from the footage.
+
+> Follow one prospect from a rental listing inquiry through a manager-reviewed application and a test lease signature. Watch where the automation moves work forward and where it stops for a person.
+>
+> This is an operator-run leasing and tenant-screening coordination demo for residential property management. A listing inquiry creates a reference and starts a messaging conversation. The system answers approved property questions, gathers scheduling details and sends the requested tour time to a manager for approval before it books through Cal.com. The manager records tour completion, which releases the application path.
+>
+> The application collects information for a reviewable file. AI is limited to answering grounded questions, extracting cited fields, classifying intent and drafting messages. Configured criteria are applied separately; the manager makes the rental decision. After approval, a fixed lease template is sent through DocuSign's developer sandbox. The system waits for a confirmed test signature, then asks for a separate manager approval before sending the welcome email.
+>
+> Chapters: add actual timestamps from the finished video for listing and inquiry; resident conversation; manager tour approval and calendar confirmation; tour completion and application; evidence review and manager decision; sandbox envelope and signature; welcome approval and delivered message.
+>
+> All data and participants in this walkthrough are test material. Telegram stands in for messaging, Plaid runs in Sandbox, and identity, credit and eviction checks are explicitly mocked. A manager records the tour-completed event; no physical visit, live consumer screening, payment clearance, access handover or move-in is demonstrated. This is not a client deployment or legal screening guidance.
+>
+> Built with self-hosted n8n and Postgres, with Cal.com, Plaid Sandbox, DocuSign developer sandbox, email and a non-authoritative Airtable display board. A production implementation would connect to a company's existing systems and approved policies after discovery.
+>
+> If you run leasing operations and want to discuss one handoff your team still chases, send a non-sensitive description of the step and the tools involved. Please don't share applicant documents or consumer reports.
 
 ### Master recording rules
 
@@ -178,6 +203,8 @@ Record one master in S01–S12 order. The short uses only footage and audio from
 The published recording begins on the listing page. Do not show a terminal, command prompt, script execution, Docker or tunnel startup, webhook registration, n8n workflow configuration, API console, database query or credential screen. Complete technical setup before capture. When an operator-only event must be triggered, pause or cut the screen recording, perform it off-camera, and resume on the labeled business-facing result. This rule applies to both the full demo and the short edit.
 
 Use the clean-run steps in `docs/manual-testing-flow.md`, including Docker, listing server and fresh tunnel recovery. Check both bot webhooks and the current callback URLs before the take. Do not reuse a cleared reference or an old manager card.
+
+**Before recording, refresh the runbook fixtures.** Its older example still says October 5, 2026 and names `fixtures/paystub-maya.pdf`; a local replacement file is currently unverified. Choose a future move-in date accepted by the form, confirm the synthetic document exists and matches the rehearsal identity where appropriate, and update the runbook before using it as a literal input sheet. Do not put a real paystub on screen.
 
 Use the actual available future Cal.com slot and verify it in property-local time. No fixed recording date is promised here. Keep asynchronous waiting in the master if useful, or cut it with an on-screen label such as “Waiting period cut.” A cut is not evidence of instant delivery.
 
@@ -191,7 +218,7 @@ For each shot, leave a clean visual hold before and after speaking. Keep the cur
 
 **Narration:**
 
-> “I'm going to follow one fictional renter through the leasing demo I built. We'll start with an inquiry and finish with a confirmed test lease signature and a welcome email.
+> “I'm going to play the prospective resident in a controlled leasing demo. We'll start with an inquiry and finish with a confirmed test lease signature and a separately approved welcome email.
 >
 > This is synthetic data, not a client deployment. Telegram stands in for messaging, Plaid runs in Sandbox, and DocuSign runs in its developer sandbox. Credit, eviction and identity checks are mocks. I'll also simulate the tour-completed event. No physical move-in happens here.”
 
@@ -203,13 +230,13 @@ For each shot, leave a clean visual hold before and after speaking. Keep the cur
 
 **Narration:**
 
-> “Maya is looking at the Maple Street two-bedroom listing. The listing and the approved facts used in the conversation come from the same unit record.
+> “I'm looking at the Maple Street two-bedroom listing. The listing and the approved facts used in the conversation come from the same unit record.
 >
-> Her first question is whether parking is included and whether a small dog is allowed. I'll submit that inquiry under her fictional name. The system creates a reference so the later conversation and application can stay attached to the right lead.
+> My first question is whether parking is included and whether a small dog is allowed. I'll submit the inquiry as Sambhav Jain using the controlled test recipient. The system creates a reference so the later conversation and application stay attached to this lead.
 >
 > This acknowledgment page isn't proof that a message was received. In this demo, the prospect must start the messaging conversation with that reference. I'll show that step next.”
 
-**Input:** Maya Restrepo; fabricated inquiry address from the runbook; demo phone 555-0142; question “Is parking included, and do you allow a small dog?”
+**Input:** Sambhav Jain; the configured prospect test inbox (keep address private); demo phone 555-0142; question “Is parking included, and do you allow a small dog?”
 
 **Check:** unit, reference and stored lead match. Don't replace the neutral acknowledgment with a bot-branded button or imply SMS was sent.
 
@@ -221,7 +248,7 @@ For each shot, leave a clean visual hold before and after speaking. Keep the cur
 
 > “I'm starting the prospect conversation with the new reference. That link is resolved by the system, not chosen by the language model.
 >
-> The reply answers Maya's parking and pet question using the approved listing facts. It can explain the property's published information; it can't invent a different rent, promise availability or negotiate terms.
+> The reply answers my parking and pet question using approved listing facts. It can explain published information; it can't invent a different rent, promise availability or negotiate terms.
 >
 > This is the messaging stand-in for the demo. A production version would use the company's approved communication channels, subject to their permissions and consent rules.”
 
@@ -229,11 +256,11 @@ For each shot, leave a clean visual hold before and after speaking. Keep the cur
 
 ### S04 — Collect scheduling information
 
-**Capture:** the fixed questions and Maya's self-reported answers. Suggested duration: 30–40 seconds.
+**Capture:** the fixed questions and the prospect's self-reported answers. Suggested duration: 30–40 seconds.
 
 **Narration:**
 
-> “The next questions collect the information needed for this scheduling path. Maya reports an October fifth move-in date, five thousand dollars in gross monthly income, one occupant, an eighteen-pound dog and one car.
+> “The next questions collect information for the scheduling path. I'll give the test move-in date and synthetic income and household answers specified in the current runbook.
 >
 > These are self-reported answers. They haven't been verified, and clearing this pre-qualification gate isn't a rental approval.
 >
@@ -241,7 +268,7 @@ For each shot, leave a clean visual hold before and after speaking. Keep the cur
 
 **Inputs, sent as the chat requests them:**
 
-- “I would like to move in on October 5, 2026.”
+- Use a future move-in date accepted by the form; refresh the runbook's older example first.
 - “My gross monthly income is $5,000 before taxes.”
 - “Only me living there. I have one small dog weighing 18 pounds and one car.”
 
@@ -249,11 +276,11 @@ For each shot, leave a clean visual hold before and after speaking. Keep the cur
 
 ### S05 — Book an available tour
 
-**Capture:** offered slots, Maya's selection, actual Cal.com booking and its local time. Suggested duration: 30–45 seconds.
+**Capture:** requested slot, manager approval, actual Cal.com booking and its property-local time. Suggested duration: 45–60 seconds.
 
 **Narration:**
 
-> “Maya now chooses one of the available showing slots. I'll check the date and time in the property's time zone, then confirm that the booking exists in Cal.com.
+> “I'll request an available showing slot. The manager sees the exact time and approves it before anything is booked or a demo entry code is released. Then I'll check the booking in Cal.com in the property's time zone.
 >
 > A successful API response isn't enough on its own. The renter's requested time and the calendar's recorded time need to agree.
 >
@@ -261,15 +288,15 @@ For each shot, leave a clean visual hold before and after speaking. Keep the cur
 
 **Input:** an actual available future slot, following the runbook's notice requirements. Don't use a stale example date.
 
-**Check:** one booking, correct unit and attendee mapping, correct property-local time. Hide attendee email details and private calendar information.
+**Check:** manager decision recorded first; then one booking, correct unit and attendee mapping, correct property-local time and no code before approval. Hide attendee email and private calendar information. If rescheduling is shown, verify the replacement and old cancellation before claiming confirmation.
 
-### S06 — Simulate the completed tour
+### S06 — Manager records synthetic tour completion
 
-**Capture:** a clear “Simulated tour-completed event” label, followed by the actual application link received. Suggested duration: 20–30 seconds.
+**Capture:** manager's ordinary “Tour completed for Sambhav Jain” message, a clear “Synthetic completion; no physical showing” label, then the application link received. Suggested duration: 25–35 seconds.
 
 **Narration:**
 
-> “For this local demo, I'm recording a synthetic tour-completed event. We haven't conducted a physical showing.
+> “As the manager, I'll record tour completion in the conversation. This is a synthetic event; no physical showing took place.
 >
 > That event advances this lead to the application step and sends the application link. In a live business, the attendance event would need a trustworthy source, such as the company's showing process or an authorized employee update.
 >
@@ -285,20 +312,20 @@ For each shot, leave a clean visual hold before and after speaking. Keep the cur
 
 > “This is the rental application, not the lease. It collects information and authorization for review.
 >
-> I'll fill it with Maya's fictional details and upload the synthetic paystub supplied with the project. The form links back to her inquiry, so the unit and reference don't have to be guessed from the document.
+> I'll fill it as Sambhav Jain using synthetic financial and household details, and upload the synthetic paystub supplied with the project. The form links back to the inquiry, so the unit and reference don't have to be guessed from the document.
 >
 > The demo masks sensitive identifiers on arrival. For the recording, I won't enter real personal or financial information.
 >
-> Submitting the form starts evidence preparation. It doesn't approve Maya, create a contract or mean that every check has been completed.”
+> Submitting the form starts evidence preparation. It doesn't approve the applicant, create a contract or mean every check is complete.”
 
 **Input checklist:**
 
-- MAPLE-2B, fictional Maya Restrepo and the configured test-delivery email from the local runbook. Keep the real inbox address out of published frames.
+- MAPLE-2B, Sambhav Jain and the controlled test-delivery email from the current runbook. Keep the inbox address out of published frames.
 - Demo phone 555-0142; synthetic identifier last-four 1234 only. Never show or enter a real SSN, date of birth or bank account number.
 - Fictional addresses 88 Cedar Lane, Apt 4, Springfield and 17 Birch Court, Springfield.
-- Desired move-in October 5, 2026; Northgate Dental Group; Dental Hygienist; gross monthly income 5000; assistance amount 0.
+- Use a refreshed future move-in date and synthetic employment/income values; do not reuse an expired date or real financial information.
 - One occupant; one 18-pound dog; one blue Honda Civic. Answer the fixture's history questions No, without implying those questions are a universal production form.
-- Upload `fixtures/paystub-maya.pdf`; use the synthetic authorization wording from the runbook.
+- Upload a verified synthetic fixture after the runbook is refreshed; use its synthetic authorization wording. Do not use a real document.
 
 **Check:** fresh application reference, uploaded file recognized, required sections present. Don't show a real ID document or real consumer report.
 
@@ -308,15 +335,15 @@ For each shot, leave a clean visual hold before and after speaking. Keep the cur
 
 **Narration:**
 
-> “The application is now prepared for review. The document reading step extracts values with their sources. The income result comes from Plaid Sandbox, not Maya connecting a real bank or payroll account. Credit, eviction and identity results here are mock fixtures.
+> “The application is now prepared for review. The document reading step extracts values with their sources. The income result comes from Plaid Sandbox, not a connection to my real bank or payroll account. Credit, eviction and identity results here are mock fixtures.
 >
 > The configured criteria check is separate from the model. It applies the demo's rules and shows the evidence behind the result. These aren't universal rental criteria or a legal compliance certification.
 >
-> This card puts the extracted value beside its source. It prepares the evidence; it doesn't choose whether Maya gets the home.
+> This card puts the extracted value beside its source. It prepares the evidence; it doesn't choose who gets the home.
 >
 > If evidence is missing or inconsistent, that needs review. It isn't permission to invent a value or silently move the application forward.”
 
-**Reusable short passage A:** “This card puts the extracted value beside its source. It prepares the evidence; it doesn't choose whether Maya gets the home.”
+**Reusable short passage A:** “This card puts the extracted value beside its source. It prepares the evidence; it doesn't choose who gets the home.”
 
 **Check:** actual values, document citations and source labels visible. Distinguish the fixture's criteria result from the manager's decision. Don't enlarge a mock score without its mock label.
 
@@ -358,13 +385,13 @@ For each shot, leave a clean visual hold before and after speaking. Keep the cur
 
 **Narration:**
 
-> “I'm signing as fictional Maya in the sandbox, not creating a real tenancy.
+> “I'm signing as the test applicant in the developer sandbox, not creating a real tenancy.
 >
 > I'll complete the required signing fields and finish the test envelope. The browser's signing confirmation is one piece of evidence; the automation still needs the provider callback associated with the correct application.
 >
 > I'm not treating an opened email, a clicked link or a signature drawn before Finish as completed signing.”
 
-**Reusable short passage D:** “I'm signing as fictional Maya in the sandbox, not creating a real tenancy.”
+**Reusable short passage D:** “I'm signing as the test applicant in the developer sandbox, not creating a real tenancy.”
 
 **Check:** authorized synthetic role only, required fields complete, Finish confirmed. Don't record a real person's signature or a live lease.
 
@@ -374,7 +401,7 @@ For each shot, leave a clean visual hold before and after speaking. Keep the cur
 
 **Narration, speak the first paragraph only after both results are visible:**
 
-> “DocuSign has confirmed the test signature. The record now shows signed, and the welcome email has arrived. Physical move-in is outside this demo.
+> “DocuSign has confirmed the test signature. The manager separately approved the welcome email, and it has arrived. Physical move-in is outside this demo.
 >
 > The callback updates the authoritative Postgres record. Airtable is a display mirror, not the source that decides what happens next. I can also check the manager confirmation and the matching pipeline row.
 >
@@ -382,9 +409,9 @@ For each shot, leave a clean visual hold before and after speaking. Keep the cur
 >
 > The next production question is where this coordination would fit around a company's existing tools. The demo proves a path can run; a pilot would need to measure whether it removes work in that business.”
 
-**Reusable short passage E:** “DocuSign has confirmed the test signature. The record now shows signed, and the welcome email has arrived. Physical move-in is outside this demo.”
+**Reusable short passage E:** “DocuSign has confirmed the test signature. The manager separately approved the welcome email, and it has arrived. Physical move-in is outside this demo.”
 
-**Check:** callback evidence and signed row agree, welcome message received and not merely logged as attempted, no duplicate lead row. If the mirror is stale, label it and recover before capturing; don't claim it blocks the underlying pipeline.
+**Check:** callback evidence and signed row agree, separate welcome approval is recorded, welcome message received and not merely logged as attempted, no duplicate lead row. If the mirror is stale, label it and recover before capturing; don't claim it blocks the underlying pipeline.
 
 ### Recording acceptance gate
 
@@ -400,19 +427,17 @@ Full-video duration is an editorial target, not a processing-time claim. Keep th
 
 ### LinkedIn post
 
-> “Pre-qualified” and “approved” shouldn't mean the same thing in a leasing workflow.
+> Someone tells a leasing team they earn $5,000 a month and would like to move next month. The conversation now has enough information to discuss a showing. It does not have enough information to approve a rental application.
 >
-> In my demo, the first stage uses what the prospect tells us: desired move-in date, income and a few details needed for the scheduling path. Those answers help route the conversation. They aren't verified application evidence.
+> That sounds obvious when written out. In a workflow, one green “qualified” status can erase the distinction.
 >
-> The application comes later. It supplies information and documents for review, with separate sources and a record of what was checked.
+> I use three separate states in this demo. First, self-reported answers help route scheduling. Next, an application provides documents and information for review. Finally, an authorized manager records a rental decision. Different inputs, different authority, different promises to the prospect.
 >
-> Then a manager makes the rental decision.
+> Consider what happens if a person does not meet the demo's scheduling path. The system must not turn that into “application denied.” No application has been reviewed. It can explain alternatives or hand the conversation to a person without implying that a rental decision has been made.
 >
-> Those three stages need different labels because people act on them differently. If a scheduling gate looks like an approval, a renter can receive the wrong impression and an employee can skip work that hasn't happened yet.
+> The same discipline applies when the path goes smoothly. A booked tour is not an approval; a complete application is not an approval; a criteria check is not an approval. The words on the status card matter because employees and prospects will act on them.
 >
-> The same distinction matters on an exception path. Not clearing the demo's scheduling gate doesn't send a rental denial. It offers an alternative path or a human handoff.
->
-> This is one configured demo sequence, not a claim that every PM company must require a tour before an application. The order should fit the business. The meaning of each status still needs to be clear.
+> This is a configured synthetic example, not a universal leasing sequence. Some companies accept applications before showings. Whatever the order, I would name each stage for what has actually happened, not what the team hopes will happen next.
 
 ### Production notes
 
@@ -428,17 +453,21 @@ No asset required. Keep the distinction between self-reported scheduling informa
 
 **Saveable asset:** Application review-file checklist. The pages deliver the method and template themselves; the caption is supporting context, not a substitute for information missing from the slides.
 
+**LinkedIn document title (36 characters):** `A reviewable rental application file`
+
 ### LinkedIn post
 
-> An application summary is only useful if the reviewer can check how it was made.
+> Imagine an application card that says “monthly income: $5,000.” It looks useful until the manager asks where that number came from.
 >
-> A detached income number doesn't tell you which document supplied it, what period it covers or which criterion used it.
+> Was it typed into the application? Extracted from a pay statement? Calculated from two pay periods? Does it include a bonus? If a second source shows a different amount, did anyone preserve the difference, or did the summary quietly pick one?
 >
-> This checklist separates the parts of a reviewable file: stable identity, source context, configured rules, unresolved evidence and the authorized person's action. It ends with a packet template you can use when assessing your own review process.
+> A review file should make those questions answerable without reconstructing the whole case from attachments and chat history. Keep the applicant reference stable. Put each extracted value next to its source and period. Show the configured criterion and the evidence used for that criterion. Mark missing or conflicting material as unresolved. Record the manager's action separately from the preparation work.
 >
-> My demo illustrates the pattern with synthetic documents, Plaid Sandbox and mocked identity/background checks. AI prepares bounded information; it doesn't recommend, rank or decide.
+> The nine-page document is a checklist for building that packet, ending with questions a reviewer can ask of their own file. Its purpose is to help a person inspect the evidence, not to hide the judgment inside a tidy score.
 >
-> The checklist describes operational controls. It doesn't certify a screening policy or replace authorized policy review.
+> My local example uses fabricated application material, Plaid Sandbox income data and explicitly mocked identity, credit and eviction checks. The AI can prepare cited fields and draft communication. It cannot rank applicants or make a rental decision; a manager owns that action.
+>
+> If your team opened an application file today, could it trace each important number back to a source and explain who made the decision? That's the test I'd start with.
 
 ### Carousel slides
 
@@ -548,19 +577,17 @@ The current nine-page PDF is the second-sweep export: 118,084 bytes. Pages 3/4 u
 
 ### LinkedIn post
 
-> The booking request succeeded. The showing time was wrong.
+> I asked the test renter for a 2 p.m. tour. The booking API returned success. The calendar held 9:30 a.m.
 >
-> During a controlled test of my leasing demo, a request for 2 p.m. became a 9:30 a.m. booking. Nothing about the successful request told me the business result was correct.
+> If I had stopped at “the workflow ran,” I would have called that a pass.
 >
-> The problem was how a date-time without a time zone was interpreted. The prospect meant property-local time; the container treated the value differently.
+> The renter's answer was a local clock time at the property. The automation received a date-time without a zone and interpreted it in the container's zone instead. Every technical step could complete while the actual appointment was wrong.
 >
-> I corrected that conversion and checked the requested time against the calendar's recorded time in the property's time zone.
+> I changed the conversion so the renter's stated time is treated in the property's time zone before comparison and booking. Then I checked the provider's saved booking, not just the outgoing request, against the time the renter asked for.
 >
-> That's a more useful test than “Did the automation run?” It checks whether the result matches what the person asked for.
+> This is why I separate three things in a scheduling test: what the person requested, what the manager approved, and what the calendar recorded. For a reschedule, I also need to know whether the old booking was cancelled. A confirmation message should be the last step, after those facts agree.
 >
-> A production rollout would also need checks for daylight-saving changes, notice requirements and time zones across the portfolio. A successful test of one slot doesn't prove every scheduling case.
->
-> This wasn't a client missing a real showing. It was a demo defect caught while testing. But it explains why I want evidence from the calendar itself, not only a green execution status.
+> The 2 p.m./9:30 a.m. case was a controlled demo defect, not a real resident missing a tour. One corrected case also doesn't prove daylight-saving boundaries, multiple property zones or notice windows are covered. But it changed the acceptance test from “green execution” to “the right business event happened.”
 
 ### Production notes
 
@@ -576,17 +603,21 @@ No new recording required. Source: recorded timezone defect and correction in `p
 
 **Saveable asset:** Leasing message-permission worksheet. The pages deliver the method and template themselves; the caption is supporting context, not a substitute for information missing from the slides.
 
+**LinkedIn document title:** `Who can send what in a leasing workflow`
+
 ### LinkedIn post
 
-> Before automating leasing messages, write down who can send what.
+> “Can I bring a small dog?” and “Please send this applicant a request for another document” are both messages. They should not have the same permission to leave the system.
 >
-> A parking answer, a tour reminder and a screening-stage document request aren't interchangeable. The stage matters as much as the wording.
+> The first can be answered from approved property facts, after a check that the answer does not invent a policy or commitment. The second arrives during screening, changes what the applicant is being asked to do, and needs an authorized person to review the exact wording and recipient.
 >
-> This worksheet explains the two-tier boundary used in my demo, then shows the fields a team needs in a message-permission matrix: allowed content, recipient checks, approval owner, final check and failure route.
+> I split the demo into two message tiers for that reason. Routine factual answers and coordination may go out after guardrails. Applicant-facing messages during screening, conditional terms and outcome-related communication stop for individual manager approval. The final text is checked again at send time, because an edited draft is a new message, not the one originally assessed.
 >
-> Routine factual coordination can send after checks. Once screening begins, applicant-facing messages need individual manager approval, including after edits.
+> A block also needs a destination. If a draft is unsafe or a provider fails, the prospect should not be left watching an empty conversation while the team sees nothing. Give the person a fixed, noncommittal response and make the exception visible to the manager.
 >
-> The demo uses Telegram as a messaging stand-in. This isn't a claim of live SMS, universal consent clearance or automated legal notices. Those production choices require the company's authorized process.
+> The nine-page worksheet asks for stage, allowed content, approval owner, recipient check, final-send check and failure route. You can fill it against the communication tools you already use.
+>
+> This local build uses Telegram as a messaging stand-in, not live SMS. The matrix is an operational design aid, not a blanket consent policy or permission to automate legal notices.
 
 ### Carousel slides
 
@@ -696,19 +727,17 @@ The current nine-page permission PDF is the second-sweep export: 118,428 bytes. 
 
 ### LinkedIn post
 
-> Before adding automation to a PM company's leasing process, I'd ask what its existing software already handles.
+> I would be wary of showing a leasing team a new dashboard before asking what they already have open all day.
 >
-> Applications, documents, showing calendars and leases may already have a home. Building a second version of those features can add another place to check instead of removing work.
+> Their property management software may already hold the applicant and unit. Their calendar may already run showings. Their document service may already send leases. If I build a parallel place for each status, I have not removed a handoff. I've created another screen someone has to reconcile.
 >
-> The useful starting point is a specific handoff that still needs attention. Who checks that an application is ready? Where does the manager see the review? Who follows up when a lease is sent but not signed?
+> The useful question is narrower: where does work wait between those systems? Maybe a prospect's requested time sits in a conversation until somebody approves it. Maybe the application file is complete, but the reviewer has no compact evidence record. Maybe the lease is out for signature and no one owns the follow-up.
 >
-> If the current software solves the problem, use it. If a gap remains, check its integration options, permissions and data quality before deciding what to build around it.
+> For that handoff, I would map the current trigger, source of truth, owner and return path. What event can the existing system expose? What action is the automation allowed to take? Where should a pending approval or failed delivery appear so the team sees it in their normal work?
 >
-> My local demo uses a listing site, messaging stand-ins and a display board to prove the coordination path. It isn't connected to a client's property management system.
+> My local build uses its own listing site, test messaging and a display board to prove a coordination path. It is not connected to a client's PMS. In a real company, integration capability, permissions and data quality would decide the implementation. Sometimes the right answer is an existing feature or a process change.
 >
-> The production objective would be to return statuses, tasks and exceptions to the tools employees already use wherever supported. That requires discovery; it isn't a promise that every PMS can connect without changes.
->
-> Which handoff still needs a person to check another system before the work can continue?
+> If you had to name one place your leasing team copies a status from one tool into another, which one would it be?
 
 ### Production notes
 
@@ -722,13 +751,15 @@ No asset required. The closing question asks about a process, not sensitive appl
 
 ### LinkedIn post
 
-> This is the review-to-signature portion of my leasing demo.
+> The application card can organize the evidence. It cannot approve the person on the other side of it.
 >
-> The evidence card prepares the file. The manager makes the rental decision. A fixed template goes to DocuSign's developer sandbox, and the record changes to signed after completion is confirmed.
+> This short clip starts at that boundary. The reviewer sees the submitted information and its sources. The manager records the decision. Only then does the fixed lease template go to DocuSign's developer sandbox.
 >
-> I cut this clip from the full recording, using its original footage and narration. It's a synthetic, operator-run test—not a live tenant approval or real tenancy. I've cut and labeled waiting periods; the clip isn't a processing-time claim.
+> There is another boundary after “send.” An envelope created is not a lease signed. The demo waits for confirmation from the sandbox and updates the file only after that event arrives. A separate manager action controls the welcome email. I wanted those states visible because a neat “application complete” badge can otherwise hide three different pieces of work.
 >
-> AI doesn't choose the tenant. Physical move-in remains outside this demo.
+> This is an excerpt from the full recording, not a second performance or a separate test. It uses the original footage and audio. Any waiting period cut in the edit is labeled; the clip does not claim that review and signing took under a minute in real time.
+>
+> All applicant data is test material. The identity, credit and eviction checks are mocks; the signature is in a developer sandbox. AI prepares information and drafts communication but does not decide who gets the home. Payment clearance, access and physical move-in are outside this recording.
 
 ### Primary short edit sequence
 
@@ -736,10 +767,10 @@ Use these passages verbatim from the original audio. Do not record them again. D
 
 | Beat | Planned allocation | Source footage | Exact original-audio passage | On-screen text |
 | --- | --- | --- | --- | --- |
-| Evidence | 10 seconds | S08, value and citation visible | This card puts the extracted value beside its source. It prepares the evidence; it doesn't choose whether Maya gets the home. | Synthetic demo · Prepared evidence |
+| Evidence | 10 seconds | S08, value and citation visible | This card puts the extracted value beside its source. It prepares the evidence; it doesn't choose who gets the home. | Synthetic demo · Prepared evidence |
 | Human decision | 11 seconds | S09, review and fresh approval | The manager reviews the file and makes the rental decision. I'm taking that role in this synthetic test and approving this application. | Manager decides · Synthetic test |
-| Sent, then signing | 16 seconds | S10 envelope, then S11 signing action | The approved template now goes to DocuSign's developer sandbox. Sending the envelope isn't the same as completing the signature. I'm signing as fictional Maya in the sandbox, not creating a real tenancy. | DocuSign developer sandbox · Sent ≠ signed |
-| Confirmed completion | 13 seconds | S12 actual signed state and received welcome email | DocuSign has confirmed the test signature. The record now shows signed, and the welcome email has arrived. Physical move-in is outside this demo. | Confirmed test signature · Welcome received |
+| Sent, then signing | 16 seconds | S10 envelope, then S11 signing action | The approved template now goes to DocuSign's developer sandbox. Sending the envelope isn't the same as completing the signature. I'm signing as the test applicant in the developer sandbox, not creating a real tenancy. | DocuSign developer sandbox · Sent ≠ signed |
+| Confirmed completion | 13 seconds | S12 actual signed state, separate approval and received welcome email | DocuSign has confirmed the test signature. The manager separately approved the welcome email, and it has arrived. Physical move-in is outside this demo. | Confirmed test signature · Welcome approved and received |
 | Scope hold | 5 seconds | Hold the final verified S12 frame; no new scene | No additional spoken line; retain the original recording's room tone or silence. | Not a live tenancy · No physical move-in |
 
 **Total target:** 55 seconds. Adjust within 45–60 seconds for the original speaking pace without speeding audio to an unnatural rate or cutting away needed disclosure. If the narration alone requires longer, favor a truthful cut over forcing the target.
@@ -778,17 +809,21 @@ Release primary only if the master passes S08–S12 checks. Use one caption and 
 
 **Saveable asset:** Income evidence reconciliation worksheet. The pages deliver the method and template themselves; the caption is supporting context, not a substitute for information missing from the slides.
 
+**LinkedIn document title:** `Why three income numbers can differ`
+
 ### LinkedIn post
 
-> Before comparing income numbers, compare their definitions.
+> An applicant reports monthly gross income. A pay statement shows one pay period. A bank-income source shows a lower monthly number.
 >
-> A monthly gross figure, a pay-period amount and a bank-derived net amount can all belong to the same file without measuring the same thing.
+> Put those three figures in one column with no labels and the file looks inconsistent. Put source, gross/net basis, frequency and coverage beside each amount, and the first question changes: were they ever supposed to match?
 >
-> This worksheet covers source, gross/net basis, payment frequency, coverage and timing. Two labeled examples show why matching digits isn't the first review task. Plaid describes Bank Income as net-income information and Payroll Income as gross-income information. [Bank Income](https://plaid.com/docs/income/bank-income/), [Payroll Income](https://plaid.com/docs/income/payroll-income/).
+> A biweekly pay amount needs a different monthly conversion from a twice-monthly one. A net deposit is not the same measure as gross pay. One source may cover a bonus, another may cover a shorter period. None of those explanations should be assumed; they are questions to verify and record.
 >
-> The examples are illustrative, not Maya's verified income. My demo uses synthetic documents and Plaid Sandbox.
+> Plaid's own documentation distinguishes [Bank Income](https://plaid.com/docs/income/bank-income/) net-income information from [Payroll Income](https://plaid.com/docs/income/payroll-income/) gross-income information. That is why “the numbers disagree” is not, on its own, a fraud conclusion.
 >
-> Use the checklist to prepare a human review. It doesn't supply a screening threshold, fraud verdict or rental decision.
+> The eleven-page document is a reconciliation note you can use to preserve each source, define its basis, show the arithmetic and flag what still needs a person to inspect. Its examples are illustrative, not verified income for a real applicant.
+>
+> My demo uses fabricated documents and Plaid Sandbox. The output is preparation for human review, not a screening threshold, risk label or rental decision. I'd hand the reviewer a clear unresolved question before letting an automated summary quietly choose a number.
 
 ### Carousel slides
 
@@ -918,19 +953,17 @@ The current eleven-page income PDF is the second-sweep export: 134,208 bytes. So
 
 ### LinkedIn post
 
-> One lead appeared several times on the demo's pipeline board.
+> I opened the demo pipeline and saw several rows that looked like new prospects. They were the same person.
 >
-> The cause wasn't a rush of new inquiries. The mirror created a new row each time the same lead reached another phase.
+> The inquiry had created one row. Then the prospect moved to another phase, and the display integration inserted another row instead of updating the first. More activity made the board look fuller while making the underlying work less clear.
 >
-> That makes a board look busy, but it makes the work harder to understand. Which row is current? Did the person apply twice? Which status should an employee trust?
+> Which row should the leasing coordinator trust? Was the application submitted twice? Is one of those leads still waiting for a showing? A dashboard that cannot answer those questions is not giving the team visibility, even if every write technically succeeded.
 >
-> I changed the mirror to update the row using the lead's stable identity, and limited writes to meaningful phase changes. The latest application information belongs with the lead. It shouldn't create another apparent prospect.
+> I changed the display write to use the lead's stable reference and update the existing row at meaningful phase boundaries. The authoritative state stays in Postgres; Airtable is a mirror. The workflow does not read the board back to decide what happens next, and a display failure must not stall a renter's case.
 >
-> Postgres remains the authoritative record in this build. Airtable displays the pipeline; the workflow doesn't read it back to decide what happens next. A stale or failed mirror write must not stop the underlying process.
+> This was a local development defect, not a client's reporting problem. It gave me a useful acceptance test for any pipeline mirror: one household should remain one household as its status changes. If the board is temporarily stale, the underlying task still needs to move and the mismatch needs a way to be repaired.
 >
-> This was a development defect, not evidence that a client's reporting was wrong. The lesson is about the board's meaning: repeated activity and a new person are different events.
->
-> A visible status is useful only if people can tell what it represents.
+> More rows can mean more work. They do not necessarily mean more people.
 
 ### Production notes
 
@@ -946,17 +979,21 @@ No asset or new Airtable view required. Source: mirror duplicate-row diagnosis a
 
 **Saveable asset:** Post-signature readiness worksheet. The pages deliver the method and template themselves; the caption is supporting context, not a substitute for information missing from the slides.
 
+**LinkedIn document title:** `A signed lease is not move-in clearance`
+
 ### LinkedIn post
 
-> A signature-complete event answers one question: has the signing transaction completed?
+> A signature notification arrives. The file says “signed.” What is someone allowed to do next?
 >
-> It doesn't answer whether required funds are confirmed, the home is ready or someone is authorized to release access.
+> In the demo, that event confirms the DocuSign sandbox transaction and moves the record forward. It does not prove funds are cleared, the home is ready, every required party has signed or access may be released.
 >
-> This worksheet separates those questions into named signoffs. For each applicable condition, the team records its source of evidence, owner and blocker. The exact requirements and sequence come from the company's approved process and applicable obligations.
+> That gap is easy to blur in a workflow drawing. One green event leads to another green event and suddenly “lease signed” has become “move-in complete.” A real operations team has separate owners and sources for those conditions. Accounting confirms what accounting controls. The property team confirms readiness. The authorized person confirms the applicable handover requirements before anyone releases access.
 >
-> These are proposed production controls, not extra features secretly running in my demo. The current build stops after a confirmed DocuSign sandbox signature and welcome delivery.
+> I put those checks in a ten-page worksheet as a proposed production design. For each condition that applies to the company's process, name the evidence, owner, blocker and signoff. If something is missing, the work stays pending with a person responsible for it; the signature event cannot silently fill that gap.
 >
-> Use the worksheet to inspect a handover process—not as a universal legal checklist or permission to release possession.
+> These controls are not hidden features of my local demo. That build stops after a confirmed test signature and a separately approved welcome email. It has no live payment clearance, key release or physical move-in.
+>
+> The worksheet is a way to review a handover process, not a universal legal checklist. The exact obligations and authority have to come from the company's approved policy and applicable requirements.
 
 ### Carousel slides
 
@@ -1076,19 +1113,15 @@ The current ten-page readiness PDF is the second-sweep export: 126,128 bytes. Se
 
 ### LinkedIn post
 
-> The reply tried to refuse a question. The guardrail blocked the refusal.
+> The model refused to answer a restricted question. The prospect saw nothing.
 >
-> During a controlled test, the model repeated part of a restricted subject while saying it couldn't answer. That wording triggered the outgoing check, so the prospect received nothing.
+> The refusal repeated a word from the question while explaining why it could not answer. The outgoing guardrail caught that word and blocked the message. From the system's point of view, the safety check worked. From the person's point of view, the conversation died.
 >
-> The safety boundary was still needed. The failure was letting a blocked message become silence.
+> I kept the boundary and changed the recovery path. The model is instructed to decline without echoing the restricted subject. If a response is blocked or malformed, a fixed, safe fallback tells the prospect a team member will pick it up, and the manager sees an alert. The fallback contains no invented property figure or promise.
 >
-> I changed the refusal instruction so it doesn't repeat the restricted subject, and added a fixed fallback with a manager alert for failed paths. The fallback avoids invented figures, commitments and sensitive content.
+> That is a better failure than silence, but it is not the end of the design. In a real company, who owns the alert? Where does it sit if the manager is away? How long can it wait before it becomes someone else's task? “We notified the team” is not a reliable outcome unless the team can see and close the work.
 >
-> That doesn't turn the demo into a staffed support queue. It gives the operator a visible handoff instead of leaving the conversation hanging.
->
-> In production, the next questions would be operational: who owns that exception, where do they see it and what happens if they don't pick it up? An alert without an owner can still be missed.
->
-> The test reminded me that blocking an unsafe reply is only part of the behavior. The system also needs a safe way to say that a person needs to take over.
+> This happened in a controlled synthetic test, not to a live resident. It is why I test the blocked paths as carefully as the happy path. A guardrail is only half a conversation design; the other half is what the person hears and what the team must do next.
 
 ### Production notes
 
@@ -1102,19 +1135,17 @@ No reenactment or separate recording. Source: guardrail refusal and fallback ent
 
 ### LinkedIn post
 
-> The best starting point for a leasing automation discussion isn't a list of AI features.
+> One leasing handoff is usually enough to tell whether an automation idea is worth discussing.
 >
-> It's one handoff the team still has to chase.
+> Take the showing request. A prospect names a time. Someone has to check availability and authority. The calendar needs to contain the right appointment. If the time changes, the old booking needs to be dealt with before a new confirmation goes out. There are several places for the work to wait, even though the renter sees one conversation.
 >
-> Maybe someone checks whether an application is ready for review. Maybe the manager's decision lives in a message that another employee has to copy elsewhere. Maybe lease follow-up means opening a second system to find out whether anything changed.
+> Or take application review. The documents may already be in a portal, but a manager still has to find the source of each figure, see what is missing and record a decision. The useful work may be preparing that file and tracking the handoff, not building another application portal.
 >
-> The answer may be a feature already in the company's software. It may be a process change. Or there may be a useful integration gap to fill.
+> I built a synthetic end-to-end demo to explore those seams. It reaches a sandbox lease signature and approved welcome message; it does not run inside a client's systems or replace their screening policy. The production design would depend on the tools and people already doing the work.
 >
-> My leasing demo shows one synthetic path from inquiry to a sandbox signature. The production blueprint explains a wider design, but neither replaces discovery of how your company works today.
+> If you lead a property management team, send me one handoff your team still chases: what starts it, which tools are involved, who owns it and where it tends to stall. A short process description is plenty. Please don't send applicant documents, financial details or consumer reports.
 >
-> If you lead a PM team and want to discuss one of those gaps, DM me the systems involved, who owns the step and where the work waits. A short, non-sensitive process description is enough—please don't send applicant documents, bank information or consumer reports.
->
-> We can start by identifying the handoff before deciding whether anything new needs to be built.
+> We can first work out whether your existing software already solves it, whether the process needs a clearer owner, or whether there is a useful integration gap.
 
 ### Production notes
 

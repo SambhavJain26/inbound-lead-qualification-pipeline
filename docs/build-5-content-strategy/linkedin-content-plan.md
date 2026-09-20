@@ -8,13 +8,13 @@ Thirteen posts: one full demo video, one short video cut from that same recordin
 the Build 01 vendor COI and Build 02 maintenance carousels. Page counts remain
 10/9/9/11/10. The new layouts make comparisons, evidence records, calculations
 and worksheets more visible without a blanket text reduction. Four slide bodies
-received small field/status-label rewrites; all captions, titles, footers and
-the eight text/video scripts remain unchanged. All 49 final-PDF pages and fifteen
+received small field/status-label rewrites; at that point the captions, titles, footers and
+the eight text/video scripts remained unchanged. A subsequent editorial pass rewrote the thirteen captions, added LinkedIn upload titles and YouTube metadata, and aligned video directions with manager supervision. The PDF slide faces remain unchanged. All 49 final-PDF pages and fifteen
 mobile previews were inspected, and technical checks pass. See
 [the second-sweep assessment](second-sweep-carousel-design-assessment.md).
 This is an export update, not publication or user design acceptance.
 
-The demo video follows the build that exists now: listing inquiry, factual conversation, self-reported pre-qualification, real tour booking, simulated tour completion, application, evidence preparation, human review, DocuSign sandbox signing and welcome delivery. It doesn't show a production PM deployment or completed physical move-in.
+The demo video follows the supervised build: listing inquiry, factual conversation, self-reported pre-qualification, manager-approved real tour booking, manager-recorded synthetic tour completion, application, evidence preparation, human rental decision, DocuSign sandbox signing and separately approved welcome delivery. It doesn't show a production PM deployment or completed physical move-in. Refresh the dated runbook inputs and verify the local synthetic document before recording.
 
 Current captions, slide copy and narration belong in `linkedin-post-scripts.md`. Working titles below identify subjects, not necessarily the final cover hooks.
 
@@ -72,7 +72,7 @@ The current carousel design uses annotated typography, not screenshots or mocked
 
 The full demo edit targets about 6–9 minutes, allowing more time if that's necessary to show the real handoffs clearly. Don't speed through the manager review to hit a number. Remove dead time, not the evidence.
 
-B5-08 targets 45–60 seconds. Supporting text posts generally target 150–250 words; carousel captions target 80–140 words. These are writing targets, not proven optimal lengths or platform limits.
+B5-08 targets 45–60 seconds. Supporting text posts and carousel captions generally target about 170–260 words; the actual scripts prioritize a specific scene, useful mechanism and honest boundary over a rigid word count. These are editorial targets, not platform limits.
 
 Each carousel delivers usable guidance, usually about 20–35 words of title and body per teaching slide, with a short source or boundary note where needed. Covers and synthesis pages can be shorter, but don't strip out the method to hit a word target. Mobile legibility takes priority over filling the page. Dense legal explanations belong in the source context, not tiny slide footnotes.
 

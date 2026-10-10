@@ -2566,3 +2566,56 @@ formatting-only scope. Durable formatting rules are identical in AGENTS/CLAUDE.
 Rewrote all thirteen LinkedIn captions in the scene-led, specific operational style of the maintenance-triage Build 2 and make-ready Build 3 scripts. Added five distinct LinkedIn PDF document-upload titles (all under 50 characters) and a full-demo YouTube title/description. Chapter timestamps remain for the actual edit rather than being invented. Updated the recording script to show the Sambhav Jain rehearsal, manager-approved booking, manager-recorded synthetic tour completion and separate welcome approval. Video claims remain gated on the eventual recording. The 49 carousel slide faces and existing PDFs did not change; no new visual QA or video completion is claimed.
 
 Updated the content plan and editorial checks. The copy check passes for thirteen posts, five titled documents and 49 preserved slide pages. Synchronized the renewal-retention collection reference and retained its canonical links. The manual-testing runbook still contains an expired October 5 example and names a paystub file currently deleted in the user's working tree; the scripts warn to refresh and verify those fixtures before recording. This copy pass did not reset the demo, touch the user's paystub changes or test live services. Social, General Copywriter and Syntax Polish guided the revision.
+
+## 2026-10-10 — Fresh portfolio demonstration and revised work sample
+
+Rebuilt the public work sample around a fresh synthetic journey rather than
+historical executions or workflow wiring alone. Maya Restrepo R-9412 / A-9731
+completed grounded Telegram intake, manager-approved Cal.com booking for
+October 12 at 11AM America/New_York, manager-recorded synthetic tour attendance,
+application upload, cited paystub extraction, genuine Plaid Sandbox payroll,
+manager approval, a real nonbinding DocuSign developer-sandbox signing session,
+the genuine Connect completion callback and separately approved welcome delivery.
+The user delegated the demo manager actions and explicitly confirmed adoption
+and completion of the fictional Maya signature on the nonbinding document.
+
+Fresh successful evidence: 307 conversation, 311/313 tour hold and booking,
+315/316 synthetic completion and application link, 317 application verification,
+318/319 approval and envelope, 321 signature callback, 322/323 welcome approval
+and send. The lease invitation and final welcome were independently received in
+the approved demo mailbox. Postgres shows A-9731 approved, signed, lease_signed,
+MAPLE-2B leased and one logged application outbound welcome.
+
+Submitted a separate synthetic Devon Clarke application A-2573. Execution 320
+completed the stop branch: claimed/document income 7800 versus canned Sandbox
+4996.33, mismatch 56.1%, income multiple 2.56 against 3.00, does_not_meet and
+stopped_for_human. The unit remains available, no envelope exists and there are
+zero logged outbound applicant messages. Bureau and identity sources remain mock.
+No physical attendance, real consumer reports or binding lease are represented.
+
+The revised PDF contains 32 pages and 31 embedded actual captures. Each of the
+five workflows has its own overview, all-node canvas after n8n Tidy Up and
+enlarged sections paired with explanations. Canvas rearrangement was performed
+in the editor for capture; no workflow logic or mock boundary changed. The
+reschedule branch is identified as implemented and tested, not as a fresh live
+reschedule. Six Telegram pages preserve the complete active conversation pane,
+chat header and composer. Per the user's correction, individual message crops
+were replaced with conversation views; unrelated sidebars are excluded and
+private actor names, recipient addresses and delivery links are raster-redacted.
+
+Browser clipped screenshots misplaced their requested regions, so final assets
+were cropped from full screenshots and verified visually. Private captures,
+execution payloads and mailbox material remain in ignored temporary storage.
+Only sanitized image crops are embedded in the public PDF. Matched the supplied
+reference's Segoe typography, navy/green palette, white space and page furniture;
+used larger body text and dedicated portrait pages for chat readability.
+
+Verification: 146 checks passed again (19 screening, 32 conversation, 36 manager,
+8 form, 10 mirror, 41 reschedule). Poppler rendered all 32 pages; every page was
+visually inspected, with final targeted re-renders after clipping corrections.
+PDF text checks found no out-of-page glyphs, contact addresses, phone patterns,
+repository paths, internal document names or external/social links. Screenshots
+were separately inspected for those details. PDF skill and computer-use guidance
+were applied. Final public artifact: output/pdf/leasing-tenant-screening-work-sample.pdf.
+The fresh demo state is retained; no post-demo reset was run.
+

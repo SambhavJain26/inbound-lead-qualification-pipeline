@@ -2633,3 +2633,12 @@ applicant names and synthetic property addresses remain intentionally labelled
 as demo data. Existing generic API endpoint labels are technical workflow detail,
 not personal contact destinations. The PDF was not changed. The user withdrew
 the proposed email-screenshot addition, so no mailbox capture was added.
+
+## 2026-10-10 - Work-sample footer revision
+
+Replaced the repeated local-demo / synthetic-data footer on all 32 pages with
+LEASING AND TENANT SCREENING / WORK SAMPLE at the user's request. Demo, mock and
+Sandbox explanations remain in the relevant content. Regenerated the PDF and
+rendered every page with Poppler. Visually reviewed all footer strips and checked
+that content above the footer matches the previously privacy-audited renders
+pixel for pixel on all 32 pages. All five workflow bookmarks remain present.

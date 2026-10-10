@@ -2619,3 +2619,17 @@ were separately inspected for those details. PDF skill and computer-use guidance
 were applied. Final public artifact: output/pdf/leasing-tenant-screening-work-sample.pdf.
 The fresh demo state is retained; no post-demo reset was run.
 
+
+## 2026-10-10 - Final work-sample contact-information audit
+
+Rechecked the existing 32-page public PDF at the user's request. SHA-256:
+3e08080232b6f9772453beaf9844cfb30e24ed38b585c36ed183efe742512e4c.
+Extracted text had no email, phone, contact URL, personal actor-name or local-path
+matches. Metadata contains generic work-sample labels; the PDF has zero link
+annotations and zero attached files. Rendered the saved PDF again with Poppler
+and visually inspected all 32 pages, then reviewed manager-chat redactions at
+full page size. No visible personal contact information was found. Synthetic
+applicant names and synthetic property addresses remain intentionally labelled
+as demo data. Existing generic API endpoint labels are technical workflow detail,
+not personal contact destinations. The PDF was not changed. The user withdrew
+the proposed email-screenshot addition, so no mailbox capture was added.

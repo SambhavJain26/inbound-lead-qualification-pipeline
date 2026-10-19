@@ -2642,3 +2642,17 @@ Sandbox explanations remain in the relevant content. Regenerated the PDF and
 rendered every page with Poppler. Visually reviewed all footer strips and checked
 that content above the footer matches the previously privacy-audited renders
 pixel for pixel on all 32 pages. All five workflow bookmarks remain present.
+
+## 2026-10-20 — Technical retrospective LinkedIn carousel completed
+
+Rendered and verified an 11-page technical retrospective carousel (`technical-retrospective-leasing-screening`) and companion LinkedIn post caption.
+
+- Story focus: problem-first build narrative covering the tension between leasing speed (vacancy loss) and underwriting rigor (falsified income documents / eviction cost), the end-to-end workflow, AI vs manager responsibility boundaries, 3-way income reconciliation (claimed vs pay stub vs verified payroll), real failures (guardrail blocking prospect stated income; underscore in tokenized links breaking Markdown parsing), specific recorded checks, and proposed next improvements.
+- Design: cream ruled paper, subtle grain, Switzer body/headers, Zodiak italics on cover payoff, and blue/yellow annotations (selection boxes with handles, highlights, underlines, circles, strikethroughs).
+- Artifacts:
+  - Source Markdown: `docs/build-5-content-strategy/technical-retrospective-carousel.md`
+  - HTML generator: `carousel-kit/scripts/build-technical-retrospective.cjs`
+  - Editable HTML: `carousel-kit/technical-retrospective-leasing-screening.html`
+  - Exported PDF: `output/pdf/technical-retrospective-leasing-screening.pdf` (162,080 bytes, 11 pages)
+  - Contact sheet preview: `output/carousels/technical-retrospective-leasing-screening/contact-sheet.png`
+  - Verification script: `carousel-kit/scripts/verify-technical-retrospective.py` passes all checks (copy preservation across all 11 slides, dimensions, fonts, resources, zero internal paths or build labels).

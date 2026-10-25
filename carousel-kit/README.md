@@ -1,6 +1,6 @@
-# Leasing carousel production status
+﻿# Leasing carousel production status
 
-## Current exports — five-deck second sweep, 2026-09-17
+## Current exports - five-deck second sweep, 2026-09-17
 
 All five decks have been updated following the comparison with the Build 01
 vendor COI and Build 02 maintenance references. Current sources, canonical copy,

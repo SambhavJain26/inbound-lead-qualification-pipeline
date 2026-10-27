@@ -1,4 +1,4 @@
-﻿# Autonomous Leasing, Tour Scheduling & Tenant Screening Engine
+# Inbound Lead Qualification & Calendar Booking Pipeline
 
 [![n8n](https://img.shields.io/badge/Orchestration-n8n_v2.x-EA4B71?style=flat-square&logo=n8n)](https://n8n.io)
 [![PostgreSQL](https://img.shields.io/badge/Authoritative_State-PostgreSQL_16-4169E1?style=flat-square&logo=postgresql)](https://www.postgresql.org)

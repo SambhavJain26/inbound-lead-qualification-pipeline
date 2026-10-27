@@ -1,4 +1,4 @@
-﻿# Case Study: Autonomous Leasing, Tour Scheduling & Fraud-Proof Tenant Screening Engine
+# Case Study: Inbound Lead Qualification & Calendar Booking Pipeline
 
 > *A comprehensive portfolio case study detailing the architecture, engineering decisions, and operational impact of an enterprise leasing and tenant screening automation engine.*
 
@@ -6,7 +6,7 @@
 
 ## Project Hero
 
-* **Project Title**: Autonomous Leasing, Tour Scheduling & Fraud-Proof Tenant Screening Engine
+* **Project Title**: Inbound Lead Qualification & Calendar Booking Pipeline
 * **Subtitle**: An enterprise n8n and PostgreSQL automation pipeline that compresses inquiry-to-lease velocity, eliminates paystub fraud via Plaid payroll verification, and routes mobile approvals to managers with automated DocuSign execution.
 * **Role**: Lead Workflow Automation Architect & Backend Engineer
 * **Timeline**: 3 Weeks (Architecture, Third-Party API Integrations, Workflow Orchestration, and Verification)

@@ -2,6 +2,8 @@
 
 Revised: 2026-10-20. Status: rendered draft for review; not published or queued.
 
+**LinkedIn document title:** `Fast leasing without the shortcuts`
+
 Review PDF: `output/pdf/technical-retrospective-leasing-screening.pdf`.
 Editable HTML: `carousel-kit/technical-retrospective-leasing-screening.html`.
 Build: `node carousel-kit/scripts/build-technical-retrospective.cjs`.

@@ -2656,3 +2656,8 @@ Rendered and verified an 11-page technical retrospective carousel (`technical-re
   - Exported PDF: `output/pdf/technical-retrospective-leasing-screening.pdf` (162,080 bytes, 11 pages)
   - Contact sheet preview: `output/carousels/technical-retrospective-leasing-screening/contact-sheet.png`
   - Verification script: `carousel-kit/scripts/verify-technical-retrospective.py` passes all checks (copy preservation across all 11 slides, dimensions, fonts, resources, zero internal paths or build labels).
+
+
+## 2026-11-07 - Add retrospective upload title
+
+- Added the explicit LinkedIn document title `Fast leasing without the shortcuts` to `docs/build-5-content-strategy/technical-retrospective-carousel.md`, matching the existing cover. Verified publishing metadata only; caption and slide fields remain unchanged. No PDF re-render or runtime changes were needed. No new durable repository rule was needed.

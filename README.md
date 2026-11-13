@@ -215,5 +215,5 @@ node scripts/test-pipeline-mirror.js   # 10 checks passed (Airtable payload norm
 
 ---
 
-## License & Security
+## Security & Privacy
 Private Client Build: Proprietary Intellectual Property. All applicant identities, financial profiles, and property addresses in this repository are synthetic test fixtures.

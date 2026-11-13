@@ -92,7 +92,7 @@ When a prospect inquires via the web listing portal or Telegram bot, **WF1 (Leas
 
 ---
 
-### Phase 2: Autonomous Tour Scheduling & Timezone Engine
+### Phase 2: Manager-Approved Tour Scheduling & Timezone Engine
 When a qualified prospect requests a showing, **WF5 (Tour Booking, 91 nodes)** coordinates the appointment:
 * **Property-Local Timezone Translation**: Resolves the building's physical timezone (`America/Phoenix`, `America/New_York`, etc.) from the database, translating conversational requests (*"tomorrow at 3pm"*) into exact UTC timestamps.
 * **Cal.com Calendar Sync**: Queries available slots via the Cal.com API and books the appointment in real time.

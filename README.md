@@ -26,7 +26,7 @@ Residential leasing teams face an unsustainable operational trade-off between sp
 ### The Solution
 This system creates an automated, compliance-safe **inquiry-to-lease pipeline**:
 1. **Instant 24/7 Inquiry Handling**: Answers prospect questions within seconds via a dedicated Telegram prospect channel and web listing portal, restricting answers strictly to verified unit attributes.
-2. **Autonomous Tour Scheduling**: Books confirmed tour slots directly onto Cal.com, handling property-local timezone conversions and routing after-hours tour exceptions to managers.
+2. **Manager-Approved Tour Scheduling**: Books confirmed tour slots directly onto Cal.com, handling property-local timezone conversions and routing after-hours tour exceptions to managers.
 3. **Automated 7-Section Application & Fraud Detection**: Collects application data, extracts paystub income details via OCR/LLM schemas, and cross-references them against payroll income data.
 4. **Fair Housing Compliance**: AI models never make rental decisions. The engine evaluates fixed objective rules (e.g. 3x rent ratio, credit tiers) and compiles an audit-proof scorecard.
 5. **1-Tap Mobile Lease Dispatch**: The property manager reviews the complete dossier in Telegram and taps `[Approve]`, triggering automated DocuSign lease generation and envelope tracking.

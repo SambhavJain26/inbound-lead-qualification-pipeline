@@ -426,7 +426,7 @@ Also: the containers had exited overnight and the tunnel is dead. `docker compos
 path works:
 
 ```
-From:     "Zillow Rental Manager" <worksambhav26@gmail.com>
+From:     "Zillow Rental Manager" <you@example.com>
 Reply-To: maya.restrepo.demo@convo.zillow.com
 Subject:  New rental inquiry: 412 Maple Street, Apt 2B
 Msg-ID:   <a7d6b159-...@gmail.com>
@@ -458,7 +458,7 @@ trigger on `UNSEEN` in INBOX would happily process those. Options:
 The label approach is cleanest and is also the most production-honest: a real deployment
 would have leads arriving to a dedicated address or label, not a human's general inbox.
 
-**2. The prospect mailbox is not a throwaway account.** `worksambhav26@gmail.com` holds
+**2. The prospect mailbox is not a throwaway account.** `you@example.com` holds
 **10,649 messages** — it is a real, in-use account. Two consequences:
 
 - On camera, showing the prospect's inbox exposes thousands of real emails. Bad for the
@@ -759,7 +759,7 @@ Confirmed against the DocuSign API directly:
 
 ```
 status:  sent | subject: Your lease for 412 Maple Street, Apt 2B, Springfield
-signer:  Maya Restrepo <worksambhav26@gmail.com> | sent
+signer:  Maya Restrepo <you@example.com> | sent
 ```
 
 ### Double-tap guard proven
@@ -997,7 +997,7 @@ node scripts/simulate-telegram-tap.js approve A-xxxx
 ### Open items
 
 1. **Swap `PROSPECT_GMAIL_ADDRESS` to an empty Gmail.** The current one
-   (`worksambhav26@gmail.com`) holds 10,000+ real messages and will be on camera. One `.env`
+   (`you@example.com`) holds 10,000+ real messages and will be on camera. One `.env`
    line, no code change.
 2. **Rename the Cal.com event type** from "30 min meeting" to "Unit Tour" — the renter sees
    that title on the booking page. If the slug changes, update `CALCOM_BOOKING_URL` in `.env`.

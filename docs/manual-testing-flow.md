@@ -13,7 +13,7 @@ This is not your real rental application.
 |---|---|
 | Resident | @MapleGroveLeasingBot |
 | Manager | @sambhav_leasing_demo_bot |
-| System email sender | worksambhav26@gmail.com |
+| System email sender | you@example.com |
 | Resident email recipient | sambhavn8n@gmail.com |
 | Cal.com organizer display name | Alex Morgan, fictional demo organizer |
 | Calendar attendee | Sambhav Jain, from your inquiry |
@@ -74,7 +74,7 @@ node scripts/test-manager-lib.js
 ```
 
 Expect healthy Postgres, running n8n, reachable local/tunnel endpoints, distinct
-bots, SMTP and IMAP authenticated as worksambhav26@gmail.com, and passing manager
+bots, SMTP and IMAP authenticated as you@example.com, and passing manager
 checks. Existing credentials are not proof of successful authentication.
 
 If the stack is already healthy, don't restart its tunnel for this test. Open
@@ -359,7 +359,7 @@ In manager chat, type:
 > Send welcome
 
 Or tap Approve welcome email. If several signed files are waiting, include the
-A-reference. Expect one email from worksambhav26@gmail.com to sambhavn8n@gmail.com
+A-reference. Expect one email from you@example.com to sambhavn8n@gmail.com
 and a manager delivery confirmation. Check Spam/All Mail if needed.
 
 The welcome says insurance, utilities and permanent entry arrangements will

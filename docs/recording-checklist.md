@@ -11,7 +11,7 @@ between the resident steps.
 ## Before capture
 
 Complete the cold-start and health checks in the manual guide. Start both bots
-once if necessary. Use worksambhav26@gmail.com as sender and sambhavn8n@gmail.com
+once if necessary. Use you@example.com as sender and sambhavn8n@gmail.com
 as recipient, with fictional calendar organizer Alex Morgan.
 
 Preserve anything you need before resetting demo rows. A reset doesn't erase
@@ -119,7 +119,7 @@ This is DocuSign's developer sandbox, not a binding production lease.”
 
 Show the signed notice and separate welcome approval in manager chat.
 Type Send welcome or use its button. Show the received welcome email from
-worksambhav26@gmail.com and the final single Airtable row.
+you@example.com and the final single Airtable row.
 
 Say: “The signature returns through a real callback. Postgres records the
 signed state; Airtable mirrors it. The manager approves the welcome email.
